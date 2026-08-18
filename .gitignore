@@ -68,6 +68,8 @@ backend
 /contracts/lib/**/.gitignore
 /contracts/lib/**/.gitattributes
 /contracts/cache/
+# forge script preprocessing scratch, can survive a failed run
+/contracts/foundry-pp/
 /contracts/broadcast/*/31337/
 /contracts/broadcast/**/dry-run/
 /contracts/.env
