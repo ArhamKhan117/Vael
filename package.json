@@ -1,0 +1,25 @@
+{
+  "name": "vael",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-chain quest game on Creditcoin, verified by the Attestcoin Protocol",
+  "author": "Arham Khan",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @vael/web dev",
+    "dev:api": "pnpm --filter @vael/api dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@wagmi/connectors": "6.2.0"
+    }
+  }
+}

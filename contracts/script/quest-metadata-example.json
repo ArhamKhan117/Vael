@@ -1,0 +1,42 @@
+{
+  "schema": "https://schema.org/CreativeWork",
+  "type": "VaelQuest",
+  "name": "Vael Swap Quest #1",
+  "description": "Swap at least 25 USDC on Uniswap v3 on Ethereum Sepolia. The transaction is proved on Creditcoin by the Attestcoin Protocol, and QuestASC releases the VAEL reward and the badge only after that proof verifies.",
+  "category": "Swap",
+  "sourceChain": {
+    "name": "Ethereum Sepolia",
+    "chainId": 11155111,
+    "attestcoinChainKey": 1
+  },
+  "protocol": {
+    "name": "Uniswap v3",
+    "url": "https://app.uniswap.org"
+  },
+  "verification": {
+    "actionType": "UniswapSwap",
+    "eventSignature": "Swap(address,address,int256,int256,uint160,uint128,int24)",
+    "tokenPair": "WETH/USDC",
+    "minAmount": "25000000",
+    "playerMustMatch": true
+  },
+  "rewards": [
+    {
+      "type": "token",
+      "token": "VAEL",
+      "amount": "100"
+    },
+    {
+      "type": "badge",
+      "level": 1,
+      "rarity": "Common"
+    }
+  ],
+  "steps": [
+    "1. Connect your wallet to Vael on Creditcoin testnet",
+    "2. Accept the quest, which anchors the Sepolia block window",
+    "3. Switch to Ethereum Sepolia and swap at least 25 USDC on Uniswap v3",
+    "4. Wait for the Attestcoin attestation of that Sepolia block",
+    "5. Submit the proof, or let the worker do it, and receive VAEL plus the badge"
+  ]
+}

@@ -1,0 +1,273 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {AgentRegistryAdapter} from "./erc8004/AgentRegistryAdapter.sol";
+import {RewardVault} from "./RewardVault.sol";
+import {BadgeNFT} from "./BadgeNFT.sol";
+import {ReputationRegistry} from "./erc8004/ReputationRegistry.sol";
+import {ValidationRegistry} from "./erc8004/ValidationRegistry.sol";
+
+/**
+ * @title QuestManager
+ * @notice Coordinates creation, acceptance, and completion of DeFi quests issued by ERC-8004 agents.
+ */
+contract QuestManager is Ownable {
+    enum QuestCategory {
+        Swap,
+        Liquidity,
+        Stake,
+        Lend
+    }
+
+    enum QuestStatus {
+        Inactive,
+        Active,
+        Completed,
+        Cancelled
+    }
+
+    struct Quest {
+        uint256 agentId;
+        address agentController;
+        QuestCategory category;
+        address protocol;
+        bytes32 parametersHash; // hashed metadata for on-chain integrity check
+        string metadataURI; // IPFS/Arweave pointer to JSON-LD quest description
+        address rewardToken; // VAEL reward token address recorded for reference
+        uint256 rewardPerParticipant;
+        uint256 badgeLevel;
+        address assignedParticipant;
+        uint32 acceptedCount;
+        uint32 completedCount;
+        uint64 expiry;
+        QuestStatus status;
+        uint64 createdAt;
+    }
+
+    struct ParticipantProgress {
+        bool accepted;
+        bool completed;
+    }
+
+    struct CreateQuestParams {
+        QuestCategory category;
+        address protocol;
+        bytes32 parametersHash;
+        string metadataURI;
+        uint256 rewardPerParticipant;
+        uint64 expiry;
+        uint256 badgeLevel;
+        address participant;
+    }
+
+    AgentRegistryAdapter public immutable AGENT_REGISTRY;
+    RewardVault public immutable REWARD_VAULT;
+    BadgeNFT public immutable BADGE_NFT;
+    ReputationRegistry public immutable REPUTATION_REGISTRY;
+    ValidationRegistry public immutable VALIDATION_REGISTRY;
+
+    uint256 private _nextQuestId = 1;
+
+    mapping(uint256 questId => Quest) private _quests;
+    mapping(uint256 questId => mapping(address participant => ParticipantProgress)) private _participantProgress;
+    /// @notice The only contract allowed to record completions. Set once, after deployment.
+    address public questASC;
+
+    event QuestCreated(
+        uint256 indexed questId,
+        uint256 indexed agentId,
+        address indexed agentController,
+        QuestCategory category,
+        address protocol
+    );
+    event QuestAccepted(uint256 indexed questId, address indexed participant);
+    event QuestCompleted(uint256 indexed questId, address indexed participant, string evidenceURI);
+    event QuestCancelled(uint256 indexed questId);
+    event QuestASCUpdated(address indexed questASC);
+
+    error QuestManager__OnlyQuestASC(address caller);
+    error QuestManager__QuestASCAlreadySet(address current);
+    error QuestManager__InvalidQuestASC();
+    error QuestManager__QuestNotActive(uint256 questId);
+    error QuestManager__QuestExpired(uint256 questId);
+    error QuestManager__QuestNotFound(uint256 questId);
+    error QuestManager__AlreadyAccepted(uint256 questId, address participant);
+    error QuestManager__AlreadyCompleted(uint256 questId, address participant);
+    error QuestManager__ParticipantNotAccepted(uint256 questId, address participant);
+    error QuestManager__UnauthorizedParticipant(uint256 questId, address participant);
+    error QuestManager__OnlyAgentController(uint256 questId, address caller);
+
+    modifier onlyQuestASC() {
+        if (msg.sender != questASC) revert QuestManager__OnlyQuestASC(msg.sender);
+        _;
+    }
+
+    constructor(
+        address owner_,
+        AgentRegistryAdapter agentRegistry,
+        RewardVault rewardVault,
+        BadgeNFT badgeNft,
+        ReputationRegistry reputationRegistry,
+        ValidationRegistry validationRegistry
+    ) Ownable(owner_) {
+        AGENT_REGISTRY = agentRegistry;
+        REWARD_VAULT = rewardVault;
+        BADGE_NFT = badgeNft;
+        REPUTATION_REGISTRY = reputationRegistry;
+        VALIDATION_REGISTRY = validationRegistry;
+    }
+
+    // ---------------------- Quest lifecycle ----------------------
+
+    function createQuest(CreateQuestParams calldata params) external returns (uint256 questId) {
+        uint256 agentId = AGENT_REGISTRY.requireValidAgent(msg.sender);
+        if (params.rewardPerParticipant == 0) revert("QuestManager: zero reward");
+        if (params.participant == address(0)) revert("QuestManager: participant missing");
+        if (params.expiry != 0 && params.expiry <= block.timestamp) revert("QuestManager: invalid expiry");
+
+        address rewardTokenAddress = address(REWARD_VAULT.vaelToken());
+        require(rewardTokenAddress != address(0), "QuestManager: reward vault uninitialized");
+
+        questId = _nextQuestId;
+        _nextQuestId += 1;
+
+        Quest storage quest = _quests[questId];
+        quest.agentId = agentId;
+        quest.agentController = msg.sender;
+        quest.category = params.category;
+        quest.protocol = params.protocol;
+        quest.parametersHash = params.parametersHash;
+        quest.metadataURI = params.metadataURI;
+        quest.rewardToken = rewardTokenAddress;
+        quest.rewardPerParticipant = params.rewardPerParticipant;
+        quest.badgeLevel = params.badgeLevel;
+        quest.assignedParticipant = params.participant;
+        quest.expiry = params.expiry;
+        quest.status = QuestStatus.Active;
+        quest.createdAt = uint64(block.timestamp);
+
+        uint256 totalReward = params.rewardPerParticipant;
+        REWARD_VAULT.fundQuest(questId, totalReward);
+
+        emit QuestCreated(questId, agentId, msg.sender, params.category, params.protocol);
+    }
+
+    function getQuest(uint256 questId) external view returns (Quest memory) {
+        Quest memory quest = _quests[questId];
+        if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
+        return quest;
+    }
+
+    function acceptQuest(uint256 questId) external {
+        Quest storage quest = _quests[questId];
+        if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
+        if (quest.status != QuestStatus.Active) revert QuestManager__QuestNotActive(questId);
+        if (quest.expiry != 0 && block.timestamp > quest.expiry) revert QuestManager__QuestExpired(questId);
+
+        ParticipantProgress storage progress = _participantProgress[questId][msg.sender];
+        if (quest.assignedParticipant != msg.sender) {
+            revert QuestManager__UnauthorizedParticipant(questId, msg.sender);
+        }
+        if (progress.accepted) revert QuestManager__AlreadyAccepted(questId, msg.sender);
+
+        progress.accepted = true;
+        quest.acceptedCount += 1;
+
+        emit QuestAccepted(questId, msg.sender);
+    }
+
+    /**
+     * @notice Record a verified quest completion. The caller must be QuestASC, which only
+     *         reaches this point after the Attestcoin block prover has verified the source
+     *         transaction on Creditcoin. There is no trusted off-chain completion path.
+     */
+    function recordCompletion(uint256 questId, address participant, string calldata evidenceURI)
+        external
+        onlyQuestASC
+    {
+
+        Quest storage quest = _quests[questId];
+        if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
+        if (quest.status != QuestStatus.Active) revert QuestManager__QuestNotActive(questId);
+        if (quest.expiry != 0 && block.timestamp > quest.expiry) revert QuestManager__QuestExpired(questId);
+
+        ParticipantProgress storage progress = _participantProgress[questId][participant];
+        if (participant != quest.assignedParticipant) {
+            revert QuestManager__UnauthorizedParticipant(questId, participant);
+        }
+        if (!progress.accepted) revert QuestManager__ParticipantNotAccepted(questId, participant);
+        if (progress.completed) revert QuestManager__AlreadyCompleted(questId, participant);
+
+        progress.completed = true;
+        quest.completedCount += 1;
+
+        REWARD_VAULT.releaseReward(questId, participant, quest.rewardPerParticipant);
+        // Mint badge NFT with metadata URI
+        BADGE_NFT.mintBadge(participant, questId, quest.badgeLevel);
+
+        // Submit positive reputation review for successful quest completion
+        // Score 95 indicates successful completion, evidenceURI as metadata, quest completion tx as payment ref
+        string memory paymentRef = string(abi.encodePacked("quest:", _uint256ToString(questId), ":completed"));
+        REPUTATION_REGISTRY.submitReview(quest.agentId, questId, 95, evidenceURI, paymentRef);
+
+        emit QuestCompleted(questId, participant, evidenceURI);
+        quest.status = QuestStatus.Completed;
+    }
+
+    function cancelQuest(uint256 questId) external {
+        Quest storage quest = _quests[questId];
+        if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
+        if (msg.sender != quest.agentController && msg.sender != owner()) {
+            revert QuestManager__OnlyAgentController(questId, msg.sender);
+        }
+        if (quest.status == QuestStatus.Cancelled || quest.status == QuestStatus.Completed) {
+            return;
+        }
+        quest.status = QuestStatus.Cancelled;
+        emit QuestCancelled(questId);
+    }
+
+    // ---------------------- Admin ----------------------
+
+    /**
+     * @notice Bind this manager to its QuestASC verifier. One-shot and irreversible, so no
+     *         later owner action can redirect completions to an unverified caller.
+     */
+    function setQuestASC(address questASC_) external onlyOwner {
+        if (questASC_ == address(0)) revert QuestManager__InvalidQuestASC();
+        if (questASC != address(0)) revert QuestManager__QuestASCAlreadySet(questASC);
+        questASC = questASC_;
+        emit QuestASCUpdated(questASC_);
+    }
+
+    function participantProgress(uint256 questId, address participant)
+        external
+        view
+        returns (ParticipantProgress memory)
+    {
+        return _participantProgress[questId][participant];
+    }
+
+    // Helper to convert uint256 to string for payment reference
+    function _uint256ToString(uint256 value) private pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            // forge-lint: disable-next-line(unsafe-typecast)
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+}

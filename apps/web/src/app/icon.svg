@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Vael">
+  <title>Vael</title>
+  <rect width="48" height="48" rx="10" fill="#0A0A0A"/>
+  <path d="M12 13 L24 35 L36 13" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
+  <circle cx="24" cy="20" r="3" fill="#FFFFFF"/>
+</svg>

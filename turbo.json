@@ -1,0 +1,43 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "out/**"]
+    },
+    "@vael/web#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_REOWN_PROJECT_ID",
+        "NEXT_PUBLIC_CREDITCOIN_RPC_URL",
+        "NEXT_PUBLIC_CREDITCOIN_RPC_FALLBACK_URLS",
+        "NEXT_PUBLIC_SEPOLIA_RPC_URL",
+        "NEXT_PUBLIC_SEPOLIA_RPC_FALLBACK_URLS",
+        "NEXT_PUBLIC_PROOF_BUILDER_URL",
+        "NEXT_PUBLIC_QUEST_MANAGER_ADDRESS",
+        "NEXT_PUBLIC_VAEL_TOKEN_ADDRESS",
+        "NEXT_PUBLIC_BADGE_NFT_ADDRESS",
+        "NEXT_PUBLIC_CAMPAIGN_ESCROW_ADDRESS",
+        "NEXT_PUBLIC_QUEST_ASC_ADDRESS",
+        "NEXT_PUBLIC_VAEL_HERO_ADDRESS",
+        "NEXT_PUBLIC_RAID_BOSS_ADDRESS",
+        "NEXT_PUBLIC_QUEST_PORTAL_ADDRESS",
+        "NEXT_PUBLIC_REWARD_STABLE_ADDRESS",
+        "NEXT_PUBLIC_IPFS_GATEWAY"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@vael/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vael smart contracts for Creditcoin and Ethereum Sepolia",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "clean": "forge clean"
+  },
+  "dependencies": {
+    "@gluwa/asc-contracts": "0.2.1"
+  }
+}
