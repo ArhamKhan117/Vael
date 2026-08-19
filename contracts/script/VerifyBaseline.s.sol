@@ -87,8 +87,15 @@ contract VerifyBaseline is Script {
         _eq("BadgeNFT.questManager", badge.questManager(), address(manager));
         _isTrue("VaelToken.MINTER_ROLE(RewardVault)", token.hasRole(MINTER_ROLE, address(vault)));
         _isTrue("ReputationRegistry.isReviewerAuthorized(QuestManager)", reputation.isReviewerAuthorized(address(manager)));
-        _isTrue("ValidationRegistry.isValidatorAuthorized(QuestManager)", validation.isValidatorAuthorized(address(manager)));
         _eq("CampaignEscrow.rewardToken", address(escrow.rewardToken()), address(token));
+        // QuestManager holds VALIDATION_REGISTRY as an immutable but calls nothing on it,
+        // so it must hold no privilege there.
+        require(
+            !validation.isValidatorAuthorized(address(manager)),
+            "VerifyBaseline: QuestManager should not be an authorized validator"
+        );
+        checks++;
+        console.log("ok   ValidationRegistry grants QuestManager nothing");
 
         console.log("=== ownership ===");
         _eq("IdentityRegistry.owner", identity.owner(), deployer);

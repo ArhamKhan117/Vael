@@ -41,7 +41,7 @@ All nine are source-verified on Blockscout. Re-check with `contracts/script/chec
 - **`CampaignEscrow`** — Partner-funded campaign pools
 - **`IdentityRegistry`** — ERC-8004 agent identity
 - **`ReputationRegistry`** — ERC-8004 agent reputation
-- **`ValidationRegistry`** — ERC-8004 validation records
+- **`ValidationRegistry`** — ERC-8004 validation records. QuestManager's authorization here was granted then revoked: it holds the registry as an immutable but calls nothing on it, so the privilege was unused
 - **`AgentRegistryAdapter`** — Resolves a controller to a live agent id
 
 ## Wiring transactions
@@ -59,6 +59,7 @@ One transaction per call, each slot read back at the block it landed in.
 | `CampaignEscrow.setRewardToken(VaelToken)` | [`0x9fdf11b1…8c18aa`](https://creditcoin-testnet.blockscout.com/tx/0x9fdf11b1a40649857a02ab4bee2d6521f16b4590088965e89a104d2f208c18aa) |
 | `VaelToken.mint(deployer, 1,000,000 VAEL)` | [`0x0021b591…f9e796`](https://creditcoin-testnet.blockscout.com/tx/0x0021b591d391916b0face99ef023d190947fea7003d6f24f8df4265370f9e796) |
 | `VaelToken.transfer(RewardVault, 100,000 VAEL)` | [`0xbdb9d581…c98789`](https://creditcoin-testnet.blockscout.com/tx/0xbdb9d581c6c6bf598c2002e60dd62d657977e2ac251204900b14d99c4cc98789) |
+| `ValidationRegistry.setValidatorAuthorization(QuestManager, false)` | [`0x204728a3…ad5975`](https://creditcoin-testnet.blockscout.com/tx/0x204728a3dc8ac135a682c610f75b3fbd03cadf5f095a9ad5df946a060dad5975) |
 | `IdentityRegistry.registerAgent(deployer)` | [`0x54ddff5b…e21528`](https://creditcoin-testnet.blockscout.com/tx/0x54ddff5bd848f0050efaea29c2a779cc6bc9098b0ed54758e23e6606cce21528) |
 
 ERC-8004 agent id for the deployer: **1**.
@@ -164,6 +165,7 @@ WIRE_BADGE_URI_9_TX=0xd16fb45762d0001fcc3da9a04ed38adef63f69bb06bf13adfd69d54069
 WIRE_BADGE_URI_10_TX=0x79720886970584d390d009f0095b69cba3ec754bc352de6834b9973f3045fc49
 MINT_INITIAL_SUPPLY_TX=0x0021b591d391916b0face99ef023d190947fea7003d6f24f8df4265370f9e796
 FUND_VAULT_TX=0xbdb9d581c6c6bf598c2002e60dd62d657977e2ac251204900b14d99c4cc98789
+REVOKE_VALIDATION_AUTH_TX=0x204728a3dc8ac135a682c610f75b3fbd03cadf5f095a9ad5df946a060dad5975
 REGISTER_AGENT_TX=0x54ddff5bd848f0050efaea29c2a779cc6bc9098b0ed54758e23e6606cce21528
 AGENT_ID=1
 ```
