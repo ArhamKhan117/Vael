@@ -12,6 +12,8 @@ import {RewardVault} from "../src/RewardVault.sol";
 import {BadgeNFT} from "../src/BadgeNFT.sol";
 import {QuestManager} from "../src/QuestManager.sol";
 import {CampaignEscrow} from "../src/CampaignEscrow.sol";
+import {QuestASC} from "../src/QuestASC.sol";
+import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 
 /**
  * @title VerifyBaseline
@@ -60,7 +62,10 @@ contract VerifyBaseline is Script {
         VaelToken token = VaelToken(vm.envAddress("VAEL_TOKEN_ADDRESS"));
         RewardVault vault = RewardVault(vm.envAddress("REWARD_VAULT_ADDRESS"));
         BadgeNFT badge = BadgeNFT(vm.envAddress("BADGE_NFT_ADDRESS"));
-        QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_ADDRESS"));
+        QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_V2_ADDRESS"));
+        QuestASC questASC = QuestASC(vm.envAddress("QUEST_ASC_ADDRESS"));
+        address questPortal = vm.envAddress("QUEST_PORTAL_ADDRESS");
+        uint64 sepoliaChainKey = uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1)));
         CampaignEscrow escrow = CampaignEscrow(vm.envAddress("CAMPAIGN_ESCROW_ADDRESS"));
 
         console.log("=== code present ===");
@@ -71,7 +76,8 @@ contract VerifyBaseline is Script {
         _hasCode("VaelToken", address(token));
         _hasCode("RewardVault", address(vault));
         _hasCode("BadgeNFT", address(badge));
-        _hasCode("QuestManager", address(manager));
+        _hasCode("QuestManager v2", address(manager));
+        _hasCode("QuestASC", address(questASC));
         _hasCode("CampaignEscrow", address(escrow));
 
         console.log("=== QuestManager immutables ===");
@@ -120,9 +126,26 @@ contract VerifyBaseline is Script {
         console.log("ok   VaelToken.totalSupply", token.totalSupply());
         console.log("ok   RewardVault VAEL balance", token.balanceOf(address(vault)));
 
-        console.log("=== one-shot bindings still open for milestone 3 ===");
-        _eq("QuestManager.questASC is unset", manager.questASC(), ZERO);
-        _eq("CampaignEscrow.rewardReleaser is unset", escrow.rewardReleaser(), ZERO);
+        console.log("=== Attestcoin core ===");
+        // The one-shot binding is now closed. Only QuestASC can complete a quest.
+        _eq("QuestManager.questASC", manager.questASC(), address(questASC));
+        _eq("QuestASC.QUEST_MANAGER", address(questASC.QUEST_MANAGER()), address(manager));
+        _eq("CampaignEscrow.rewardReleaser", escrow.rewardReleaser(), address(questASC));
+        _eq("QuestASC.campaignEscrow", address(questASC.campaignEscrow()), address(escrow));
+        _eq("QuestASC.questPortal(sepolia)", questASC.questPortal(sepoliaChainKey), questPortal);
+        // VERIFIER is immutable and taken from the address library, never a constructor argument.
+        _eq(
+            "QuestASC.VERIFIER is the block prover precompile",
+            address(questASC.VERIFIER()),
+            0x0000000000000000000000000000000000000FD2
+        );
+        _isTrue("QuestASC decodes Portal", questASC.isActionSupported(VaelTypes.ActionType.Portal));
+        require(
+            !questASC.isActionSupported(VaelTypes.ActionType.UniswapSwap),
+            "VerifyBaseline: UniswapSwap should not be supported in milestone 3a"
+        );
+        checks++;
+        console.log("ok   milestone 3b action types are still refused");
 
         console.log("");
         console.log("VerifyBaseline: all checks passed", checks);

@@ -9,7 +9,7 @@ Re-assert the whole wiring at any time, keylessly and without sending a transact
 ```bash
 cd contracts
 set -a; source .env; set +a
-set -a; eval "$(grep -E '^[A-Z_]+=0x' ../docs/ADDRESSES.md | grep -vE '_TX=|_BLOCK=')"; set +a
+set -a; eval "$(grep -E '^[A-Z0-9_]+=0x' ../docs/ADDRESSES.md | grep -vE '_TX=|_BLOCK=')"; set +a
 forge script script/VerifyBaseline.s.sol:VerifyBaseline --rpc-url creditcoin
 ```
 
@@ -87,6 +87,18 @@ Two bindings are one-shot and stay at the zero address until `QuestASC` exists i
 - `CampaignEscrow.setRewardReleaser` — no campaign payout can be released yet.
 
 `VerifyBaseline` asserts both are still zero, so an accidental early binding fails the check.
+
+## EvmV1Decoder
+
+A copy of `EvmV1Decoder` from `@gluwa/asc-contracts@0.2.1` was deployed at
+[`0xf46cFB693202B56b7C9D9242FE12acdf29c8A344`](https://creditcoin-testnet.blockscout.com/address/0xf46cFB693202B56b7C9D9242FE12acdf29c8A344)
+in block 5455497.
+
+**Nothing links against it, and nothing needs to.** Every function in that version of the decoder
+is `internal` or `private`, so solc inlines it: `QuestASC`, `QuestManager`, and `QuestPortal` all
+compile to `linkReferences: {}` with no `__$` placeholder. The deployed copy is a 28-byte stub, the
+normal artefact of deploying an all-internal library. It is recorded here for completeness and as
+the address to link against if a future package version reintroduces a public function.
 
 ## Smoke test
 
@@ -169,3 +181,21 @@ REVOKE_VALIDATION_AUTH_TX=0x204728a3dc8ac135a682c610f75b3fbd03cadf5f095a9ad5df94
 REGISTER_AGENT_TX=0x54ddff5bd848f0050efaea29c2a779cc6bc9098b0ed54758e23e6606cce21528
 AGENT_ID=1
 ```
+EVM_V1_DECODER_LIBRARY_ADDRESS=0xf46cFB693202B56b7C9D9242FE12acdf29c8A344
+EVM_V1_DECODER_LIBRARY_ADDRESS_TX=0xbbf7c45a491b8e0ca60fcc7e1421e5dda99e27f709c8fdcbe0796a703036d187
+EVM_V1_DECODER_LIBRARY_ADDRESS_BLOCK=5455497
+QUEST_MANAGER_V1_ADDRESS=0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F
+QUEST_MANAGER_V2_ADDRESS=0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA
+QUEST_MANAGER_V2_ADDRESS_TX=0xcbb1c3f0bc3104c0e417cd33317c99372b7ca546e9a9f6b06f1a679adc5d3b3a
+QUEST_ASC_ADDRESS=0x93866c63CE38936aB832b4635d9B706FC17FD735
+QUEST_ASC_ADDRESS_TX=0x2b7ed8d1d67decf8b7cb6493ad1cd8e1423d0658f150cc6fd70c3a5c2711fcc2
+QUEST_PORTAL_ADDRESS=0x62d937DC3410C9C79078A521dA254E6fD53936F1
+QUEST_PORTAL_ADDRESS_TX=0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd
+WIRE_V2_VAULT_MANAGER_TX=0x9f08f9363f4cdd315dd3f43132b42633f93ba3163b3528084a9173beebbb4cd3
+WIRE_V2_BADGE_MANAGER_TX=0x10d94c2343c6c2577a438229124472475caf9b3ded932242236ab1f87110ca9f
+WIRE_V2_REPUTATION_AUTH_TX=0x532c1d8c53c18f25323deb8219a57eaf653dc9ec55c2490390a58dc9ef1bfa37
+WIRE_V1_REPUTATION_REVOKE_TX=0x87dde15dd491139bf35d9b9f8131f58c9d931702513c4f82b6a971c0fec0782c
+WIRE_SET_QUEST_ASC_TX=0xd672692d9c45876c54d6ef238d569947d7d318df80d6991ebf0b1157ff853f86
+WIRE_ESCROW_RELEASER_TX=0xdc01c19f64190b0f38100402369845a161a548d5d59a3446a4bbd88e28d5cd2b
+WIRE_ASC_ESCROW_TX=0x05499a9c0ef4328514e8c9c75fb8ede968a198f928f2fce310df33d02e641e4e
+WIRE_ASC_PORTAL_TX=0xb58839d42e4ddbbd4b83330ab591549db355e3de23ae9a725aaea0dcb277c961
