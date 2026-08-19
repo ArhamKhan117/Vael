@@ -8,12 +8,24 @@ import {RewardVault} from "./RewardVault.sol";
 import {BadgeNFT} from "./BadgeNFT.sol";
 import {ReputationRegistry} from "./erc8004/ReputationRegistry.sol";
 import {ValidationRegistry} from "./erc8004/ValidationRegistry.sol";
+import {ChainInfoLib, IChainInfo} from "./interfaces/IChainInfo.sol";
+import {IQuestASC} from "./interfaces/IQuestASC.sol";
+import {IQuestManager} from "./interfaces/IQuestManager.sol";
+import {VaelTypes} from "./interfaces/IVaelTypes.sol";
 
 /**
  * @title QuestManager
- * @notice Coordinates creation, acceptance, and completion of DeFi quests issued by ERC-8004 agents.
+ * @notice Coordinates creation, acceptance, and completion of quests issued by ERC-8004 agents.
+ *
+ * @dev A quest completes exactly one way: `QuestASC` verifies an Attestcoin proof of the player's
+ * source-chain transaction and calls `recordCompletion`. `onlyQuestASC` is the whole security
+ * model, and `setQuestASC` is one-shot so no later owner action can redirect completions.
+ *
+ * Acceptance anchors the quest in source-chain time by reading the attested frontier from the
+ * ChainInfo precompile. The action must land strictly above that height, so a player cannot accept
+ * a quest and then claim a transaction they already made.
  */
-contract QuestManager is Ownable {
+contract QuestManager is Ownable, IQuestManager {
     enum QuestCategory {
         Swap,
         Liquidity,
@@ -44,11 +56,18 @@ contract QuestManager is Ownable {
         uint64 expiry;
         QuestStatus status;
         uint64 createdAt;
+        /// @dev Attestcoin source chain key the action must happen on.
+        uint64 sourceChainKey;
+        /// @dev Campaign this quest pays from, or 0.
+        uint256 campaignId;
     }
 
     struct ParticipantProgress {
         bool accepted;
         bool completed;
+        /// @dev Attested source height at the moment of acceptance, read from the ChainInfo
+        /// precompile. The proved action must sit strictly above it.
+        uint64 acceptedAtSourceHeight;
     }
 
     struct CreateQuestParams {
@@ -60,6 +79,12 @@ contract QuestManager is Ownable {
         uint64 expiry;
         uint256 badgeLevel;
         address participant;
+        /// @dev Attestcoin source chain the action must happen on. Sepolia is 1.
+        uint64 sourceChainKey;
+        /// @dev Campaign this quest pays from, or 0 for a plain VAEL quest.
+        uint256 campaignId;
+        /// @dev What a proved log must look like. Forwarded to QuestASC at creation.
+        VaelTypes.VerificationRule rule;
     }
 
     AgentRegistryAdapter public immutable AGENT_REGISTRY;
@@ -82,8 +107,18 @@ contract QuestManager is Ownable {
         QuestCategory category,
         address protocol
     );
-    event QuestAccepted(uint256 indexed questId, address indexed participant);
-    event QuestCompleted(uint256 indexed questId, address indexed participant, string evidenceURI);
+    event QuestAccepted(
+        uint256 indexed questId,
+        address indexed participant,
+        uint64 sourceChainKey,
+        uint64 acceptedAtSourceHeight
+    );
+    event QuestCompleted(
+        uint256 indexed questId,
+        address indexed participant,
+        bytes32 indexed replayKey,
+        bytes32 sourceTxHash
+    );
     event QuestCancelled(uint256 indexed questId);
     event QuestASCUpdated(address indexed questASC);
 
@@ -98,6 +133,8 @@ contract QuestManager is Ownable {
     error QuestManager__ParticipantNotAccepted(uint256 questId, address participant);
     error QuestManager__UnauthorizedParticipant(uint256 questId, address participant);
     error QuestManager__OnlyAgentController(uint256 questId, address caller);
+    error QuestManager__QuestASCNotSet();
+    error QuestManager__SourceChainNotAttested(uint64 sourceChainKey);
 
     modifier onlyQuestASC() {
         if (msg.sender != questASC) revert QuestManager__OnlyQuestASC(msg.sender);
@@ -147,9 +184,16 @@ contract QuestManager is Ownable {
         quest.expiry = params.expiry;
         quest.status = QuestStatus.Active;
         quest.createdAt = uint64(block.timestamp);
+        quest.sourceChainKey = params.sourceChainKey;
+        quest.campaignId = params.campaignId;
 
         uint256 totalReward = params.rewardPerParticipant;
         REWARD_VAULT.fundQuest(questId, totalReward);
+
+        // The rule lives in QuestASC, which is the only contract that reads it. Registering it
+        // here, at creation, means a quest can never exist without the rule that governs it.
+        if (questASC == address(0)) revert QuestManager__QuestASCNotSet();
+        IQuestASC(questASC).setRule(questId, params.sourceChainKey, params.rule);
 
         emit QuestCreated(questId, agentId, msg.sender, params.category, params.protocol);
     }
@@ -175,7 +219,15 @@ contract QuestManager is Ownable {
         progress.accepted = true;
         quest.acceptedCount += 1;
 
-        emit QuestAccepted(questId, msg.sender);
+        // Anchor the quest in source-chain time. Reading the attested frontier rather than a
+        // caller-supplied height is what stops a player accepting a quest and then claiming a
+        // transaction they already made: the proved action must sit strictly above this.
+        IChainInfo.HeightHashResult memory frontier =
+            ChainInfoLib.chainInfo().get_latest_attestation_height_and_hash(quest.sourceChainKey);
+        if (!frontier.exists) revert QuestManager__SourceChainNotAttested(quest.sourceChainKey);
+        progress.acceptedAtSourceHeight = frontier.height;
+
+        emit QuestAccepted(questId, msg.sender, quest.sourceChainKey, frontier.height);
     }
 
     /**
@@ -183,10 +235,12 @@ contract QuestManager is Ownable {
      *         reaches this point after the Attestcoin block prover has verified the source
      *         transaction on Creditcoin. There is no trusted off-chain completion path.
      */
-    function recordCompletion(uint256 questId, address participant, string calldata evidenceURI)
-        external
-        onlyQuestASC
-    {
+    function recordCompletion(
+        uint256 questId,
+        address participant,
+        bytes32 replayKey,
+        bytes32 sourceTxHash
+    ) external onlyQuestASC {
 
         Quest storage quest = _quests[questId];
         if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
@@ -207,14 +261,50 @@ contract QuestManager is Ownable {
         // Mint badge NFT with metadata URI
         BADGE_NFT.mintBadge(participant, questId, quest.badgeLevel);
 
-        // Submit positive reputation review for successful quest completion
-        // Score 95 indicates successful completion, evidenceURI as metadata, quest completion tx as payment ref
+        // Reputation for the agent that created this quest. The evidence is the proof itself:
+        // the source transaction hash and the replay key that verifying it produced.
+        string memory evidenceURI = string(
+            abi.encodePacked("attestcoin:tx:", _toHexString(sourceTxHash))
+        );
         string memory paymentRef = string(abi.encodePacked("quest:", _uint256ToString(questId), ":completed"));
         REPUTATION_REGISTRY.submitReview(quest.agentId, questId, 95, evidenceURI, paymentRef);
 
-        emit QuestCompleted(questId, participant, evidenceURI);
+        emit QuestCompleted(questId, participant, replayKey, sourceTxHash);
         quest.status = QuestStatus.Completed;
     }
+
+    // ---------------------- Views for QuestASC ----------------------
+
+    /// @inheritdoc IQuestManager
+    function verificationContext(uint256 questId)
+        external
+        view
+        returns (QuestVerificationContext memory context)
+    {
+        Quest storage quest = _quests[questId];
+        context.exists = quest.agentController != address(0);
+        context.active = quest.status == QuestStatus.Active;
+        context.assignedParticipant = quest.assignedParticipant;
+        context.expiry = quest.expiry;
+        context.sourceChainKey = quest.sourceChainKey;
+        context.campaignId = quest.campaignId;
+    }
+
+    /// @inheritdoc IQuestManager
+    function acceptedAtSourceHeight(uint256 questId, address participant)
+        external
+        view
+        returns (uint64)
+    {
+        return _participantProgress[questId][participant].acceptedAtSourceHeight;
+    }
+
+    /// @inheritdoc IQuestManager
+    function hasAccepted(uint256 questId, address participant) external view returns (bool) {
+        return _participantProgress[questId][participant].accepted;
+    }
+
+    // ---------------------- Lifecycle ----------------------
 
     function cancelQuest(uint256 questId) external {
         Quest storage quest = _quests[questId];
@@ -251,6 +341,19 @@ contract QuestManager is Ownable {
     }
 
     // Helper to convert uint256 to string for payment reference
+    /// @dev Lowercase hex of a bytes32, used to build the evidence URI from the source tx hash.
+    function _toHexString(bytes32 value) private pure returns (string memory) {
+        bytes memory alphabet = "0123456789abcdef";
+        bytes memory out = new bytes(66);
+        out[0] = "0";
+        out[1] = "x";
+        for (uint256 i = 0; i < 32; ++i) {
+            out[2 + i * 2] = alphabet[uint8(value[i] >> 4)];
+            out[3 + i * 2] = alphabet[uint8(value[i] & 0x0f)];
+        }
+        return string(out);
+    }
+
     function _uint256ToString(uint256 value) private pure returns (string memory) {
         if (value == 0) {
             return "0";

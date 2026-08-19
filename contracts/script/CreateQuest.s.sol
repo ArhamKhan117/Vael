@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {QuestManager} from "../src/QuestManager.sol";
+import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 
 /**
  * @title CreateQuest
@@ -22,6 +23,11 @@ import {QuestManager} from "../src/QuestManager.sol";
  *   - EXPIRY_TIMESTAMP: Unix timestamp for quest expiry (0 = no expiry)
  *   - BADGE_LEVEL: Badge level awarded on completion (1-10)
  *   - QUEST_PARTICIPANT: Address of the player this quest is assigned to
+ *   - SOURCE_CHAIN_KEY: Attestcoin source chain, 1 for Sepolia (default 1)
+ *   - CAMPAIGN_ID: Campaign to pay from, 0 for a plain VAEL quest (default 0)
+ *   - RULE_ACTION_TYPE: 0 Portal, 1 UniswapSwap, 2 Erc20Transfer, 3 AaveSupply, 4 AaveBorrow
+ *   - RULE_EMITTER, RULE_TOKEN, RULE_MIN_AMOUNT, RULE_MIN_SOURCE_BLOCK, RULE_MAX_SOURCE_BLOCK,
+ *     RULE_PLAYER_MUST_MATCH: the verification rule QuestASC enforces against the proved log
  */
 contract CreateQuest is Script {
     function run() external {
@@ -59,7 +65,18 @@ contract CreateQuest is Script {
             rewardPerParticipant: rewardPerParticipant,
             expiry: expiry,
             badgeLevel: badgeLevel,
-            participant: questParticipant
+            participant: questParticipant,
+            sourceChainKey: uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1))),
+            campaignId: vm.envOr("CAMPAIGN_ID", uint256(0)),
+            rule: VaelTypes.VerificationRule({
+                actionType: VaelTypes.ActionType(vm.envOr("RULE_ACTION_TYPE", uint256(0))),
+                emitter: vm.envOr("RULE_EMITTER", address(0)),
+                token: vm.envOr("RULE_TOKEN", address(0)),
+                minAmount: vm.envOr("RULE_MIN_AMOUNT", uint256(0)),
+                minSourceBlock: uint64(vm.envOr("RULE_MIN_SOURCE_BLOCK", uint256(0))),
+                maxSourceBlock: uint64(vm.envOr("RULE_MAX_SOURCE_BLOCK", uint256(0))),
+                playerMustMatch: vm.envOr("RULE_PLAYER_MUST_MATCH", true)
+            })
         });
 
         console.log("\n=== Creating Quest ===");

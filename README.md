@@ -43,7 +43,7 @@ graph LR
   end
 
   subgraph CC["Creditcoin testnet (102031)"]
-    ASC["QuestASC.sol (ASCBase)<br/>verifyAndEmit → decode → rules"]
+    ASC["QuestASC.sol (VaelAscBase)<br/>verifyAndEmit → decode → rules"]
     QM["QuestManager.sol"]
     RV["RewardVault.sol / CampaignEscrow.sol"]
     BN["BadgeNFT.sol (soul-bound)"]
@@ -62,7 +62,7 @@ graph LR
   QP & UNI & AAVE & ERC -->|events| W
   ATT --> PB
   W -->|getProof| PB
-  W -->|executeForQuest(proof)| ASC
+  W -->|submit(proof)| ASC
   WEB -->|self-claim (SDK in browser)| ASC
   ASC --> PRE
   ASC --> QM --> RV & BN

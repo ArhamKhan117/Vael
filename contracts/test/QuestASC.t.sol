@@ -1,0 +1,536 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {Test} from "forge-std/Test.sol";
+import {INativeQueryVerifier, NativeQueryVerifierLib} from
+    "@gluwa/asc-contracts/contracts/write-ability/common/INativeQueryVerifier.sol";
+
+import {IdentityRegistry} from "../src/erc8004/IdentityRegistry.sol";
+import {ReputationRegistry, IIdentityRegistry} from "../src/erc8004/ReputationRegistry.sol";
+import {ValidationRegistry, IIdentityRegistryMinimal} from "../src/erc8004/ValidationRegistry.sol";
+import {AgentRegistryAdapter, IIdentityRegistryReader} from "../src/erc8004/AgentRegistryAdapter.sol";
+import {QuestManager} from "../src/QuestManager.sol";
+import {QuestASC} from "../src/QuestASC.sol";
+import {RewardVault} from "../src/RewardVault.sol";
+import {BadgeNFT} from "../src/BadgeNFT.sol";
+import {VaelToken} from "../src/tokens/VaelToken.sol";
+import {VaelAscBase} from "../src/asc/VaelAscBase.sol";
+import {IQuestManager} from "../src/interfaces/IQuestManager.sol";
+import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
+import {ChainInfoLib} from "../src/interfaces/IChainInfo.sol";
+
+import {MockBlockProver} from "./mocks/MockBlockProver.sol";
+import {MockChainInfo} from "./mocks/MockChainInfo.sol";
+import {SourceTxFixture} from "./SourceTxFixture.sol";
+
+/// @notice The proof path, end to end, against the real decoder and the real precompile ABI.
+/// @dev The block prover and ChainInfo mocks are etched at the real precompile addresses and
+/// implement their full interfaces, so these tests exercise the same encode and decode path the
+/// live network does. Fixtures are built in the prover's exact wire shape.
+contract QuestASCTest is Test {
+    IdentityRegistry internal identityRegistry;
+    ReputationRegistry internal reputationRegistry;
+    ValidationRegistry internal validationRegistry;
+    AgentRegistryAdapter internal agentRegistryAdapter;
+    RewardVault internal rewardVault;
+    BadgeNFT internal badgeNft;
+    VaelToken internal vaelToken;
+    QuestManager internal questManager;
+    QuestASC internal questASC;
+
+    address internal owner;
+    address internal agentController;
+    address internal player;
+    address internal gasPayer;
+    address internal portal;
+
+    uint64 internal constant SEPOLIA = 1;
+    uint64 internal constant OTHER_CHAIN = 3;
+    uint64 internal constant ATTESTED_HEIGHT = 5_000_000;
+    uint64 internal constant ACTION_HEIGHT = 5_000_100;
+    uint256 internal constant REWARD = 100 ether;
+    uint256 internal constant MIN_AMOUNT = 0.001 ether;
+
+    bytes32 internal constant ROOT = keccak256("vael-test-merkle-root");
+
+    function setUp() public {
+        owner = address(this);
+        agentController = address(0x1111);
+        player = address(0x2222);
+        gasPayer = address(0x9999); // deliberately not the player
+        portal = address(0xB0B0);
+
+        MockChainInfo chainInfoImpl = new MockChainInfo();
+        vm.etch(ChainInfoLib.PRECOMPILE_ADDRESS, address(chainInfoImpl).code);
+        MockChainInfo(ChainInfoLib.PRECOMPILE_ADDRESS).setAttestedHeight(SEPOLIA, ATTESTED_HEIGHT);
+        MockChainInfo(ChainInfoLib.PRECOMPILE_ADDRESS).setAttestedHeight(OTHER_CHAIN, ATTESTED_HEIGHT);
+
+        MockBlockProver proverImpl = new MockBlockProver();
+        vm.etch(NativeQueryVerifierLib.PRECOMPILE, address(proverImpl).code);
+
+        identityRegistry = new IdentityRegistry(owner);
+        reputationRegistry =
+            new ReputationRegistry(owner, IIdentityRegistry(address(identityRegistry)));
+        validationRegistry =
+            new ValidationRegistry(owner, IIdentityRegistryMinimal(address(identityRegistry)));
+        agentRegistryAdapter =
+            new AgentRegistryAdapter(IIdentityRegistryReader(address(identityRegistry)));
+        identityRegistry.registerAgent(agentController, "ipfs://agent");
+
+        rewardVault = new RewardVault(owner);
+        badgeNft = new BadgeNFT(owner);
+        vaelToken = new VaelToken(owner);
+
+        questManager = new QuestManager(
+            owner, agentRegistryAdapter, rewardVault, badgeNft, reputationRegistry, validationRegistry
+        );
+
+        vaelToken.grantMinterRole(address(rewardVault));
+        rewardVault.setVaelToken(address(vaelToken));
+        rewardVault.setQuestManager(address(questManager));
+        badgeNft.setQuestManager(address(questManager));
+        badgeNft.setBadgeURI(1, "ipfs://placeholder");
+        reputationRegistry.setReviewerAuthorization(address(questManager), true);
+
+        questASC = new QuestASC(owner, IQuestManager(address(questManager)));
+        questASC.setQuestPortal(SEPOLIA, portal);
+        questManager.setQuestASC(address(questASC));
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    function prover() internal pure returns (MockBlockProver) {
+        return MockBlockProver(NativeQueryVerifierLib.PRECOMPILE);
+    }
+
+    function _rule(bool playerMustMatch, uint256 minAmount)
+        internal
+        view
+        returns (VaelTypes.VerificationRule memory)
+    {
+        return VaelTypes.VerificationRule({
+            actionType: VaelTypes.ActionType.Portal,
+            emitter: portal,
+            token: address(0),
+            minAmount: minAmount,
+            minSourceBlock: 0,
+            maxSourceBlock: 0,
+            playerMustMatch: playerMustMatch
+        });
+    }
+
+    function _createQuest(VaelTypes.VerificationRule memory rule, uint64 chainKey)
+        internal
+        returns (uint256 questId)
+    {
+        QuestManager.CreateQuestParams memory params = QuestManager.CreateQuestParams({
+            category: QuestManager.QuestCategory.Swap,
+            protocol: portal,
+            parametersHash: keccak256("params"),
+            metadataURI: "ipfs://placeholder",
+            rewardPerParticipant: REWARD,
+            expiry: 0,
+            badgeLevel: 1,
+            participant: player,
+            sourceChainKey: chainKey,
+            campaignId: 0,
+            rule: rule
+        });
+        vm.prank(agentController);
+        questId = questManager.createQuest(params);
+    }
+
+    function _acceptedQuest() internal returns (uint256 questId) {
+        questId = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questId);
+    }
+
+    function _sourceTx(bytes memory encoded, uint64 chainKey, uint64 height)
+        internal
+        pure
+        returns (VaelAscBase.SourceTx memory)
+    {
+        INativeQueryVerifier.MerkleProofEntry[] memory siblings =
+            new INativeQueryVerifier.MerkleProofEntry[](1);
+        siblings[0] = INativeQueryVerifier.MerkleProofEntry({hash: keccak256("sib"), isLeft: true});
+
+        bytes32[] memory roots = new bytes32[](1);
+        roots[0] = ROOT;
+
+        return VaelAscBase.SourceTx({
+            chainKey: chainKey,
+            blockHeight: height,
+            encodedTransaction: encoded,
+            merkleProof: INativeQueryVerifier.MerkleProof({root: ROOT, siblings: siblings}),
+            continuityProof: INativeQueryVerifier.ContinuityProof({
+                lowerEndpointDigest: keccak256("endpoint"),
+                roots: roots
+            })
+        });
+    }
+
+    function _portalTx(uint256 questId, address loggedPlayer, uint256 amount)
+        internal
+        view
+        returns (bytes memory)
+    {
+        return SourceTxFixture.build(
+            gasPayer,
+            1,
+            SourceTxFixture.single(
+                SourceTxFixture.portalLog(portal, questId, loggedPlayer, address(0), amount)
+            )
+        );
+    }
+
+    // ---------------------------------------------------------------- happy path
+
+    function test_Portal_HappyPath_ReleasesRewardAndMintsBadge() public {
+        uint256 questId = _acceptedQuest();
+
+        uint256 balanceBefore = vaelToken.balanceOf(player);
+        assertEq(badgeNft.balanceOf(player), 0);
+
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+
+        uint256 handled = questASC.submit(sourceTx, questId);
+
+        assertEq(handled, 1);
+        assertEq(vaelToken.balanceOf(player) - balanceBefore, REWARD, "reward not released");
+        assertEq(badgeNft.balanceOf(player), 1, "badge not minted");
+
+        QuestManager.Quest memory quest = questManager.getQuest(questId);
+        assertEq(uint256(quest.status), uint256(QuestManager.QuestStatus.Completed));
+
+        bytes32 key = questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0);
+        assertTrue(questASC.claimedLog(key), "replay key not claimed");
+    }
+
+    /// @dev The gas payer is not the player. Identity must come from the indexed topic.
+    function test_Portal_PlayerComesFromIndexedTopicNotFrom() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        questASC.submit(sourceTx, questId);
+        assertEq(vaelToken.balanceOf(player), REWARD);
+        assertEq(vaelToken.balanceOf(gasPayer), 0, "gas payer must never be credited");
+    }
+
+    // ---------------------------------------------------------------- replay
+
+    function test_Replay_SameLogRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        questASC.submit(sourceTx, questId);
+
+        bytes32 key = questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0);
+        vm.expectRevert(abi.encodeWithSelector(VaelAscBase.AlreadyClaimed.selector, key));
+        questASC.submit(sourceTx, questId);
+    }
+
+    /// @dev Two portal logs in one transaction are two distinct claims. A transaction-scoped key
+    /// would strand the second one permanently.
+    function test_SecondLogInSameTxHasItsOwnKey() public {
+        uint256 questA = _acceptedQuest();
+        uint256 questB = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questB);
+
+        bytes memory encoded = SourceTxFixture.build(
+            gasPayer,
+            1,
+            SourceTxFixture.pair(
+                SourceTxFixture.portalLog(portal, questA, player, address(0), MIN_AMOUNT),
+                SourceTxFixture.portalLog(portal, questB, player, address(0), MIN_AMOUNT)
+            )
+        );
+
+        // No hint, because the two logs name different quests.
+        uint256 handled = questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), 0);
+        assertEq(handled, 2, "both logs must be handled");
+
+        assertTrue(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+        assertTrue(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 1)));
+        assertEq(vaelToken.balanceOf(player), REWARD * 2);
+    }
+
+    /// @dev An unrecognised log between two portal logs must not shift their ordinals.
+    function test_UnrecognisedLogIsSkippedButKeepsItsOrdinal() public {
+        uint256 questId = _acceptedQuest();
+        bytes memory encoded = SourceTxFixture.build(
+            gasPayer,
+            1,
+            SourceTxFixture.pair(
+                SourceTxFixture.noiseLog(address(0xFEED)),
+                SourceTxFixture.portalLog(portal, questId, player, address(0), MIN_AMOUNT)
+            )
+        );
+        uint256 handled = questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
+        assertEq(handled, 1);
+        // The portal log is at ordinal 1, not 0.
+        assertTrue(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 1)));
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+    }
+
+    // ---------------------------------------------------------------- rejections
+
+    function test_ReceiptStatusZeroRejected() public {
+        uint256 questId = _acceptedQuest();
+        bytes memory encoded = SourceTxFixture.build(
+            gasPayer,
+            0, // reverted source transaction
+            SourceTxFixture.single(
+                SourceTxFixture.portalLog(portal, questId, player, address(0), MIN_AMOUNT)
+            )
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaelAscBase.SourceTransactionReverted.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
+            )
+        );
+        questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
+    }
+
+    function test_WrongEmitterIsNotRecognised() public {
+        uint256 questId = _acceptedQuest();
+        bytes memory encoded = SourceTxFixture.build(
+            gasPayer,
+            1,
+            SourceTxFixture.single(
+                // Same event shape, impostor contract.
+                SourceTxFixture.portalLog(address(0xBAD), questId, player, address(0), MIN_AMOUNT)
+            )
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
+            )
+        );
+        questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
+    }
+
+    function test_WrongChainKeyRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), OTHER_CHAIN, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(VaelAscBase.UnsupportedChainKey.selector, OTHER_CHAIN)
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    /// @dev A portal registered on another chain must not satisfy a Sepolia quest.
+    function test_SameAddressOnAnotherChainDoesNotCount() public {
+        uint256 questId = _acceptedQuest();
+        questASC.setQuestPortal(OTHER_CHAIN, portal);
+
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), OTHER_CHAIN, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.WrongSourceChain.selector, questId, SEPOLIA, OTHER_CHAIN)
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_PlayerMismatchRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, address(0xDEAD), MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.PlayerMismatch.selector, player, address(0xDEAD))
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_AmountBelowMinimumRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT - 1), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.AmountBelowMinimum.selector, MIN_AMOUNT, MIN_AMOUNT - 1)
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_BlockAtAcceptedHeightRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ATTESTED_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuestASC.SourceBlockTooEarly.selector, ATTESTED_HEIGHT, ATTESTED_HEIGHT
+            )
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_BlockBeforeAcceptedHeightRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ATTESTED_HEIGHT - 10);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuestASC.SourceBlockTooEarly.selector, ATTESTED_HEIGHT - 10, ATTESTED_HEIGHT
+            )
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_HintMismatchRejected() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.QuestHintMismatch.selector, questId + 99, questId)
+        );
+        questASC.submit(sourceTx, questId + 99);
+    }
+
+    function test_ProofRejectedByPrecompile() public {
+        uint256 questId = _acceptedQuest();
+        prover().setRejectRoot(ROOT, true);
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(VaelAscBase.ProofRejected.selector, SEPOLIA, ACTION_HEIGHT, ROOT)
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    /// @dev The live precompile reverts with Error(string) rather than returning false.
+    function test_PrecompileRevertStringPropagates() public {
+        uint256 questId = _acceptedQuest();
+        prover().setRevertReason(ROOT, "Merkle root mismatch");
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert("Merkle root mismatch");
+        questASC.submit(sourceTx, questId);
+    }
+
+    /// @dev Nothing is written before the proof gate returns.
+    function test_NoStateWrittenWhenProofFails() public {
+        uint256 questId = _acceptedQuest();
+        prover().setRejectRoot(ROOT, true);
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        try questASC.submit(sourceTx, questId) {
+            revert("should have reverted");
+        } catch {}
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+        assertEq(vaelToken.balanceOf(player), 0);
+    }
+
+    // ---------------------------------------------------------------- batching
+
+    function test_Batch_AllOrNothing() public {
+        uint256 questA = _acceptedQuest();
+        uint256 questB = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questB);
+
+        VaelAscBase.SourceTx[] memory txs = new VaelAscBase.SourceTx[](2);
+        txs[0] = _sourceTx(_portalTx(questA, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        txs[1] = _sourceTx(_portalTx(questB, player, MIN_AMOUNT - 1), SEPOLIA, ACTION_HEIGHT + 1);
+
+        uint256[] memory hints = new uint256[](2);
+        hints[0] = questA;
+        hints[1] = questB;
+
+        // The second member breaks the amount rule, so the whole batch unwinds.
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.AmountBelowMinimum.selector, MIN_AMOUNT, MIN_AMOUNT - 1)
+        );
+        questASC.submitBatch(txs, hints);
+
+        assertEq(vaelToken.balanceOf(player), 0, "no member may be credited");
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+    }
+
+    function test_Batch_SucceedsWhenEveryMemberIsValid() public {
+        uint256 questA = _acceptedQuest();
+        uint256 questB = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questB);
+
+        VaelAscBase.SourceTx[] memory txs = new VaelAscBase.SourceTx[](2);
+        txs[0] = _sourceTx(_portalTx(questA, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        txs[1] = _sourceTx(_portalTx(questB, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT + 1);
+
+        uint256[] memory hints = new uint256[](2);
+        hints[0] = questA;
+        hints[1] = questB;
+
+        assertEq(questASC.submitBatch(txs, hints), 2);
+        assertEq(vaelToken.balanceOf(player), REWARD * 2);
+    }
+
+    function test_Batch_RejectsOversizedBatch() public {
+        VaelAscBase.SourceTx[] memory txs = new VaelAscBase.SourceTx[](11);
+        uint256[] memory hints = new uint256[](11);
+        vm.expectRevert(abi.encodeWithSelector(VaelAscBase.BatchTooLarge.selector, 11, 10));
+        questASC.submitBatch(txs, hints);
+    }
+
+    function test_Batch_RejectsSpanBeyondLimit() public {
+        uint256 questId = _acceptedQuest();
+        VaelAscBase.SourceTx[] memory txs = new VaelAscBase.SourceTx[](2);
+        txs[0] = _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        txs[1] = _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT + 1001);
+        uint256[] memory hints = new uint256[](2);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaelAscBase.BatchRangeExceeded.selector, ACTION_HEIGHT, ACTION_HEIGHT + 1001, 1000
+            )
+        );
+        questASC.submitBatch(txs, hints);
+    }
+
+    function test_Batch_RejectsEmpty() public {
+        vm.expectRevert(VaelAscBase.EmptyBatch.selector);
+        questASC.submitBatch(new VaelAscBase.SourceTx[](0), new uint256[](0));
+    }
+
+    // ---------------------------------------------------------------- rules
+
+    function test_RuleIsWriteOnce() public {
+        uint256 questId = _acceptedQuest();
+        vm.expectRevert(abi.encodeWithSelector(QuestASC.RuleAlreadyRegistered.selector, questId));
+        vm.prank(address(questManager));
+        questASC.setRule(questId, SEPOLIA, _rule(true, 0));
+    }
+
+    function test_OnlyQuestManagerMaySetRule() public {
+        vm.expectRevert(abi.encodeWithSelector(QuestASC.OnlyQuestManager.selector, address(this)));
+        questASC.setRule(999, SEPOLIA, _rule(true, 0));
+    }
+
+    function test_UnsupportedActionTypeIsNamed() public {
+        VaelTypes.VerificationRule memory rule = _rule(true, MIN_AMOUNT);
+        rule.actionType = VaelTypes.ActionType.UniswapSwap;
+        uint256 questId = _createQuest(rule, SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questId);
+
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuestASC.ActionNotYetSupported.selector, VaelTypes.ActionType.UniswapSwap
+            )
+        );
+        questASC.submit(sourceTx, questId);
+    }
+
+    function test_ParticipantWhoNeverAcceptedIsRejected() public {
+        uint256 questId = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        VaelAscBase.SourceTx memory sourceTx =
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.ParticipantHasNotAccepted.selector, questId, player)
+        );
+        questASC.submit(sourceTx, questId);
+    }
+}

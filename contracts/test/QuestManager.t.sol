@@ -11,9 +11,14 @@ import {RewardVault} from "../src/RewardVault.sol";
 import {BadgeNFT} from "../src/BadgeNFT.sol";
 
 import {VaelToken} from "../src/tokens/VaelToken.sol";
+import {QuestASC} from "../src/QuestASC.sol";
+import {IQuestManager} from "../src/interfaces/IQuestManager.sol";
+import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
+import {ChainInfoLib} from "../src/interfaces/IChainInfo.sol";
+import {MockChainInfo} from "./mocks/MockChainInfo.sol";
 
-// These tests wire the real contracts together. QuestASC is stubbed as a plain address so the
-// access control on recordCompletion is exercised without the proof path, which lands in milestone 3.
+// These tests wire the real contracts together, including the real QuestASC, because createQuest
+// now registers its verification rule there and acceptQuest reads the ChainInfo precompile.
 
 contract QuestManagerTest is Test {
     IdentityRegistry public identityRegistry;
@@ -27,14 +32,26 @@ contract QuestManagerTest is Test {
     address public owner;
     address public agentController;
     address public participant;
-    address public questASC;
+    QuestASC public questASC;
+    MockChainInfo public chainInfo;
     uint256 public agentId;
+
+    uint64 internal constant SEPOLIA_CHAIN_KEY = 1;
+    uint64 internal constant ATTESTED_HEIGHT = 5_000_000;
+    address internal constant PORTAL = address(0xB0B0);
 
     function setUp() public {
         owner = address(this);
         agentController = address(0x1111);
         participant = address(0x2222);
-        questASC = address(0x3333);
+
+        // The ChainInfo precompile has no code in a test EVM, so acceptQuest would revert on the
+        // extcodesize check. Etch a full-interface mock at the real address.
+        chainInfo = new MockChainInfo();
+        vm.etch(ChainInfoLib.PRECOMPILE_ADDRESS, address(chainInfo).code);
+        MockChainInfo(ChainInfoLib.PRECOMPILE_ADDRESS).setAttestedHeight(
+            SEPOLIA_CHAIN_KEY, ATTESTED_HEIGHT
+        );
 
         // Deploy ERC-8004 registries
         identityRegistry = new IdentityRegistry(owner);
@@ -65,8 +82,11 @@ contract QuestManagerTest is Test {
         badgeNft.setBadgeURI(1, "ipfs://badge-level-1");
         reputationRegistry.setReviewerAuthorization(address(questManager), true);
 
-        // Bind the QuestASC verifier (stubbed as a plain address in unit tests)
-        questManager.setQuestASC(questASC);
+        // Bind the real QuestASC. createQuest registers its rule there, so a plain address would
+        // fail the extcodesize check on the setRule call.
+        questASC = new QuestASC(owner, IQuestManager(address(questManager)));
+        questASC.setQuestPortal(SEPOLIA_CHAIN_KEY, PORTAL);
+        questManager.setQuestASC(address(questASC));
 
         // Deploy VaelToken (ERC-20) for testing
         VaelToken vaelToken = new VaelToken(owner);
@@ -74,6 +94,19 @@ contract QuestManagerTest is Test {
         vaelToken.grantMinterRole(address(rewardVault));
         // Set VaelToken in RewardVault
         rewardVault.setVaelToken(address(vaelToken));
+    }
+
+    /// @dev A minimal portal rule: the emitter is the registered portal and the player must match.
+    function _portalRule() internal pure returns (VaelTypes.VerificationRule memory) {
+        return VaelTypes.VerificationRule({
+            actionType: VaelTypes.ActionType.Portal,
+            emitter: PORTAL,
+            token: address(0),
+            minAmount: 0,
+            minSourceBlock: 0,
+            maxSourceBlock: 0,
+            playerMustMatch: true
+        });
     }
 
     function test_CreateQuest_RevertIf_NoVaelToken() public {
@@ -92,7 +125,10 @@ contract QuestManagerTest is Test {
             rewardPerParticipant: 1000,
             expiry: 0,
             badgeLevel: 1,
-            participant: participant
+            participant: participant,
+            sourceChainKey: SEPOLIA_CHAIN_KEY,
+            campaignId: 0,
+            rule: _portalRule()
         });
 
         // Will revert because vaelToken is not set in RewardVault
@@ -110,7 +146,10 @@ contract QuestManagerTest is Test {
             rewardPerParticipant: 1000,
             expiry: 0,
             badgeLevel: 1,
-            participant: participant
+            participant: participant,
+            sourceChainKey: SEPOLIA_CHAIN_KEY,
+            campaignId: 0,
+            rule: _portalRule()
         });
 
         vm.prank(agentController);
@@ -134,7 +173,10 @@ contract QuestManagerTest is Test {
             rewardPerParticipant: 1000,
             expiry: 0,
             badgeLevel: 1,
-            participant: participant
+            participant: participant,
+            sourceChainKey: SEPOLIA_CHAIN_KEY,
+            campaignId: 0,
+            rule: _portalRule()
         });
 
         vm.expectRevert();
@@ -171,10 +213,8 @@ contract QuestManagerTest is Test {
         vm.prank(participant);
         questManager.acceptQuest(questId);
 
-        string memory evidenceURI = "ipfs://QmEvidence";
-
-        vm.prank(questASC);
-        questManager.recordCompletion(questId, participant, evidenceURI);
+        vm.prank(address(questASC));
+        questManager.recordCompletion(questId, participant, keccak256("replay"), keccak256("srctx"));
 
         QuestManager.ParticipantProgress memory progressAfter = questManager.participantProgress(questId, participant);
         assertTrue(progressAfter.accepted);
@@ -193,7 +233,7 @@ contract QuestManagerTest is Test {
 
         vm.expectRevert(abi.encodeWithSelector(QuestManager.QuestManager__OnlyQuestASC.selector, address(0x9999)));
         vm.prank(address(0x9999));
-        questManager.recordCompletion(questId, participant, "ipfs://Qm");
+        questManager.recordCompletion(questId, participant, keccak256("replay"), keccak256("srctx"));
     }
 
     function test_RecordCompletion_RevertIf_ParticipantNotAccepted() public {
@@ -202,8 +242,8 @@ contract QuestManagerTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(QuestManager.QuestManager__ParticipantNotAccepted.selector, questId, participant)
         );
-        vm.prank(questASC);
-        questManager.recordCompletion(questId, participant, "ipfs://Qm");
+        vm.prank(address(questASC));
+        questManager.recordCompletion(questId, participant, keccak256("replay"), keccak256("srctx"));
     }
 
     function test_ReputationSubmitted_OnCompletion() public {
@@ -212,10 +252,8 @@ contract QuestManagerTest is Test {
         vm.prank(participant);
         questManager.acceptQuest(questId);
 
-        string memory evidenceURI = "ipfs://QmEvidence";
-
-        vm.prank(questASC);
-        questManager.recordCompletion(questId, participant, evidenceURI);
+        vm.prank(address(questASC));
+        questManager.recordCompletion(questId, participant, keccak256("replay"), keccak256("srctx"));
 
         ReputationRegistry.Review[] memory reviews = reputationRegistry.getReviews(agentId);
         assertEq(reviews.length, 1);
@@ -242,7 +280,10 @@ contract QuestManagerTest is Test {
             rewardPerParticipant: 1000,
             expiry: 0,
             badgeLevel: 1,
-            participant: participant
+            participant: participant,
+            sourceChainKey: SEPOLIA_CHAIN_KEY,
+            campaignId: 0,
+            rule: _portalRule()
         });
 
         vm.prank(agentController);
