@@ -92,6 +92,71 @@ library SourceTxFixture {
         return Log({emitter: portal, topics: topics, data: abi.encode(token, amount)});
     }
 
+    /// @notice An ERC-20 `Transfer` log.
+    function erc20TransferLog(address token, address from, address to, uint256 amount)
+        internal
+        pure
+        returns (Log memory)
+    {
+        bytes32[] memory topics = new bytes32[](3);
+        topics[0] = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef;
+        topics[1] = bytes32(uint256(uint160(from)));
+        topics[2] = bytes32(uint256(uint160(to)));
+        return Log({emitter: token, topics: topics, data: abi.encode(amount)});
+    }
+
+    /// @notice A Uniswap v3 pool `Swap` log.
+    /// @param amount0 Signed from the pool's point of view: positive is what the pool received.
+    function uniswapSwapLog(
+        address pool,
+        address sender,
+        address recipient,
+        int256 amount0,
+        int256 amount1
+    ) internal pure returns (Log memory) {
+        bytes32[] memory topics = new bytes32[](3);
+        topics[0] = 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67;
+        topics[1] = bytes32(uint256(uint160(sender)));
+        topics[2] = bytes32(uint256(uint160(recipient)));
+        return Log({
+            emitter: pool,
+            topics: topics,
+            data: abi.encode(amount0, amount1, uint160(1 << 96), uint128(0), int24(0))
+        });
+    }
+
+    /// @notice An Aave v3 `Supply` log.
+    function aaveSupplyLog(address pool, address reserve, address user, address onBehalfOf, uint256 amount)
+        internal
+        pure
+        returns (Log memory)
+    {
+        bytes32[] memory topics = new bytes32[](4);
+        topics[0] = 0x2b627736bca15cd5381dcf80b0bf11fd197d01a037c52b927a881a10fb73ba61;
+        topics[1] = bytes32(uint256(uint160(reserve)));
+        topics[2] = bytes32(uint256(uint160(onBehalfOf)));
+        topics[3] = bytes32(uint256(0)); // referralCode
+        return Log({emitter: pool, topics: topics, data: abi.encode(user, amount)});
+    }
+
+    /// @notice An Aave v3 `Borrow` log.
+    function aaveBorrowLog(address pool, address reserve, address user, address onBehalfOf, uint256 amount)
+        internal
+        pure
+        returns (Log memory)
+    {
+        bytes32[] memory topics = new bytes32[](4);
+        topics[0] = 0xb3d084820fb1a9decffb176436bd02558d15fac9b0ddfed8c465bc7359d7dce0;
+        topics[1] = bytes32(uint256(uint160(reserve)));
+        topics[2] = bytes32(uint256(uint160(onBehalfOf)));
+        topics[3] = bytes32(uint256(0));
+        return Log({
+            emitter: pool,
+            topics: topics,
+            data: abi.encode(user, amount, uint256(2), uint256(0))
+        });
+    }
+
     /// @notice An arbitrary unrelated log, to prove the sweep skips what it does not recognise.
     function noiseLog(address emitter) internal pure returns (Log memory) {
         bytes32[] memory topics = new bytes32[](1);

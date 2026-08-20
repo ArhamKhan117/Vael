@@ -19,6 +19,7 @@ import {IQuestManager} from "../src/interfaces/IQuestManager.sol";
 import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 import {ChainInfoLib} from "../src/interfaces/IChainInfo.sol";
 
+import {PortalAdapter} from "../src/adapters/PortalAdapter.sol";
 import {MockBlockProver} from "./mocks/MockBlockProver.sol";
 import {MockChainInfo} from "./mocks/MockChainInfo.sol";
 import {SourceTxFixture} from "./SourceTxFixture.sol";
@@ -37,6 +38,7 @@ contract QuestASCTest is Test {
     VaelToken internal vaelToken;
     QuestManager internal questManager;
     QuestASC internal questASC;
+    PortalAdapter internal portalAdapter;
 
     address internal owner;
     address internal agentController;
@@ -93,6 +95,8 @@ contract QuestASCTest is Test {
         reputationRegistry.setReviewerAuthorization(address(questManager), true);
 
         questASC = new QuestASC(owner, IQuestManager(address(questManager)));
+        portalAdapter = new PortalAdapter();
+        questASC.setAdapter(SEPOLIA, portalAdapter.TOPIC(), portalAdapter);
         questASC.setQuestPortal(SEPOLIA, portal);
         questManager.setQuestASC(address(questASC));
     }
@@ -294,22 +298,37 @@ contract QuestASCTest is Test {
         questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
     }
 
-    function test_WrongEmitterIsNotRecognised() public {
+    /// @dev An impostor contract emitting the same event shape is decodable but not allowlisted,
+    /// so it is refused at the emitter check rather than silently credited.
+    function test_UnallowlistedEmitterIsRefused() public {
         uint256 questId = _acceptedQuest();
         bytes memory encoded = SourceTxFixture.build(
             gasPayer,
             1,
             SourceTxFixture.single(
-                // Same event shape, impostor contract.
                 SourceTxFixture.portalLog(address(0xBAD), questId, player, address(0), MIN_AMOUNT)
             )
         );
         vm.expectRevert(
             abi.encodeWithSelector(
-                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
+                QuestASC.EmitterNotAllowed.selector, SEPOLIA, uint8(0), address(0xBAD)
             )
         );
         questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
+    }
+
+    /// @dev With no adapter registered for a signature, the log is not recognised at all.
+    function test_NoAdapterMeansNothingRecognised() public {
+        uint256 questId = _acceptedQuest();
+        questASC.setAdapter(SEPOLIA, portalAdapter.TOPIC(), PortalAdapter(address(0)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
+            )
+        );
+        questASC.submit(
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId
+        );
     }
 
     function test_WrongChainKeyRejected() public {
@@ -325,6 +344,7 @@ contract QuestASCTest is Test {
     /// @dev A portal registered on another chain must not satisfy a Sepolia quest.
     function test_SameAddressOnAnotherChainDoesNotCount() public {
         uint256 questId = _acceptedQuest();
+        questASC.setAdapter(OTHER_CHAIN, portalAdapter.TOPIC(), portalAdapter);
         questASC.setQuestPortal(OTHER_CHAIN, portal);
 
         VaelAscBase.SourceTx memory sourceTx =
@@ -507,7 +527,8 @@ contract QuestASCTest is Test {
         questASC.setRule(999, SEPOLIA, _rule(true, 0));
     }
 
-    function test_UnsupportedActionTypeIsNamed() public {
+    /// @dev A portal log cannot satisfy a quest whose rule names a different action.
+    function test_ActionTypeMismatchIsRefused() public {
         VaelTypes.VerificationRule memory rule = _rule(true, MIN_AMOUNT);
         rule.actionType = VaelTypes.ActionType.UniswapSwap;
         uint256 questId = _createQuest(rule, SEPOLIA);

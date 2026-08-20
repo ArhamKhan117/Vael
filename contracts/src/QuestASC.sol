@@ -7,6 +7,7 @@ import {EvmV1Decoder} from "@gluwa/asc-contracts/contracts/common/EvmV1Decoder.s
 import {VaelAscBase} from "./asc/VaelAscBase.sol";
 import {IQuestManager} from "./interfaces/IQuestManager.sol";
 import {IQuestASC} from "./interfaces/IQuestASC.sol";
+import {IActionAdapter} from "./interfaces/IActionAdapter.sol";
 import {VaelTypes} from "./interfaces/IVaelTypes.sol";
 
 interface ICampaignEscrow {
@@ -20,20 +21,33 @@ interface ICampaignEscrow {
 /// and campaign escrow payouts. Nothing here trusts its caller. The submitter supplies proof
 /// material and, at most, a quest id hint that can only narrow what is accepted.
 ///
-/// The order of checks in the portal handler is deliberate. Emitter first, because a log from an
-/// unregistered contract is somebody else's event and must not reach any quest logic. Then the
-/// quest context, then the player binding, then the amount, then the block window. Each one is a
-/// separate named revert so a failed submission says which rule it broke.
+/// Decoding lives in stateless adapters registered per `topics[0]`. QuestASC keeps everything that
+/// matters: proof verification, the replay ledger, rules, the emitter allowlist, and the payout. An
+/// adapter is handed a log the block prover already verified and says what it means; it holds no
+/// privilege and cannot widen what is accepted.
+///
+/// The split exists because `QuestManager.setQuestASC` and `CampaignEscrow.setRewardReleaser` are
+/// one-shot, so replacing this contract means replacing them too. Adding a protocol should cost one
+/// transaction, not three redeploys.
+///
+/// The order of checks is deliberate. Emitter first, because a log from an unregistered contract is
+/// somebody else's event and must not reach any quest logic. Then the quest context, then the
+/// player binding, then the amount, then the block window. Each one is a separate named revert so a
+/// failed submission says which rule it broke.
 contract QuestASC is VaelAscBase, Ownable, IQuestASC {
-    /// @notice `QuestActionPerformed(uint256,address,uint8,address,uint256)`.
-    bytes32 public constant PORTAL_TOPIC =
-        0x3ffa602a6835802daaea4f4c4102da0a312d481769471dd020a1512afd9d8022;
-
     /// @notice The quest manager whose quests this contract completes.
     IQuestManager public immutable QUEST_MANAGER;
 
     /// @notice Campaign escrow used for partner-funded quests. May be unset.
     ICampaignEscrow public campaignEscrow;
+
+    /// @notice Adapter registered for each event signature, per chain.
+    /// @dev Owner-managed. Registering an adapter does not by itself allow anything: the emitter
+    /// must still be allowlisted for the action type the adapter reports.
+    mapping(uint64 chainKey => mapping(bytes32 topic0 => IActionAdapter)) public adapters;
+
+    /// @notice Source chains this deployment accepts proofs from.
+    mapping(uint64 chainKey => bool) public supportedChain;
 
     /// @notice The Vael QuestPortal deployed on each source chain.
     /// @dev Keyed by chain because the same address exists on more than one chain, and a deployer
@@ -66,6 +80,8 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     );
     event RuleRegistered(uint256 indexed questId, uint64 sourceChainKey, VaelTypes.ActionType actionType);
     event QuestPortalRegistered(uint64 indexed chainKey, address indexed portal);
+    event AdapterRegistered(uint64 indexed chainKey, bytes32 indexed topic0, address indexed adapter);
+    event SupportedChainUpdated(uint64 indexed chainKey, bool supported);
     event EmitterAllowed(uint64 indexed chainKey, VaelTypes.ActionType indexed actionType, address indexed emitter, bool allowed);
     event CampaignEscrowUpdated(address indexed escrow);
 
@@ -76,14 +92,15 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     error QuestNotOpen(uint256 questId);
     error QuestHintMismatch(uint256 hinted, uint256 fromLog);
     error WrongSourceChain(uint256 questId, uint64 expected, uint64 provided);
-    error WrongEmitter(address expected, address provided);
     error PlayerMismatch(address expected, address decoded);
     error ParticipantHasNotAccepted(uint256 questId, address player);
     error AmountBelowMinimum(uint256 required, uint256 provided);
     error WrongToken(address required, address provided);
     error SourceBlockTooEarly(uint64 provided, uint64 mustExceed);
     error SourceBlockTooLate(uint64 provided, uint64 maximum);
-    error MalformedPortalLog();
+    error NoAdapterForTopic(bytes32 topic0);
+    error EmitterNotAllowed(uint64 chainKey, uint8 actionType, address emitter);
+    error QuestHintRequired(uint8 actionType);
     error InvalidAddress();
 
     modifier onlyQuestManager() {
@@ -102,7 +119,25 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     function setQuestPortal(uint64 chainKey, address portal) external onlyOwner {
         if (portal == address(0)) revert InvalidAddress();
         questPortal[chainKey] = portal;
+        // The portal goes through the same allowlist as every other emitter. Keeping one code path
+        // means the portal cannot drift into being a privileged special case.
+        allowedEmitters[chainKey][VaelTypes.ActionType.Portal][portal] = true;
         emit QuestPortalRegistered(chainKey, portal);
+        emit EmitterAllowed(chainKey, VaelTypes.ActionType.Portal, portal, true);
+    }
+
+    /// @notice Register the adapter that decodes an event signature on a chain.
+    /// @dev Pass the zero address to unregister, which immediately stops that event being decoded.
+    function setAdapter(uint64 chainKey, bytes32 topic0, IActionAdapter adapter) external onlyOwner {
+        adapters[chainKey][topic0] = adapter;
+        if (address(adapter) != address(0)) supportedChain[chainKey] = true;
+        emit AdapterRegistered(chainKey, topic0, address(adapter));
+    }
+
+    /// @notice Turn a whole source chain on or off, independently of its adapters.
+    function setSupportedChain(uint64 chainKey, bool supported) external onlyOwner {
+        supportedChain[chainKey] = supported;
+        emit SupportedChainUpdated(chainKey, supported);
     }
 
     /// @notice Allow or disallow a third-party emitter for an action type on a chain.
@@ -141,24 +176,27 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     // ---------------------------------------------------------------- base hooks
 
     /// @inheritdoc VaelAscBase
-    /// @dev A chain is supported once its portal is registered. milestone 3b widens this to chains that
-    /// only carry third-party emitters.
+    /// @dev A chain is supported once at least one adapter is registered for it. The portal is no
+    /// longer special: a chain that only carries third-party protocols is equally valid.
     function _isSupportedChainKey(uint64 chainKey) internal view override returns (bool) {
-        return questPortal[chainKey] != address(0);
+        return supportedChain[chainKey];
     }
 
     /// @inheritdoc VaelAscBase
+    /// @dev Recognition is two independent questions, and both must be yes. Is there an adapter for
+    /// this event signature, and does that adapter actually decode this log? The emitter allowlist
+    /// is checked in the handler, against the action type the adapter reports, because the adapter
+    /// is what determines which allowlist applies.
     function _isRecognised(uint64 chainKey, EvmV1Decoder.LogEntry memory logEntry)
         internal
         view
         override
         returns (bool)
     {
-        bytes32 topic0 = logEntry.topics[0];
-        if (topic0 == PORTAL_TOPIC) {
-            return logEntry.address_ == questPortal[chainKey];
-        }
-        return false;
+        IActionAdapter adapter = adapters[chainKey][logEntry.topics[0]];
+        if (address(adapter) == address(0)) return false;
+        (bool recognised,,,,,) = adapter.decode(chainKey, logEntry);
+        return recognised;
     }
 
     /// @inheritdoc VaelAscBase
@@ -171,45 +209,49 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         EvmV1Decoder.LogEntry memory logEntry,
         uint256 questIdHint
     ) internal override {
-        if (logEntry.topics[0] == PORTAL_TOPIC) {
-            _handlePortal(chainKey, blockHeight, key, logEntry, questIdHint);
-            return;
+        IActionAdapter adapter = adapters[chainKey][logEntry.topics[0]];
+        if (address(adapter) == address(0)) revert NoAdapterForTopic(logEntry.topics[0]);
+
+        (
+            bool recognised,
+            uint8 actionType,
+            address player,
+            address token,
+            uint256 amount,
+            uint256 questIdFromEvent
+        ) = adapter.decode(chainKey, logEntry);
+        if (!recognised) revert NoAdapterForTopic(logEntry.topics[0]);
+
+        // The emitter allowlist is checked here, after the adapter has said which action this is,
+        // because which allowlist applies depends on the action type. An adapter cannot bypass it:
+        // it only reports, it never authorises.
+        if (!allowedEmitters[chainKey][VaelTypes.ActionType(actionType)][logEntry.address_]) {
+            revert EmitterNotAllowed(chainKey, actionType, logEntry.address_);
         }
-        // Unreachable while _isRecognised only accepts the portal topic. Kept so that adding a
-        // topic to the recogniser without adding a handler fails loudly rather than silently.
-        revert ActionNotYetSupported(VaelTypes.ActionType.UniswapSwap);
-    }
 
-    // ---------------------------------------------------------------- portal
-
-    /// @dev `QuestActionPerformed(uint256 indexed questId, address indexed player,
-    ///      uint8 indexed actionType, address token, uint256 amount)`.
-    function _handlePortal(
-        uint64 chainKey,
-        uint64 blockHeight,
-        bytes32 key,
-        EvmV1Decoder.LogEntry memory logEntry,
-        uint256 questIdHint
-    ) private {
-        // The emitter was already matched against the registered portal in _isRecognised, but the
-        // check is repeated here because this function is what releases money and must not depend
-        // on a caller of it having done the right thing.
-        address portal = questPortal[chainKey];
-        if (logEntry.address_ != portal) revert WrongEmitter(portal, logEntry.address_);
-
-        if (logEntry.topics.length < 4 || logEntry.data.length < 64) revert MalformedPortalLog();
-
-        uint256 questId = uint256(logEntry.topics[1]);
-        // Player identity comes from the indexed topic, never from the transaction's `from` field,
-        // which is the gas payer and differs behind routers and smart accounts.
-        address player = address(uint160(uint256(logEntry.topics[2])));
-        (address token, uint256 amount) = abi.decode(logEntry.data, (address, uint256));
-
-        // A hint may only narrow. It cannot select a different quest than the log names.
-        if (questIdHint != 0 && questIdHint != questId) revert QuestHintMismatch(questIdHint, questId);
+        // Only Vael's own portal event can name a quest. Every third-party protocol emits events
+        // that know nothing about Vael, so those submissions must carry a hint.
+        uint256 questId;
+        if (questIdFromEvent != 0) {
+            questId = questIdFromEvent;
+            // A hint may only narrow. It cannot select a different quest than the log names.
+            if (questIdHint != 0 && questIdHint != questId) {
+                revert QuestHintMismatch(questIdHint, questId);
+            }
+        } else {
+            if (questIdHint == 0) revert QuestHintRequired(actionType);
+            questId = questIdHint;
+        }
 
         _applyCompletion(
-            questId, player, token, amount, chainKey, blockHeight, key, VaelTypes.ActionType.Portal
+            questId,
+            player,
+            token,
+            amount,
+            chainKey,
+            blockHeight,
+            key,
+            VaelTypes.ActionType(actionType)
         );
     }
 
@@ -227,7 +269,6 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     ) private {
         if (!ruleExists[questId]) revert NoRuleForQuest(questId);
         VaelTypes.VerificationRule memory rule = rules[questId];
-        _requireSupportedAction(rule.actionType);
         if (rule.actionType != actionType) revert ActionNotYetSupported(rule.actionType);
 
         uint64 expectedChain = questSourceChainKey[questId];
@@ -274,15 +315,11 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
 
     // ---------------------------------------------------------------- milestone 3b
 
-    /// @notice Whether this deployment can decode an action type yet.
-    /// @dev Portal is the only one in milestone 3a. UniswapSwap, Erc20Transfer, AaveSupply, and
-    /// AaveBorrow arrive in milestone 3b. Naming them here, rather than leaving them silently absent,
-    /// means a quest created against one fails with a reason a partner can read.
-    function isActionSupported(VaelTypes.ActionType actionType) public pure returns (bool) {
-        return actionType == VaelTypes.ActionType.Portal;
-    }
-
-    function _requireSupportedAction(VaelTypes.ActionType actionType) private pure {
-        if (!isActionSupported(actionType)) revert ActionNotYetSupported(actionType);
+    /// @notice Whether a rule may be written against an action type.
+    /// @dev All five are decodable now that the adapters exist. Whether a specific log is accepted
+    /// still depends on an adapter being registered for its signature and its emitter being
+    /// allowlisted, both of which are per-chain.
+    function isActionSupported(VaelTypes.ActionType) public pure returns (bool) {
+        return true;
     }
 }
