@@ -21,9 +21,10 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 | Contract | Address | Deploy tx | Block | Source |
 |---|---|---|---|---|
 | `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | verified |
-| `RewardVault` | [`0x4cDa11850a3697940329975EA3943f166Ba6FFf8`](https://creditcoin-testnet.blockscout.com/address/0x4cDa11850a3697940329975EA3943f166Ba6FFf8) | [`0x067abe3b…3b01ab`](https://creditcoin-testnet.blockscout.com/tx/0x067abe3b4e8062767cadc075b8a9591f7be6e57fc028f6def3303349493b01ab) | 5455360 | verified |
+| `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455574 | verified |
 | `BadgeNFT` | [`0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3`](https://creditcoin-testnet.blockscout.com/address/0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3) | [`0xe0381fdc…0b1430`](https://creditcoin-testnet.blockscout.com/tx/0xe0381fdcf2941dfffa0ec900332a0668f96e0465d80def5a0df4716f1c0b1430) | 5455361 | verified |
-| `QuestManager` | [`0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F`](https://creditcoin-testnet.blockscout.com/address/0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F) | [`0xe76b6cf7…944e90`](https://creditcoin-testnet.blockscout.com/tx/0xe76b6cf78e828e5945fd36083f21c7658c56309ee45aa02ce2a7d2bbb2944e90) | 5455362 | verified |
+| `QuestManager` | [`0x8E42A111295F72c93d3A23181C4C3E13eCbeF220`](https://creditcoin-testnet.blockscout.com/address/0x8E42A111295F72c93d3A23181C4C3E13eCbeF220) | [`0xb4d1ef39…b292db`](https://creditcoin-testnet.blockscout.com/tx/0xb4d1ef394883d6b544149ec42b93be0372f1555d33585838cffc58980bb292db) | 5455576 | verified |
+| `QuestASC` | [`0x983cFa52747708Fe86d125DdFB1Bf67E052793cb`](https://creditcoin-testnet.blockscout.com/address/0x983cFa52747708Fe86d125DdFB1Bf67E052793cb) | [`0x544820f7…6d89fd`](https://creditcoin-testnet.blockscout.com/tx/0x544820f7c8b670ab68e2fa2d79bc517e81506b1deb7e96a8ab3f128b296d89fd) | 5455578 | verified |
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | verified |
 | `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | verified |
 | `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | verified |
@@ -79,14 +80,37 @@ Badge URIs for levels 1 to 10 are set to the literal placeholder `ipfs://placeho
 | 9 | [`0xd16fb457…835135`](https://creditcoin-testnet.blockscout.com/tx/0xd16fb45762d0001fcc3da9a04ed38adef63f69bb06bf13adfd69d54069835135) |
 | 10 | [`0x79720886…45fc49`](https://creditcoin-testnet.blockscout.com/tx/0x79720886970584d390d009f0095b69cba3ec754bc352de6834b9973f3045fc49) |
 
-## Deliberately unset
+## Superseded deployments
 
-Two bindings are one-shot and stay at the zero address until `QuestASC` exists in milestone 3:
+Redeployment during milestone 3 left three contracts behind. They are recorded so an explorer link from
+an old transaction still resolves, and so nobody wires against them by accident. None of them holds
+a privilege: the reviewer grant on each superseded QuestManager was explicitly revoked.
 
-- `QuestManager.setQuestASC` — until it is called, **no address can complete a quest**. This is the point of the design, not an oversight.
-- `CampaignEscrow.setRewardReleaser` — no campaign payout can be released yet.
+| Contract | Address | Why superseded |
+|---|---|---|
+| `QuestManager` v1 | `0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F` | milestone 2 baseline, before verification rules and the source-height anchor |
+| `QuestManager` v2 | `0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA` | Constructed against the v1 RewardVault, whose ledger already held quest ids 1 and 2 |
+| `RewardVault` v1 | `0x4cDa11850a3697940329975EA3943f166Ba6FFf8` | Ledger keyed by questId alone; see below |
+| `QuestASC` v1 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
 
-`VerifyBaseline` asserts both are still zero, so an accidental early binding fails the check.
+### Why the vault was redeployed
+
+`RewardVault` keyed its funding ledger by `questId` alone. Quest ids are a per-manager counter that
+restarts at 1, so the first `createQuest` on QuestManager v2 reverted
+`RewardVault__QuestAlreadyFunded(1)` against ids the v1 manager had already funded — and because the
+id counter only advances on a successful create, the manager was permanently stuck.
+
+This was found by the live E2E run, not in review. The ledger is now keyed by
+`keccak256(questManager, questId)`, so a manager redeploy is safe without touching the vault again.
+`test/RewardVault.t.sol` covers it. `QuestManager.REWARD_VAULT` and `QuestASC.QUEST_MANAGER` are
+both immutable, which is why fixing the vault required redeploying all three.
+
+## One-shot bindings, now closed
+
+- `QuestManager.setQuestASC` → `QuestASC`. Irreversible. Only that contract can complete a quest.
+- `CampaignEscrow.setRewardReleaser` → `QuestASC`. Campaign payouts are proof-gated.
+
+`VerifyBaseline` asserts both, so a future rewiring away from QuestASC fails the check.
 
 ## EvmV1Decoder
 
@@ -121,9 +145,16 @@ Quest ids 1 and 2 on this deployment were created by smoke runs.
 
 ## Ethereum Sepolia (11155111)
 
-| Contract | Address | Status |
-|---|---|---|
-| `QuestPortal` | — | milestone 3 |
+| Contract | Address | Deploy tx | Source |
+|---|---|---|---|
+| `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x0f26d55b…ba61dd`](https://sepolia.etherscan.io/tx/0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd) | verified on Blockscout |
+
+Verified on [eth-sepolia.blockscout.com](https://eth-sepolia.blockscout.com), not Etherscan: no
+Etherscan API key is configured in `contracts/.env`.
+
+Note that this address is identical to `IdentityRegistry` on Creditcoin. Same deployer, same nonce,
+different chain. It is a live illustration of why `QuestASC` scopes every emitter check by
+`chainKey` rather than by address alone.
 
 ## Machine-readable
 
@@ -146,15 +177,15 @@ AGENT_REGISTRY_ADAPTER_ADDRESS_BLOCK=5455358
 VAEL_TOKEN_ADDRESS=0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf
 VAEL_TOKEN_ADDRESS_TX=0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b
 VAEL_TOKEN_ADDRESS_BLOCK=5455359
-REWARD_VAULT_ADDRESS=0x4cDa11850a3697940329975EA3943f166Ba6FFf8
-REWARD_VAULT_ADDRESS_TX=0x067abe3b4e8062767cadc075b8a9591f7be6e57fc028f6def3303349493b01ab
+REWARD_VAULT_ADDRESS=0x89aE45f3B75E20af549715294754292eFf25b89C
+REWARD_VAULT_ADDRESS_TX=0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268
 REWARD_VAULT_ADDRESS_BLOCK=5455360
 BADGE_NFT_ADDRESS=0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3
 BADGE_NFT_ADDRESS_TX=0xe0381fdcf2941dfffa0ec900332a0668f96e0465d80def5a0df4716f1c0b1430
 BADGE_NFT_ADDRESS_BLOCK=5455361
-QUEST_MANAGER_ADDRESS=0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F
-QUEST_MANAGER_ADDRESS_TX=0xe76b6cf78e828e5945fd36083f21c7658c56309ee45aa02ce2a7d2bbb2944e90
-QUEST_MANAGER_ADDRESS_BLOCK=5455362
+QUEST_MANAGER_ADDRESS=0x8E42A111295F72c93d3A23181C4C3E13eCbeF220
+QUEST_MANAGER_ADDRESS_TX=0xb4d1ef394883d6b544149ec42b93be0372f1555d33585838cffc58980bb292db
+QUEST_MANAGER_ADDRESS_BLOCK=5455504
 CAMPAIGN_ESCROW_ADDRESS=0xcF675302d19967788009592423E4E66bd69EA32b
 CAMPAIGN_ESCROW_ADDRESS_TX=0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6
 CAMPAIGN_ESCROW_ADDRESS_BLOCK=5455363
@@ -185,10 +216,11 @@ EVM_V1_DECODER_LIBRARY_ADDRESS=0xf46cFB693202B56b7C9D9242FE12acdf29c8A344
 EVM_V1_DECODER_LIBRARY_ADDRESS_TX=0xbbf7c45a491b8e0ca60fcc7e1421e5dda99e27f709c8fdcbe0796a703036d187
 EVM_V1_DECODER_LIBRARY_ADDRESS_BLOCK=5455497
 QUEST_MANAGER_V1_ADDRESS=0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F
+QUEST_MANAGER_V1_ADDRESS_TX=0xe76b6cf78e828e5945fd36083f21c7658c56309ee45aa02ce2a7d2bbb2944e90
 QUEST_MANAGER_V2_ADDRESS=0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA
 QUEST_MANAGER_V2_ADDRESS_TX=0xcbb1c3f0bc3104c0e417cd33317c99372b7ca546e9a9f6b06f1a679adc5d3b3a
-QUEST_ASC_ADDRESS=0x93866c63CE38936aB832b4635d9B706FC17FD735
-QUEST_ASC_ADDRESS_TX=0x2b7ed8d1d67decf8b7cb6493ad1cd8e1423d0658f150cc6fd70c3a5c2711fcc2
+QUEST_ASC_ADDRESS=0x983cFa52747708Fe86d125DdFB1Bf67E052793cb
+QUEST_ASC_ADDRESS_TX=0x544820f7c8b670ab68e2fa2d79bc517e81506b1deb7e96a8ab3f128b296d89fd
 QUEST_PORTAL_ADDRESS=0x62d937DC3410C9C79078A521dA254E6fD53936F1
 QUEST_PORTAL_ADDRESS_TX=0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd
 WIRE_V2_VAULT_MANAGER_TX=0x9f08f9363f4cdd315dd3f43132b42633f93ba3163b3528084a9173beebbb4cd3
@@ -199,3 +231,19 @@ WIRE_SET_QUEST_ASC_TX=0xd672692d9c45876c54d6ef238d569947d7d318df80d6991ebf0b1157
 WIRE_ESCROW_RELEASER_TX=0xdc01c19f64190b0f38100402369845a161a548d5d59a3446a4bbd88e28d5cd2b
 WIRE_ASC_ESCROW_TX=0x05499a9c0ef4328514e8c9c75fb8ede968a198f928f2fce310df33d02e641e4e
 WIRE_ASC_PORTAL_TX=0xb58839d42e4ddbbd4b83330ab591549db355e3de23ae9a725aaea0dcb277c961
+QUEST_MANAGER_V3_ADDRESS=0x8E42A111295F72c93d3A23181C4C3E13eCbeF220
+REWARD_VAULT_V1_ADDRESS=0x4cDa11850a3697940329975EA3943f166Ba6FFf8
+REWARD_VAULT_V2_ADDRESS=0x89aE45f3B75E20af549715294754292eFf25b89C
+QUEST_ASC_V1_ADDRESS=0x93866c63CE38936aB832b4635d9B706FC17FD735
+QUEST_ASC_V2_ADDRESS=0x983cFa52747708Fe86d125DdFB1Bf67E052793cb
+WIRE_V3_VAULT_TOKEN_TX=0x741ef444b7f0d5e07e2de09e61132010ff20aaa59ed1c73a3418161fe47463a7
+WIRE_V3_MINTER_ROLE_TX=0x7bc20a1b4526e4b3c7ba1d8e7669a143951d2c641b05f688997242630b8e1ffa
+WIRE_V3_VAULT_MANAGER_TX=0x4d6e9ff5a69ef30f1f7ae5d90bf60605fba10e0de8f87863827b8836773b2b9a
+WIRE_V3_BADGE_MANAGER_TX=0xdcdc33b1dc5b2067baf8c2cbbfd97d2ece255fefaab7f9be3df4cd6043c92429
+WIRE_V3_REPUTATION_AUTH_TX=0x5ea9ebf25eb8e4ed78ffea7c48fb5149fdc53ad80f33e8e94d4cd6412421a8de
+WIRE_V3_REPUTATION_REVOKE_OLD_TX=0xd299630ef7c134a8b0856acba7fc9dc6b8d5c971476c3f10522a40ce4823ab45
+WIRE_V3_SET_QUEST_ASC_TX=0x3b03d0e3aeabafc44eb621ac218531cc72eabb2b9381b6f89f2aa724ab3d93fb
+WIRE_V3_ESCROW_RELEASER_TX=0x172eb8a41bb09242422c1f67d932d9536ee85f4b5705774314923f09e041e3b0
+WIRE_V3_ASC_ESCROW_TX=0x63a90f119e0fc55d9d9df30e6256efd300ca70af15e04ec634fdbdc09c999dcd
+WIRE_V3_ASC_PORTAL_TX=0x129de10ac7f867babefdb451d0ac2ef0b6b0160522393ad5dad66513b209da5e
+FUND_VAULT_V2_TX=0x7072b3a395ec557e161453313c94da5f65259c2bb8acab873f37e7d095a67577

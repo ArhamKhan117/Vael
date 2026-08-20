@@ -1,0 +1,15 @@
+{
+  // Typecheck the operational scripts alongside src, without emitting. They live outside
+  // rootDir because they are run with tsx and must never end up in dist.
+  // `exclude` replaces rather than extends the parent's, so the test excludes are repeated here.
+  "extends": "./tsconfig.json",
+  "include": ["src", "scripts"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  }
+}

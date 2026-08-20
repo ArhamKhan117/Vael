@@ -20,7 +20,14 @@ contract RewardVault is Ownable {
         uint256 claimedAmount;
     }
 
-    mapping(uint256 questId => QuestReward) private _rewards;
+    /// @dev Keyed by `(questManager, questId)`, not by `questId` alone.
+    ///
+    /// Quest ids are a per-manager counter that restarts at 1, so a redeployed QuestManager reuses
+    /// ids the previous one already funded. With a questId-only key, the first `createQuest` on a
+    /// fresh manager reverts `RewardVault__QuestAlreadyFunded(1)` and the manager is permanently
+    /// stuck, because the id counter only advances on success. Namespacing by manager makes a
+    /// manager redeploy safe without touching this contract again.
+    mapping(bytes32 rewardKey => QuestReward) private _rewards;
 
     address public questManager;
     VaelToken public vaelToken;
@@ -36,6 +43,11 @@ contract RewardVault is Ownable {
     error RewardVault__InsufficientBalance(uint256 questId, uint256 requested, uint256 available);
     error RewardVault__VaelTokenNotConfigured();
     error RewardVault__QuestNotFunded(uint256 questId);
+
+    /// @dev The ledger key for a quest under the current manager.
+    function _rewardKey(uint256 questId) private view returns (bytes32) {
+        return keccak256(abi.encode(questManager, questId));
+    }
 
     modifier onlyQuestManager() {
         _requireQuestManager();
@@ -64,10 +76,11 @@ contract RewardVault is Ownable {
      */
     function fundQuest(uint256 questId, uint256 amount) external onlyQuestManager {
         if (address(vaelToken) == address(0)) revert RewardVault__VaelTokenNotConfigured();
-        if (_rewards[questId].totalAmount != 0) revert RewardVault__QuestAlreadyFunded(questId);
+        bytes32 key = _rewardKey(questId);
+        if (_rewards[key].totalAmount != 0) revert RewardVault__QuestAlreadyFunded(questId);
         if (amount == 0) revert("RewardVault: zero amount");
 
-        _rewards[questId] = QuestReward({totalAmount: amount, claimedAmount: 0});
+        _rewards[key] = QuestReward({totalAmount: amount, claimedAmount: 0});
 
         // Mint tokens directly to this vault
         vaelToken.mint(address(this), amount);
@@ -83,7 +96,7 @@ contract RewardVault is Ownable {
      * @param amount Amount of VAEL tokens to release (with 18 decimals)
      */
     function releaseReward(uint256 questId, address recipient, uint256 amount) external onlyQuestManager {
-        QuestReward storage reward = _rewards[questId];
+        QuestReward storage reward = _rewards[_rewardKey(questId)];
         if (reward.totalAmount == 0) revert RewardVault__QuestNotFunded(questId);
         if (amount == 0) revert("RewardVault: zero amount");
 
@@ -99,7 +112,7 @@ contract RewardVault is Ownable {
     }
 
     function rewardInfo(uint256 questId) external view returns (QuestReward memory) {
-        return _rewards[questId];
+        return _rewards[_rewardKey(questId)];
     }
 
     function _requireQuestManager() internal view {

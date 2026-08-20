@@ -1,5 +1,8 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
+  // The build emits only src. Operational scripts are run with tsx and are typechecked
+  // separately by tsconfig.scripts.json, which lint runs.
+  "include": ["src"],
   "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"],
   "compilerOptions": {
     // File Layout

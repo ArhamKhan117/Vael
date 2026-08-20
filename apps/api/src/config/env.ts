@@ -3,8 +3,16 @@ import { z } from "zod"
 
 config()
 
+/**
+ * `.env` files carry unset variables as empty strings, not as absent keys, so an optional field
+ * has to treat "" as absent. Without this, every placeholder line in .env.example fails validation
+ * the moment it is copied.
+ */
+const emptyAsUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional())
+
 const address = z.string().regex(/^0x[a-fA-F0-9]{40}$/)
-const optionalAddress = address.optional()
+const optionalAddress = emptyAsUndefined(address)
 
 /** Comma-separated URL list, tried in order after the primary. */
 const urlList = z
@@ -61,11 +69,42 @@ const envSchema = z.object({
   // Sepolia contracts
   QUEST_PORTAL_ADDRESS: optionalAddress,
 
-  // External services
+})
+
+export const env = envSchema.parse(process.env)
+
+/**
+ * Credentials for the third-party services.
+ *
+ * Deliberately separate and validated lazily. The Attestcoin worker talks to Creditcoin and
+ * Sepolia and needs none of these, so requiring them up front would mean an operator could not run
+ * the proof path without a Groq key. Anything that actually uses one of these imports
+ * `serviceEnv()`, which throws with a clear message on first use if the credential is missing, so
+ * the API still fails loudly rather than silently degrading.
+ */
+const serviceEnvSchema = z.object({
   GROQ_API_KEY: z.string().min(10),
   PINATA_JWT: z.string().min(10),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10),
 })
 
-export const env = envSchema.parse(process.env)
+export type ServiceEnv = z.infer<typeof serviceEnvSchema>
+
+let cachedServiceEnv: ServiceEnv | undefined
+
+export function serviceEnv(): ServiceEnv {
+  if (!cachedServiceEnv) {
+    const parsed = serviceEnvSchema.safeParse(process.env)
+    if (!parsed.success) {
+      const missing = parsed.error.issues.map((issue) => issue.path.join(".")).join(", ")
+      throw new Error(
+        `Missing or invalid service credentials: ${missing}. ` +
+          "These are required for AI quest generation, IPFS pinning, and the Supabase cache. " +
+          "The Attestcoin worker does not need them."
+      )
+    }
+    cachedServiceEnv = parsed.data
+  }
+  return cachedServiceEnv
+}

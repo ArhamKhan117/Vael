@@ -3,7 +3,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts"
 import { z } from "zod"
 import { StructuredOutputParser } from "@langchain/core/output_parsers"
 
-import { env } from "../config/env"
+import { serviceEnv } from "../config/env"
 import { SEPOLIA_TOKENS } from "../lib/protocols"
 import { createQuest, getQuestById } from "./questService"
 import { uploadQuestMetadata } from "./ipfsService"
@@ -114,7 +114,7 @@ Generate a quest that fulfills the goal. Derive verificationParams from the goal
 ])
 
 const groqModel = new ChatGroq({
-  apiKey: env.GROQ_API_KEY,
+  apiKey: serviceEnv().GROQ_API_KEY,
   model: "openai/gpt-oss-20b",
   temperature: 0.3,
 })

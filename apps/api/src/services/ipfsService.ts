@@ -1,4 +1,4 @@
-import { env } from "../config/env"
+import { serviceEnv } from "../config/env"
 
 const PINATA_JSON_ENDPOINT = "https://api.pinata.cloud/pinning/pinJSONToIPFS"
 
@@ -56,7 +56,7 @@ export async function uploadQuestMetadata(metadata: unknown, name: string) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.PINATA_JWT}`,
+      Authorization: `Bearer ${serviceEnv().PINATA_JWT}`,
     },
     body: JSON.stringify({
       pinataMetadata: {

@@ -62,7 +62,7 @@ contract VerifyBaseline is Script {
         VaelToken token = VaelToken(vm.envAddress("VAEL_TOKEN_ADDRESS"));
         RewardVault vault = RewardVault(vm.envAddress("REWARD_VAULT_ADDRESS"));
         BadgeNFT badge = BadgeNFT(vm.envAddress("BADGE_NFT_ADDRESS"));
-        QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_V2_ADDRESS"));
+        QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_ADDRESS"));
         QuestASC questASC = QuestASC(vm.envAddress("QUEST_ASC_ADDRESS"));
         address questPortal = vm.envAddress("QUEST_PORTAL_ADDRESS");
         uint64 sepoliaChainKey = uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1)));
@@ -76,7 +76,7 @@ contract VerifyBaseline is Script {
         _hasCode("VaelToken", address(token));
         _hasCode("RewardVault", address(vault));
         _hasCode("BadgeNFT", address(badge));
-        _hasCode("QuestManager v2", address(manager));
+        _hasCode("QuestManager", address(manager));
         _hasCode("QuestASC", address(questASC));
         _hasCode("CampaignEscrow", address(escrow));
 
@@ -121,10 +121,11 @@ contract VerifyBaseline is Script {
 
         console.log("=== supply ===");
         require(token.totalSupply() > 0, "VerifyBaseline: no VAEL minted");
-        require(token.balanceOf(address(vault)) > 0, "VerifyBaseline: reward vault unfunded");
-        checks += 2;
+        checks++;
         console.log("ok   VaelToken.totalSupply", token.totalSupply());
-        console.log("ok   RewardVault VAEL balance", token.balanceOf(address(vault)));
+        // The vault mints on demand in fundQuest, so a standing balance is a convenience, not a
+        // requirement. What must hold is that it can mint at all, asserted above via MINTER_ROLE.
+        console.log("     RewardVault VAEL balance", token.balanceOf(address(vault)));
 
         console.log("=== Attestcoin core ===");
         // The one-shot binding is now closed. Only QuestASC can complete a quest.
