@@ -95,3 +95,6 @@ Thumbs.db
 .turbo
 # env example files are tracked; real env files stay ignored
 !.env.example
+
+# Worker state when Supabase is not configured
+.state/

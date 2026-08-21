@@ -90,7 +90,6 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     error RuleAlreadyRegistered(uint256 questId);
     error NoRuleForQuest(uint256 questId);
     error QuestNotOpen(uint256 questId);
-    error QuestHintMismatch(uint256 hinted, uint256 fromLog);
     error WrongSourceChain(uint256 questId, uint64 expected, uint64 provided);
     error PlayerMismatch(address expected, address decoded);
     error ParticipantHasNotAccepted(uint256 questId, address player);
@@ -195,8 +194,12 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     {
         IActionAdapter adapter = adapters[chainKey][logEntry.topics[0]];
         if (address(adapter) == address(0)) return false;
-        (bool recognised,,,,,) = adapter.decode(chainKey, logEntry);
-        return recognised;
+        (bool recognised, uint8 actionType,,,,) = adapter.decode(chainKey, logEntry);
+        if (!recognised) return false;
+        // The emitter gate belongs here, before the base claims a replay key, so a log from an
+        // impostor contract is never consumed. Which allowlist applies depends on what the adapter
+        // decided the log is, which is why the decode happens first.
+        return allowedEmitters[chainKey][VaelTypes.ActionType(actionType)][logEntry.address_];
     }
 
     /// @inheritdoc VaelAscBase
@@ -208,7 +211,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         bytes32 key,
         EvmV1Decoder.LogEntry memory logEntry,
         uint256 questIdHint
-    ) internal override {
+    ) internal override returns (bool) {
         IActionAdapter adapter = adapters[chainKey][logEntry.topics[0]];
         if (address(adapter) == address(0)) revert NoAdapterForTopic(logEntry.topics[0]);
 
@@ -222,26 +225,27 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         ) = adapter.decode(chainKey, logEntry);
         if (!recognised) revert NoAdapterForTopic(logEntry.topics[0]);
 
-        // The emitter allowlist is checked here, after the adapter has said which action this is,
-        // because which allowlist applies depends on the action type. An adapter cannot bypass it:
-        // it only reports, it never authorises.
-        if (!allowedEmitters[chainKey][VaelTypes.ActionType(actionType)][logEntry.address_]) {
-            revert EmitterNotAllowed(chainKey, actionType, logEntry.address_);
-        }
-
         // Only Vael's own portal event can name a quest. Every third-party protocol emits events
         // that know nothing about Vael, so those submissions must carry a hint.
         uint256 questId;
         if (questIdFromEvent != 0) {
             questId = questIdFromEvent;
-            // A hint may only narrow. It cannot select a different quest than the log names.
-            if (questIdHint != 0 && questIdHint != questId) {
-                revert QuestHintMismatch(questIdHint, questId);
-            }
+            // The event names the quest, so a hint can only ever confirm or not apply. A hint
+            // naming a different quest means this log is not the one being claimed: decline it, so
+            // its replay key survives for the quest it does name. The hint can never redirect the
+            // log, because questId comes from the event either way.
+            if (questIdHint != 0 && questIdHint != questId) return false;
         } else {
             if (questIdHint == 0) revert QuestHintRequired(actionType);
             questId = questIdHint;
         }
+
+        // A real transaction carries several recognised logs: a Uniswap swap emits two ERC-20
+        // Transfers beside its Swap. The submitter is claiming one quest, so a log whose action
+        // type is not the one that quest's rule names is declined rather than treated as an error.
+        // Declining releases the replay key, so that Transfer can still satisfy a transfer quest.
+        if (!ruleExists[questId]) revert NoRuleForQuest(questId);
+        if (rules[questId].actionType != VaelTypes.ActionType(actionType)) return false;
 
         _applyCompletion(
             questId,
@@ -253,6 +257,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
             key,
             VaelTypes.ActionType(actionType)
         );
+        return true;
     }
 
     /// @dev Shared tail: every rule check, then the payout. Split out so future action handlers
@@ -267,9 +272,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         bytes32 key,
         VaelTypes.ActionType actionType
     ) private {
-        if (!ruleExists[questId]) revert NoRuleForQuest(questId);
         VaelTypes.VerificationRule memory rule = rules[questId];
-        if (rule.actionType != actionType) revert ActionNotYetSupported(rule.actionType);
 
         uint64 expectedChain = questSourceChainKey[questId];
         if (expectedChain != chainKey) revert WrongSourceChain(questId, expectedChain, chainKey);

@@ -15,6 +15,9 @@ remappings = [
     "@gluwa/=node_modules/@gluwa/"
 ]
 
+# Read-only access to the captured real-network fixtures the adapter tests replay.
+fs_permissions = [{ access = "read", path = "./test/fixtures" }]
+
 [rpc_endpoints]
 creditcoin = "${CREDITCOIN_RPC_URL}"
 sepolia = "${SEPOLIA_RPC_URL}"

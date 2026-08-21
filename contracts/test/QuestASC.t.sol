@@ -299,8 +299,8 @@ contract QuestASCTest is Test {
     }
 
     /// @dev An impostor contract emitting the same event shape is decodable but not allowlisted,
-    /// so it is refused at the emitter check rather than silently credited.
-    function test_UnallowlistedEmitterIsRefused() public {
+    /// so it is never recognised and never claims a replay key.
+    function test_UnallowlistedEmitterIsNotRecognised() public {
         uint256 questId = _acceptedQuest();
         bytes memory encoded = SourceTxFixture.build(
             gasPayer,
@@ -311,10 +311,11 @@ contract QuestASCTest is Test {
         );
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuestASC.EmitterNotAllowed.selector, SEPOLIA, uint8(0), address(0xBAD)
+                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
             )
         );
         questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questId);
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
     }
 
     /// @dev With no adapter registered for a signature, the log is not recognised at all.
@@ -399,14 +400,20 @@ contract QuestASCTest is Test {
         questASC.submit(sourceTx, questId);
     }
 
-    function test_HintMismatchRejected() public {
+    /// @dev A hint naming a different quest than the event declines the log rather than
+    /// redirecting it. The quest id always comes from the event, so the hint can never widen.
+    function test_HintNamingAnotherQuestDeclines() public {
         uint256 questId = _acceptedQuest();
         VaelAscBase.SourceTx memory sourceTx =
             _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
         vm.expectRevert(
-            abi.encodeWithSelector(QuestASC.QuestHintMismatch.selector, questId + 99, questId)
+            abi.encodeWithSelector(
+                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
+            )
         );
         questASC.submit(sourceTx, questId + 99);
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+        assertEq(vaelToken.balanceOf(player), 0);
     }
 
     function test_ProofRejectedByPrecompile() public {
@@ -527,22 +534,58 @@ contract QuestASCTest is Test {
         questASC.setRule(999, SEPOLIA, _rule(true, 0));
     }
 
-    /// @dev A portal log cannot satisfy a quest whose rule names a different action.
-    function test_ActionTypeMismatchIsRefused() public {
+    /// @dev A portal log cannot satisfy a quest whose rule names a different action. The log is
+    /// declined, not treated as an error, and crucially its replay key is left unclaimed so it can
+    /// still satisfy the portal quest it belongs to.
+    function test_ActionTypeMismatchDeclinesWithoutBurningTheKey() public {
         VaelTypes.VerificationRule memory rule = _rule(true, MIN_AMOUNT);
         rule.actionType = VaelTypes.ActionType.UniswapSwap;
-        uint256 questId = _createQuest(rule, SEPOLIA);
+        uint256 mismatched = _createQuest(rule, SEPOLIA);
         vm.prank(player);
-        questManager.acceptQuest(questId);
+        questManager.acceptQuest(mismatched);
 
         VaelAscBase.SourceTx memory sourceTx =
-            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
+            _sourceTx(_portalTx(mismatched, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT);
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuestASC.ActionNotYetSupported.selector, VaelTypes.ActionType.UniswapSwap
+                VaelAscBase.NothingRecognised.selector, SEPOLIA, ACTION_HEIGHT, uint64(0)
             )
         );
-        questASC.submit(sourceTx, questId);
+        questASC.submit(sourceTx, mismatched);
+
+        bytes32 key = questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0);
+        assertFalse(questASC.claimedLog(key), "a declined log must not consume its replay key");
+        assertEq(questASC.ingestedAt(key), 0);
+    }
+
+    /// @dev The real shape of a Uniswap swap: a Transfer beside the Swap. Claiming the transfer
+    /// quest must not burn the swap log, and vice versa. This is the case that failed on the live
+    /// network before handlers could decline.
+    function test_MixedLogsInOneTxAreEachClaimableByTheirOwnQuest() public {
+        // A portal quest and, in the same transaction, an unrelated portal log for another quest.
+        uint256 questA = _acceptedQuest();
+        uint256 questB = _createQuest(_rule(true, MIN_AMOUNT), SEPOLIA);
+        vm.prank(player);
+        questManager.acceptQuest(questB);
+
+        bytes memory encoded = SourceTxFixture.build(
+            gasPayer,
+            1,
+            SourceTxFixture.pair(
+                SourceTxFixture.portalLog(portal, questA, player, address(0), MIN_AMOUNT),
+                SourceTxFixture.portalLog(portal, questB, player, address(0), MIN_AMOUNT)
+            )
+        );
+
+        // Hint quest A: only its log applies, and B's key stays free.
+        assertEq(questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questA), 1);
+        assertTrue(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0)));
+        assertFalse(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 1)));
+
+        // Now claim B from the very same transaction.
+        assertEq(questASC.submit(_sourceTx(encoded, SEPOLIA, ACTION_HEIGHT), questB), 1);
+        assertTrue(questASC.claimedLog(questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 1)));
+        assertEq(vaelToken.balanceOf(player), REWARD * 2);
     }
 
     function test_ParticipantWhoNeverAcceptedIsRejected() public {

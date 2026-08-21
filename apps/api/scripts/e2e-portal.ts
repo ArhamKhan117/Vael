@@ -22,7 +22,7 @@ import {
   workerWallet,
 } from "../src/attestcoin/config"
 import { getAttestedFrontier } from "../src/attestcoin/chainInfo"
-import { waitForAttestation } from "../src/attestcoin/attest"
+import { waitUntilProvable } from "../src/attestcoin/attest"
 import { fetchProof, verifyMerkleRootLocally } from "../src/attestcoin/prove"
 import { preflight, submitProof } from "../src/attestcoin/submit"
 import {
@@ -158,7 +158,7 @@ async function main() {
 
   log("4. waiting for attestation, measured lag is roughly 8 minutes")
   const waitStarted = Date.now()
-  const waited = await waitForAttestation(cc, SEPOLIA_CHAIN_KEY, sourceBlock, {
+  const waited = await waitUntilProvable(cc, SEPOLIA_CHAIN_KEY, sourceBlock, {
     onPoll: ({ attestedHeight, elapsedMs }) => {
       const behind = sourceBlock - attestedHeight
       log(

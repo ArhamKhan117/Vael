@@ -14,6 +14,12 @@ import { getAttestedFrontier } from "./chainInfo"
  *
  * Returns a Result rather than throwing, because "not attested yet" is an ordinary outcome the
  * caller has to handle, not an exception.
+ *
+ * **Pass the block above the one you want to prove.** A continuity proof is a chain between two
+ * attested endpoints that bracket the block, so an attested height at or below the block is not
+ * enough: the proof builder needs one strictly above it too. Waiting only for
+ * `frontier >= sourceBlock` produces a proof builder that answers "Cannot build continuity proof
+ * ... without both lower and upper continuity bounds". `proveSourceBlock` below does this for you.
  */
 export interface AttestationWaitOutcome {
   attestedHeight: bigint
@@ -75,6 +81,19 @@ export async function waitForAttestation(
 
     await sleep(intervalMs)
   }
+}
+
+/**
+ * Wait until a source block is provable, which needs an attested endpoint strictly above it.
+ * Attestations land every 10 source blocks, so this is normally one extra interval.
+ */
+export function waitUntilProvable(
+  provider: JsonRpcProvider,
+  chainKey: number,
+  sourceBlock: bigint,
+  options: WaitOptions = {}
+): Promise<Result<AttestationWaitOutcome>> {
+  return waitForAttestation(provider, chainKey, sourceBlock + 1n, options)
 }
 
 function sleep(ms: number): Promise<void> {

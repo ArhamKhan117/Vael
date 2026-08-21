@@ -219,6 +219,7 @@ abstract contract VaelAscBase {
         // 5. Ordinal sweep. The loop counter is the receipt-wide log ordinal the replay key needs,
         //    which is why this walks every log rather than taking the first signature match.
         uint256 logCount = receipt.receiptLogs.length;
+        bytes32 firstClaimedKey;
         for (uint256 i = 0; i < logCount; ++i) {
             EvmV1Decoder.LogEntry memory logEntry = receipt.receiptLogs[i];
 
@@ -236,18 +237,42 @@ abstract contract VaelAscBase {
             uint64 logOrdinal = uint64(i);
             bytes32 key = replayKey(sourceTx.chainKey, sourceTx.blockHeight, txIndex, logOrdinal);
 
-            // Claim before handling. A duplicate makes the whole submission a replay attempt and
-            // reverts: skipping would let a caller mix fresh and replayed logs in one call.
-            if (claimedLog[key]) revert AlreadyClaimed(key);
+            // An already-claimed log is skipped, not fatal. The whole point of a log-scoped key is
+            // that one source transaction can satisfy several quests, and those claims arrive as
+            // separate submissions: the second one necessarily sweeps past the first one's log.
+            // Double-crediting is still impossible, because the claim below is what prevents it.
+            // If nothing else in the transaction applies, the skip is reported as the replay it is.
+            if (claimedLog[key]) {
+                if (firstClaimedKey == bytes32(0)) firstClaimedKey = key;
+                continue;
+            }
             claimedLog[key] = true;
             ingestedAt[key] = uint64(block.number);
 
-            _handleRecognisedLog(sourceTx.chainKey, sourceTx.blockHeight, key, logEntry, questIdHint);
+            bool applied =
+                _handleRecognisedLog(sourceTx.chainKey, sourceTx.blockHeight, key, logEntry, questIdHint);
+
+            // A recognised log that does not belong to the quest being claimed is released rather
+            // than consumed. One real transaction routinely carries several recognised logs of
+            // different kinds — a Uniswap swap emits two ERC-20 Transfers alongside its Swap — and
+            // the submitter is claiming exactly one quest. Burning the other logs' keys would make
+            // them permanently unclaimable for the quests they *do* satisfy.
+            //
+            // The claim is set across the handler call and cleared only on a clean false return,
+            // so the reentrancy guarantee is unchanged: during any external call the key is held.
+            if (!applied) {
+                claimedLog[key] = false;
+                ingestedAt[key] = 0;
+                continue;
+            }
             ++handledLogs;
         }
 
-        // A transaction with nothing recognised is not a quest action at all.
         if (handledLogs == 0) {
+            // Nothing applied. If the only thing standing in the way was an already-claimed log,
+            // say so plainly: this submission is a replay, and a caller preflighting it needs that
+            // answer rather than a generic "nothing here".
+            if (firstClaimedKey != bytes32(0)) revert AlreadyClaimed(firstClaimedKey);
             revert NothingRecognised(sourceTx.chainKey, sourceTx.blockHeight, txIndex);
         }
 
@@ -269,11 +294,14 @@ abstract contract VaelAscBase {
 
     /// @dev Apply one recognised log. Called only after the proof passed, the receipt succeeded,
     /// and the replay key was claimed.
+    /// @return applied True when the log was credited. False means "recognised, but not the log
+    ///         this submission is claiming", and the base releases the replay key so the log stays
+    ///         available for the quest it does satisfy.
     function _handleRecognisedLog(
         uint64 chainKey,
         uint64 blockHeight,
         bytes32 key,
         EvmV1Decoder.LogEntry memory logEntry,
         uint256 questIdHint
-    ) internal virtual;
+    ) internal virtual returns (bool applied);
 }

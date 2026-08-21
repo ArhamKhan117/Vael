@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "e2e:portal": "tsx scripts/e2e-portal.ts"
+    "e2e:portal": "tsx scripts/e2e-portal.ts",
+    "worker": "tsx scripts/worker.ts"
   },
   "keywords": [
     "vael",
