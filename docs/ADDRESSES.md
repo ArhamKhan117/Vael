@@ -23,8 +23,12 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 | `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | verified |
 | `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455574 | verified |
 | `BadgeNFT` | [`0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3`](https://creditcoin-testnet.blockscout.com/address/0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3) | [`0xe0381fdc…0b1430`](https://creditcoin-testnet.blockscout.com/tx/0xe0381fdcf2941dfffa0ec900332a0668f96e0465d80def5a0df4716f1c0b1430) | 5455361 | verified |
-| `QuestManager` | [`0x8E42A111295F72c93d3A23181C4C3E13eCbeF220`](https://creditcoin-testnet.blockscout.com/address/0x8E42A111295F72c93d3A23181C4C3E13eCbeF220) | [`0xb4d1ef39…b292db`](https://creditcoin-testnet.blockscout.com/tx/0xb4d1ef394883d6b544149ec42b93be0372f1555d33585838cffc58980bb292db) | 5455576 | verified |
-| `QuestASC` | [`0x983cFa52747708Fe86d125DdFB1Bf67E052793cb`](https://creditcoin-testnet.blockscout.com/address/0x983cFa52747708Fe86d125DdFB1Bf67E052793cb) | [`0x544820f7…6d89fd`](https://creditcoin-testnet.blockscout.com/tx/0x544820f7c8b670ab68e2fa2d79bc517e81506b1deb7e96a8ab3f128b296d89fd) | 5455578 | verified |
+| `QuestManager` | [`0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377`](https://creditcoin-testnet.blockscout.com/address/0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377) | [`0xeaed2e6c…1631cd`](https://creditcoin-testnet.blockscout.com/tx/0xeaed2e6c70b8499f4068c9b7edc03feec619efcaf47cb1421de2a59c611631cd) | 5458073 | verified |
+| `QuestASC` | [`0x467bF17dcf7A5988dC96b2F8e3Af571169176780`](https://creditcoin-testnet.blockscout.com/address/0x467bF17dcf7A5988dC96b2F8e3Af571169176780) | [`0x5997d123…f61985`](https://creditcoin-testnet.blockscout.com/tx/0x5997d1236f35f64844b2830b48c6558dba65d5a4fcea2df225cb382c7ff61985) | 5458075 | verified |
+| `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) | [`0xf9596fbd…8fe7c94`](https://creditcoin-testnet.blockscout.com/tx/0xf9596fbdf6e1aa693d251cbe6bc5f24294683992c4d5cef596a78ee828fe7c94) | 5458012 | verified |
+| `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) | [`0xef8b6a28…b0df12`](https://creditcoin-testnet.blockscout.com/tx/0xef8b6a28941cd98ca273add4a12180558bdaca6d60e63a645d99235aabb0df12) | 5458014 | verified |
+| `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) | [`0xcf9eb35e…c05952`](https://creditcoin-testnet.blockscout.com/tx/0xcf9eb35e244a609eabe19340ced2d592c926a83160b5c27ec5c67810dbc05952) | 5458010 | verified |
+| `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) | [`0xe5a85953…49d5a9`](https://creditcoin-testnet.blockscout.com/tx/0xe5a859535f8771140b58fc7c4b2f43f42d1c1d95823dfd7db1334c030e49d5a9) | 5458016 | verified |
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | verified |
 | `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | verified |
 | `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | verified |
@@ -32,6 +36,28 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 | `AgentRegistryAdapter` | [`0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d`](https://creditcoin-testnet.blockscout.com/address/0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d) | [`0x8f77ab8f…11d4f4`](https://creditcoin-testnet.blockscout.com/tx/0x8f77ab8f6ffa44bfdd2a5e06456ee84b046da6f19a9b2ec100a07bcc5711d4f4) | 5455358 | verified |
 
 All nine are source-verified on Blockscout. Re-check with `contracts/script/check-verification.sh`.
+
+### Adapters
+
+Decoding lives outside the core so that adding a protocol costs one `setAdapter` transaction rather
+than a redeploy of QuestASC, QuestManager, and the escrow together. An adapter is a pure decoder
+over an already-proved log: it holds no privilege and cannot widen what is accepted.
+
+| Adapter | Event | Registered for |
+|---|---|---|
+| `PortalAdapter` | `QuestActionPerformed` | chainKey 1 |
+| `Erc20TransferAdapter` | `Transfer` | chainKey 1 |
+| `UniswapV3SwapAdapter` | `Swap` | chainKey 1, holds the pool token pairs |
+| `AaveV3Adapter` | `Supply` and `Borrow` | chainKey 1 |
+
+### Sepolia emitters allowlisted
+
+| Action | Emitters |
+|---|---|
+| Portal | `QuestPortal` |
+| Erc20Transfer | WETH9, Circle USDC, Aave test USDC, DAI, WETH, LINK |
+| UniswapSwap | USDC/WETH 0.05% `0x3289680d…AEfF1`, USDC/WETH 0.3% `0x6Ce0896e…9b50` |
+| AaveSupply, AaveBorrow | Aave v3 Pool `0x6Ae43d32…8951` |
 
 ### What each one is
 
@@ -90,8 +116,24 @@ a privilege: the reviewer grant on each superseded QuestManager was explicitly r
 |---|---|---|
 | `QuestManager` v1 | `0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F` | milestone 2 baseline, before verification rules and the source-height anchor |
 | `QuestManager` v2 | `0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA` | Constructed against the v1 RewardVault, whose ledger already held quest ids 1 and 2 |
+| `QuestManager` v3 | `0x8E42A111295F72c93d3A23181C4C3E13eCbeF220` | Predates adapter-based decoding |
+| `QuestManager` v4 | `0x68B609a29cC6B0635d6A3A6A1eDa5a1bBCCEdE24` | Predates declining handlers; see below |
+| `QuestASC` v2 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
+| `QuestASC` v3 | `0xB7D7Bf8e3BEBB1321620C3F5D81E2854B1df9776` | Reverted on a recognised log belonging to another quest |
 | `RewardVault` v1 | `0x4cDa11850a3697940329975EA3943f166Ba6FFf8` | Ledger keyed by questId alone; see below |
-| `QuestASC` v1 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
+
+
+### Why the core was redeployed twice more in milestone 3b
+
+`QuestManager.setQuestASC` is one-shot, so every QuestASC replacement forces a QuestManager
+replacement. That happened twice: once to move decoding into adapters, and once to let a handler
+decline a log rather than revert on it. The second was found by the live network, not by review: a
+Uniswap swap emits ERC-20 `Transfer` logs beside its `Swap`, and the first recognised log killed
+the whole submission. The adapter split is precisely what stops the *next* protocol from costing a
+redeploy.
+
+`CampaignEscrow.setRewardReleaser` is plain `onlyOwner`, not one-shot, so the escrow has never
+needed redeploying; it is re-pointed with a single transaction.
 
 ### Why the vault was redeployed
 
