@@ -68,6 +68,31 @@ class APIClient {
     }>(`/quests/${questId}/progress/${participant}`)
   }
 
+  /**
+   * Where a proof submission has got to, if the API knows.
+   *
+   * Returns null rather than throwing when the endpoint is unavailable: the self-claim path does
+   * not need this, so a missing API degrades the timeline rather than the feature.
+   */
+  async getProofStatus(questId: number, participant: string) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/quests/${questId}/proof-status?participant=${participant}`
+      )
+      if (!response.ok) return null
+      return (await response.json()) as {
+        stage: "not_started" | "detected" | "attesting" | "proving" | "submitted" | "verified" | "failed"
+        sourceTxHash?: string
+        sourceBlock?: number
+        creditcoinTxHash?: string
+        attestedHeight?: number
+        error?: string
+      }
+    } catch {
+      return null
+    }
+  }
+
   async submitProof(questId: number, data: { transactionHash: string; participant?: string }) {
     return this.request<{ message: string; questId: string; transactionHash: string }>(
       `/quests/${questId}/submit-proof`,

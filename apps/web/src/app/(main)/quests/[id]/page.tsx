@@ -29,6 +29,10 @@ import {
 } from "@/lib/ipfs"
 import PartnershipCarousel from "@/components/partnership-carousel"
 import { formatUnits } from "viem"
+import { ClaimPanel } from "@/components/quest/claim-panel"
+import { ActionType, ProofStatus, VerificationRule } from "@/lib/attestcoin/types"
+import { useProofStatus, useVerificationRule } from "@/hooks/useProofStatus"
+import { CONTRACT_ADDRESSES } from "@/lib/contracts"
 
 function formatCompact(n: number) {
   return Intl.NumberFormat("en", { notation: "compact" }).format(n)
@@ -61,6 +65,13 @@ export default function QuestDetailPage() {
   const { progress, loading: progressLoading, refetch: refetchProgress } =
     useQuestProgress(questId, wallet.address ?? null)
   const { acceptQuest, loading: acceptLoading } = useQuestContract()
+
+  // The rule comes from QuestASC itself, not from our cache: it is what the chain will enforce.
+  const verificationRule = useVerificationRule(Number.isNaN(questId) ? undefined : questId)
+  const proofStatus = useProofStatus(
+    Number.isNaN(questId) ? undefined : questId,
+    wallet.address ?? undefined
+  )
 
   const [metadata, setMetadata] = useState<QuestMetadata | null>(null)
   const [metadataLoading, setMetadataLoading] = useState(false)
@@ -533,8 +544,19 @@ export default function QuestDetailPage() {
                       Quest Accepted
                     </p>
                     <p className="mt-1 text-xs text-zinc-400">
-                      Complete the quest steps. Completion will be verified automatically.
+                      Your Sepolia block window is anchored. Act now, then prove it.
                     </p>
+                  </div>
+                )}
+
+                {(isAccepted || hasAccepted) && !isCompleted && verificationRule && (
+                  <div className="pt-2">
+                    <ClaimPanel
+                      questId={BigInt(questId)}
+                      rule={verificationRule}
+                      status={proofStatus}
+                      tokenSymbol={rewardToken}
+                    />
                   </div>
                 )}
 

@@ -106,7 +106,10 @@ export class AttestcoinWorker {
       try {
         await this.advance(row)
       } catch (error: any) {
-        await this.fail(row, error?.message ?? String(error))
+        // A thrown error here is almost always transient: an RPC timeout, a rate limit, a provider
+        // hiccup. Marking the row failed would abandon a player's action because one request was
+        // slow. Count the attempt, keep the stage, and only give up once the attempts run out.
+        await this.retryLater(row, error?.message ?? String(error))
       }
     }
   }
@@ -249,6 +252,23 @@ export class AttestcoinWorker {
       log(`verified ${row.sourceTxHash} in ${submitted.value.txHash}`)
       return
     }
+  }
+
+  /**
+   * Record a transient failure without losing the row's place in the pipeline.
+   *
+   * Terminal failure is reserved for things retrying cannot fix: a rule the action does not
+   * satisfy, a replayed log, an emitter that is not allowlisted. Everything else waits and tries
+   * again, with the backoff growing per attempt.
+   */
+  private async retryLater(row: ProofSubmission, reason: string): Promise<void> {
+    const attempts = row.attempts + 1
+    if (attempts >= MAX_ATTEMPTS) {
+      await this.fail(row, `${reason} (after ${attempts} attempts)`)
+      return
+    }
+    log(`retrying ${row.sourceTxHash} in ${Math.round(backoffMs(attempts) / 1000)}s: ${reason}`)
+    await this.store.updateSubmission(row.id, { attempts, error: reason })
   }
 
   private async fail(row: ProofSubmission, reason: string): Promise<void> {
