@@ -7,6 +7,9 @@ import {
   isTransactionHashSubmitted,
   saveQuestSubmission,
 } from "../services/dbService"
+import { SEPOLIA_CHAIN_KEY, creditcoinProvider } from "../attestcoin/config"
+import { getAttestedFrontier } from "../attestcoin/chainInfo"
+import { createWorkerStore } from "../attestcoin/store"
 
 export const questProofsRouter: Router = Router()
 
@@ -92,6 +95,59 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
       participant,
       sourceTransactionHash: parsed.transactionHash,
       status: "detected",
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
+ * GET /quests/:id/proof-status?participant=0x…
+ *
+ * Where a submission has got to, for the quest page's timeline.
+ *
+ * This is a convenience. The self-claim path in the browser talks to the Proof Builder and to
+ * QuestASC directly, so a player can still complete a quest when this endpoint is unavailable;
+ * the timeline just goes quiet.
+ */
+questProofsRouter.get("/:id/proof-status", async (req, res, next) => {
+  try {
+    const questId = Number(req.params.id)
+    if (Number.isNaN(questId) || questId <= 0) {
+      return res.status(400).json({ message: "Invalid quest id" })
+    }
+    const participant = String(req.query.participant ?? "")
+    if (!/^0x[a-fA-F0-9]{40}$/.test(participant)) {
+      return res.status(400).json({ message: "participant must be an address" })
+    }
+
+    const store = createWorkerStore()
+    await store.init()
+
+    // The worker keys a submission by chain, source transaction, and quest, so without a known
+    // transaction the newest row for this quest is the right answer.
+    const rows = (await store.allSubmissions()).filter(
+      (row) =>
+        row.questIdOnChain === questId &&
+        row.participant.toLowerCase() === participant.toLowerCase()
+    )
+    const latest = rows[rows.length - 1]
+
+    let attestedHeight: number | undefined
+    const frontier = await getAttestedFrontier(creditcoinProvider(), SEPOLIA_CHAIN_KEY)
+    if (frontier.ok) attestedHeight = Number(frontier.value.height)
+
+    if (!latest) {
+      return res.json({ stage: "not_started", ...(attestedHeight ? { attestedHeight } : {}) })
+    }
+
+    return res.json({
+      stage: latest.status,
+      sourceTxHash: latest.sourceTxHash,
+      sourceBlock: latest.sourceBlock,
+      creditcoinTxHash: latest.creditcoinTxHash,
+      error: latest.error,
+      ...(attestedHeight ? { attestedHeight } : {}),
     })
   } catch (error) {
     next(error)
