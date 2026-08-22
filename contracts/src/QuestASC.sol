@@ -8,6 +8,7 @@ import {VaelAscBase} from "./asc/VaelAscBase.sol";
 import {IQuestManager} from "./interfaces/IQuestManager.sol";
 import {IQuestASC} from "./interfaces/IQuestASC.sol";
 import {IActionAdapter} from "./interfaces/IActionAdapter.sol";
+import {ICompletionHook} from "./interfaces/ICompletionHook.sol";
 import {VaelTypes} from "./interfaces/IVaelTypes.sol";
 
 interface ICampaignEscrow {
@@ -37,6 +38,20 @@ interface ICampaignEscrow {
 contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     /// @notice The quest manager whose quests this contract completes.
     IQuestManager public immutable QUEST_MANAGER;
+
+    /// @notice Gas allowed to each completion hook.
+    /// @dev Capped so one expensive or hostile hook cannot make every submission unaffordable, and
+    /// so a hook that loops forever fails on its own rather than taking the payout with it.
+    uint256 public constant HOOK_GAS_LIMIT = 400_000;
+
+    /// @notice Amount multiples above a rule's minimum that promote a completion to a higher tier.
+    uint256 internal constant TIER_2_MULTIPLE = 5;
+    uint256 internal constant TIER_3_MULTIPLE = 25;
+
+    /// @notice Modules notified after a completion, in order.
+    /// @dev Ordered because a later hook may want to read what an earlier one wrote: RaidBoss reads
+    /// the hero level VaelHero has just updated, so VaelHero must come first.
+    ICompletionHook[] public hooks;
 
     /// @notice Campaign escrow used for partner-funded quests. May be unset.
     ICampaignEscrow public campaignEscrow;
@@ -84,6 +99,10 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     event SupportedChainUpdated(uint64 indexed chainKey, bool supported);
     event EmitterAllowed(uint64 indexed chainKey, VaelTypes.ActionType indexed actionType, address indexed emitter, bool allowed);
     event CampaignEscrowUpdated(address indexed escrow);
+    event HookAdded(address indexed hook, uint256 index);
+    event HookRemoved(address indexed hook, uint256 index);
+    /// @notice A hook failed. The completion still stands and the reward was already paid.
+    event HookFailed(address indexed hook, uint256 indexed questId, bytes reason);
 
     error OnlyQuestManager(address caller);
     error ActionNotYetSupported(VaelTypes.ActionType actionType);
@@ -101,6 +120,8 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     error EmitterNotAllowed(uint64 chainKey, uint8 actionType, address emitter);
     error QuestHintRequired(uint8 actionType);
     error InvalidAddress();
+    error HookAlreadyRegistered(address hook);
+    error HookIndexOutOfRange(uint256 index);
 
     modifier onlyQuestManager() {
         if (msg.sender != address(QUEST_MANAGER)) revert OnlyQuestManager(msg.sender);
@@ -149,6 +170,35 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         if (emitter == address(0)) revert InvalidAddress();
         allowedEmitters[chainKey][actionType][emitter] = allowed;
         emit EmitterAllowed(chainKey, actionType, emitter, allowed);
+    }
+
+    /// @notice Append a completion hook.
+    /// @dev Order is the registration order, and it matters: RaidBoss reads the hero level that
+    /// VaelHero sets, so VaelHero is added first.
+    function addHook(ICompletionHook hook) external onlyOwner {
+        if (address(hook) == address(0)) revert InvalidAddress();
+        uint256 count = hooks.length;
+        for (uint256 i = 0; i < count; ++i) {
+            if (address(hooks[i]) == address(hook)) revert HookAlreadyRegistered(address(hook));
+        }
+        hooks.push(hook);
+        emit HookAdded(address(hook), count);
+    }
+
+    /// @notice Remove a hook by index, preserving the order of the rest.
+    function removeHook(uint256 index) external onlyOwner {
+        uint256 count = hooks.length;
+        if (index >= count) revert HookIndexOutOfRange(index);
+        address removed = address(hooks[index]);
+        for (uint256 i = index; i + 1 < count; ++i) {
+            hooks[i] = hooks[i + 1];
+        }
+        hooks.pop();
+        emit HookRemoved(removed, index);
+    }
+
+    function hookCount() external view returns (uint256) {
+        return hooks.length;
     }
 
     function setCampaignEscrow(address escrow) external onlyOwner {
@@ -314,6 +364,57 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         }
 
         emit QuestProofApplied(questId, player, actionType, key, blockHeight, amount);
+
+        // Game modules run last, after the reward is already paid, and cannot affect it.
+        _notifyHooks(
+            chainKey, questId, participant, actionType, token, amount, rule.minAmount, blockHeight, key
+        );
+    }
+
+    // ---------------------------------------------------------------- hooks
+
+    /// @notice How far a completion exceeded its rule's minimum: 1, 2 at 5x, 3 at 25x.
+    /// @dev A rule with no minimum has nothing to measure against, so every completion is tier 1.
+    /// Tier is computed here rather than by each hook so that XP and raid damage cannot disagree
+    /// about how large the same action was.
+    function tierFor(uint256 amount, uint256 minAmount) public pure returns (uint8) {
+        if (minAmount == 0) return 1;
+        if (amount >= minAmount * TIER_3_MULTIPLE) return 3;
+        if (amount >= minAmount * TIER_2_MULTIPLE) return 2;
+        return 1;
+    }
+
+    /**
+     * @dev Notify every hook, in order, and never let one stop the others or the completion.
+     *
+     * The reward has already been released by the time this runs. A hook that reverts, runs out of
+     * its gas allowance, or has no code is recorded in `HookFailed` and skipped. A player's reward
+     * must not depend on a game module being healthy, and a module added later must not be able to
+     * brick quest completion for everyone.
+     */
+    function _notifyHooks(
+        uint64 chainKey,
+        uint256 questId,
+        address player,
+        VaelTypes.ActionType actionType,
+        address token,
+        uint256 amount,
+        uint256 minAmount,
+        uint64 blockHeight,
+        bytes32 key
+    ) private {
+        uint8 tier = tierFor(amount, minAmount);
+        uint256 count = hooks.length;
+        for (uint256 i = 0; i < count; ++i) {
+            ICompletionHook hook = hooks[i];
+            try hook.onQuestCompleted{gas: HOOK_GAS_LIMIT}(
+                chainKey, questId, player, uint8(actionType), token, amount, tier, blockHeight, key
+            ) {
+                // Handled.
+            } catch (bytes memory reason) {
+                emit HookFailed(address(hook), questId, reason);
+            }
+        }
     }
 
     // ---------------------------------------------------------------- milestone 3b

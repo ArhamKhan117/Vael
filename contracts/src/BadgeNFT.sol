@@ -13,6 +13,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract BadgeNFT is ERC721, ERC721URIStorage, Ownable {
     address public questManager;
 
+    /// @notice Contracts other than QuestManager allowed to mint.
+    /// @dev RaidBoss mints the RaidVictory badge directly, because a raid is won by the community
+    /// rather than completed by one quest. Owner-managed and deliberately narrow: every entry here
+    /// is a contract whose own minting path is itself gated on verified proofs.
+    mapping(address minter => bool) public minters;
+
     uint256 private _nextTokenId = 1;
 
     // Badge level => metadata URI
@@ -24,6 +30,7 @@ contract BadgeNFT is ERC721, ERC721URIStorage, Ownable {
     mapping(uint256 => uint256) public questIdByTokenId;
 
     event QuestManagerUpdated(address indexed questManager);
+    event MinterUpdated(address indexed minter, bool allowed);
     event BadgeMinted(address indexed to, uint256 indexed questId, uint256 badgeLevel, uint256 tokenId);
 
     error BadgeNFT__OnlyQuestManager();
@@ -32,12 +39,25 @@ contract BadgeNFT is ERC721, ERC721URIStorage, Ownable {
     error BadgeNFT__InvalidBadgeLevel();
     error BadgeNFT__MetadataMissing();
 
+    modifier onlyMinter() {
+        if (msg.sender != questManager && !minters[msg.sender]) {
+            revert BadgeNFT__OnlyQuestManager();
+        }
+        _;
+    }
+
     modifier onlyQuestManager() {
         _requireQuestManager();
         _;
     }
 
     constructor(address owner_) ERC721("Vael Quest Badges", "VQB") Ownable(owner_) {}
+
+    function setMinter(address minter, bool allowed) external onlyOwner {
+        if (minter == address(0)) revert BadgeNFT__InvalidQuestManager();
+        minters[minter] = allowed;
+        emit MinterUpdated(minter, allowed);
+    }
 
     function setQuestManager(address questManager_) external onlyOwner {
         if (questManager_ == address(0)) revert BadgeNFT__InvalidQuestManager();
@@ -66,7 +86,7 @@ contract BadgeNFT is ERC721, ERC721URIStorage, Ownable {
      */
     function mintBadge(address to, uint256 questId, uint256 badgeLevel)
         external
-        onlyQuestManager
+        onlyMinter
         returns (uint256)
     {
         if (badgeLevel == 0) revert BadgeNFT__InvalidBadgeLevel();

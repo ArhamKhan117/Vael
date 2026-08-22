@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {INativeQueryVerifier, NativeQueryVerifierLib} from
     "@gluwa/asc-contracts/contracts/write-ability/common/INativeQueryVerifier.sol";
 
@@ -20,6 +20,8 @@ import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 import {ChainInfoLib} from "../src/interfaces/IChainInfo.sol";
 
 import {PortalAdapter} from "../src/adapters/PortalAdapter.sol";
+import {ICompletionHook} from "../src/interfaces/ICompletionHook.sol";
+import {GasBurningHook, RecordingHook, RevertingHook} from "./mocks/HostileHook.sol";
 import {MockBlockProver} from "./mocks/MockBlockProver.sol";
 import {MockChainInfo} from "./mocks/MockChainInfo.sol";
 import {SourceTxFixture} from "./SourceTxFixture.sol";
@@ -596,5 +598,129 @@ contract QuestASCTest is Test {
             abi.encodeWithSelector(QuestASC.ParticipantHasNotAccepted.selector, questId, player)
         );
         questASC.submit(sourceTx, questId);
+    }
+
+    // ---------------------------------------------------------------- hooks
+
+    function test_TierFromAmountAgainstTheRuleMinimum() public view {
+        assertEq(questASC.tierFor(MIN_AMOUNT, MIN_AMOUNT), 1);
+        assertEq(questASC.tierFor(MIN_AMOUNT * 5 - 1, MIN_AMOUNT), 1);
+        assertEq(questASC.tierFor(MIN_AMOUNT * 5, MIN_AMOUNT), 2);
+        assertEq(questASC.tierFor(MIN_AMOUNT * 25 - 1, MIN_AMOUNT), 2);
+        assertEq(questASC.tierFor(MIN_AMOUNT * 25, MIN_AMOUNT), 3);
+        // A rule with no minimum has nothing to measure against.
+        assertEq(questASC.tierFor(1 ether, 0), 1);
+    }
+
+    function test_HookReceivesTheCompletion() public {
+        RecordingHook recorder = new RecordingHook();
+        questASC.addHook(ICompletionHook(address(recorder)));
+
+        uint256 questId = _acceptedQuest();
+        questASC.submit(
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT * 5), SEPOLIA, ACTION_HEIGHT), questId
+        );
+
+        assertEq(recorder.calls(), 1);
+        assertEq(recorder.lastPlayer(), player);
+        assertEq(recorder.lastActionType(), uint8(VaelTypes.ActionType.Portal));
+        assertEq(recorder.lastTier(), 2, "5x the minimum is tier 2");
+        assertEq(recorder.lastSourceBlock(), ACTION_HEIGHT, "streaks need the source block");
+        assertEq(recorder.lastReplayKey(), questASC.replayKey(SEPOLIA, ACTION_HEIGHT, 0, 0));
+    }
+
+    /// @dev The whole reason hooks are called inside try/catch: a broken game module must never
+    /// cost a player their reward.
+    function test_RevertingHookDoesNotBlockTheReward() public {
+        questASC.addHook(ICompletionHook(address(new RevertingHook())));
+
+        uint256 questId = _acceptedQuest();
+        vm.recordLogs();
+        questASC.submit(
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId
+        );
+
+        assertEq(vaelToken.balanceOf(player), REWARD, "reward paid despite the hook reverting");
+        assertEq(badgeNft.balanceOf(player), 1);
+        assertTrue(_sawHookFailed(), "the failure is recorded, not swallowed");
+    }
+
+    function test_GasBurningHookIsCappedAndDoesNotBlockTheReward() public {
+        questASC.addHook(ICompletionHook(address(new GasBurningHook())));
+
+        uint256 questId = _acceptedQuest();
+        vm.recordLogs();
+        questASC.submit(
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId
+        );
+
+        assertEq(vaelToken.balanceOf(player), REWARD);
+        assertTrue(_sawHookFailed());
+    }
+
+    /// @dev One bad hook must not stop the hooks after it.
+    function test_AFailingHookDoesNotStopLaterHooks() public {
+        questASC.addHook(ICompletionHook(address(new RevertingHook())));
+        RecordingHook recorder = new RecordingHook();
+        questASC.addHook(ICompletionHook(address(recorder)));
+
+        uint256 questId = _acceptedQuest();
+        questASC.submit(
+            _sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId
+        );
+
+        assertEq(recorder.calls(), 1, "the second hook still ran");
+        assertEq(vaelToken.balanceOf(player), REWARD);
+    }
+
+    function test_HooksRunInRegistrationOrder() public {
+        RecordingHook first = new RecordingHook();
+        RecordingHook second = new RecordingHook();
+        questASC.addHook(ICompletionHook(address(first)));
+        questASC.addHook(ICompletionHook(address(second)));
+
+        assertEq(questASC.hookCount(), 2);
+        assertEq(address(questASC.hooks(0)), address(first));
+        assertEq(address(questASC.hooks(1)), address(second));
+    }
+
+    function test_RemoveHookPreservesOrder() public {
+        RecordingHook a = new RecordingHook();
+        RecordingHook b = new RecordingHook();
+        RecordingHook c = new RecordingHook();
+        questASC.addHook(ICompletionHook(address(a)));
+        questASC.addHook(ICompletionHook(address(b)));
+        questASC.addHook(ICompletionHook(address(c)));
+
+        questASC.removeHook(1);
+        assertEq(questASC.hookCount(), 2);
+        assertEq(address(questASC.hooks(0)), address(a));
+        assertEq(address(questASC.hooks(1)), address(c), "order survives a removal");
+    }
+
+    function test_DuplicateHookRejected() public {
+        RecordingHook recorder = new RecordingHook();
+        questASC.addHook(ICompletionHook(address(recorder)));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuestASC.HookAlreadyRegistered.selector, address(recorder))
+        );
+        questASC.addHook(ICompletionHook(address(recorder)));
+    }
+
+    function test_OnlyOwnerMayManageHooks() public {
+        RecordingHook recorder = new RecordingHook();
+        vm.expectRevert();
+        vm.prank(player);
+        questASC.addHook(ICompletionHook(address(recorder)));
+    }
+
+    /// @dev Scan the recorded logs for HookFailed without depending on its argument encoding.
+    function _sawHookFailed() private returns (bool) {
+        bytes32 topic = keccak256("HookFailed(address,uint256,bytes)");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        for (uint256 i = 0; i < entries.length; ++i) {
+            if (entries[i].topics.length > 0 && entries[i].topics[0] == topic) return true;
+        }
+        return false;
     }
 }
