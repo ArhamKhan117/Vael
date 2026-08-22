@@ -120,6 +120,33 @@ contract RealFixturesTest is Test {
         assertEq(amount, fixture.amount);
     }
 
+    function test_RealAaveBorrow() public view {
+        _assertFixture(aaveAdapter, "aave-borrow");
+        Fixture memory fixture = _load("aave-borrow");
+        (, address player,, uint256 amount, uint8 actionType) =
+            _decodeThrough(aaveAdapter, fixture);
+
+        assertEq(actionType, uint8(VaelTypes.ActionType.AaveBorrow));
+        assertEq(amount, fixture.amount);
+        // Borrow and Supply share an adapter and an indexed layout, so the one thing worth
+        // asserting separately is that a real Borrow is not mistaken for a Supply.
+        assertTrue(actionType != uint8(VaelTypes.ActionType.AaveSupply));
+        assertEq(player, fixture.player);
+    }
+
+    /// @dev The Aave Pool emits both events. Each must decode as itself and only itself, or a
+    /// borrow quest could be satisfied by a supply, which is a strictly easier action.
+    function test_RealAaveSupplyAndBorrowAreNotInterchangeable() public view {
+        Fixture memory supply = _load("aave-supply");
+        Fixture memory borrow = _load("aave-borrow");
+        (,,,, uint8 supplyAction) = _decodeThrough(aaveAdapter, supply);
+        (,,,, uint8 borrowAction) = _decodeThrough(aaveAdapter, borrow);
+
+        assertEq(supplyAction, uint8(VaelTypes.ActionType.AaveSupply));
+        assertEq(borrowAction, uint8(VaelTypes.ActionType.AaveBorrow));
+        assertTrue(supplyAction != borrowAction);
+    }
+
     /// @dev A real swap receipt carries ERC-20 Transfers beside the Swap. Each adapter must pick
     /// out only its own, which is what makes the declining handler in VaelAscBase work.
     function test_RealSwapReceiptAlsoCarriesTransfers() public view {
