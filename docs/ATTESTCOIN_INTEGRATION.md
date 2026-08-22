@@ -218,6 +218,11 @@ Full detail in [E2E_LOG.md](./E2E_LOG.md).
 Every run released exactly the quest reward, minted a badge, and claimed the replay key. A replay of
 the portal transaction was refused at preflight with `AlreadyClaimed` and cost no gas.
 
+`submitBatch` was also exercised live: two source transactions four blocks apart, each with its
+own continuity proof (six roots and two), in one Creditcoin transaction
+[`0xfe132531…350a50`](https://creditcoin-testnet.blockscout.com/tx/0xfe132531f9ffd797fccc3b7af36309ff96c90302f62aac51f56e17c17d350a50)
+for 1,174,990 gas, about 21% less than submitting the two separately.
+
 The exact proof material for four of these is committed under `contracts/test/fixtures/`, and
 `contracts/test/RealFixtures.t.sol` replays those bytes through the real adapters offline, so the
 decoding is regression-tested against what the network actually produced rather than against

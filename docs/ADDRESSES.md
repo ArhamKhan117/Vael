@@ -35,7 +35,11 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 | `ValidationRegistry` | [`0x9BE39f19b55792285D495302D872160dB2285a65`](https://creditcoin-testnet.blockscout.com/address/0x9BE39f19b55792285D495302D872160dB2285a65) | [`0x0e56c603…6bd9ca`](https://creditcoin-testnet.blockscout.com/tx/0x0e56c603808ddc5724251ecbf0fd29dbc31fa156b2f8e89617e25ac1326bd9ca) | 5455357 | verified |
 | `AgentRegistryAdapter` | [`0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d`](https://creditcoin-testnet.blockscout.com/address/0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d) | [`0x8f77ab8f…11d4f4`](https://creditcoin-testnet.blockscout.com/tx/0x8f77ab8f6ffa44bfdd2a5e06456ee84b046da6f19a9b2ec100a07bcc5711d4f4) | 5455358 | verified |
 
-All nine are source-verified on Blockscout. Re-check with `contracts/script/check-verification.sh`.
+Every contract is source-verified on Blockscout. Re-check with
+`contracts/script/check-verification.sh`, which asks the explorer what it actually holds rather
+than trusting the `OK` that `forge verify-contract` prints on submission. That distinction matters:
+QuestASC v3 was submitted successfully and stayed unverified for a day, and the submit output gave
+no hint. `verify-blockscout.sh` now ends by running the checker.
 
 ### Adapters
 

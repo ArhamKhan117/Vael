@@ -69,4 +69,9 @@ submit "$MANAGER"    src/QuestManager.sol:QuestManager \
 submit "$ESCROW"     src/CampaignEscrow.sol:CampaignEscrow \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
-printf '\nSubmitted. Poll status with script/check-verification.sh\n'
+# A submission returning OK does not mean the contract ended up verified: QuestASC v3 was
+# accepted and stayed unverified, and nothing noticed because the submit output looked fine.
+# Always finish by asking the explorer what it actually holds.
+printf '\nWaiting for the explorer to publish, then checking what it actually holds\n'
+sleep 25
+exec "$CONTRACTS_DIR/script/check-verification.sh"

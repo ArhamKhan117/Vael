@@ -51,3 +51,38 @@ Every log scan is chunked.
 ```bash
 pnpm --filter @vael/api test
 ```
+
+## The Attestcoin worker
+
+```bash
+pnpm --filter @vael/api worker
+```
+
+It watches Sepolia for logs from emitters that quests care about, records what it sees **before**
+doing any network work, then walks each submission through
+`detected → attesting → proving → submitted → verified`, or `failed` with a reason and an attempt
+count.
+
+Persisting first is what makes a restart safe: a crash between observing a log and proving it
+leaves a row the next start picks up, rather than losing the player's action. State goes to
+Supabase when `SUPABASE_URL` is a real URL, otherwise to `apps/api/.state/worker-state.json`, which
+is gitignored.
+
+A thrown error during a step is treated as transient by default: an RPC timeout or a rate limit
+counts an attempt, keeps the row's stage, and backs off. Terminal failure is reserved for what
+retrying cannot fix, such as a rule the action does not satisfy.
+
+The worker is a convenience, never a trust dependency. It can only submit proofs; the chain decides
+whether they are valid, and a player can always claim from their own wallet instead.
+
+### Scripts
+
+| Script | What it does |
+|---|---|
+| `scripts/e2e-portal.ts` | Full portal loop, and `--replay <tx>` to prove a replay is refused |
+| `scripts/e2e-actions.ts` | `--action erc20\|swap\|supply\|borrow`, or `--batch a,b` |
+| `scripts/prep-worker-run.ts` | Stages a Sepolia action and leaves the proof to the worker |
+| `scripts/worker.ts` | The long-running worker |
+
+The action scripts capture the exact proof material to `contracts/test/fixtures/`, which
+`contracts/test/RealFixtures.t.sol` replays offline.
