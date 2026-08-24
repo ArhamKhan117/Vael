@@ -84,11 +84,32 @@ All business logic, rewards, and game state live on Creditcoin.
 4. A proof is built for that exact transaction and submitted to `QuestASC`, either by the worker or by the player's own wallet.
 5. `QuestASC` verifies the proof through the block prover precompile, decodes the receipt, applies the rule, and releases VAEL, a soul-bound badge, hero XP, and raid damage in one transaction.
 
+## The game
+
+Verified actions do more than pay out. Two modules attach to `QuestASC` as completion hooks and
+react to every proof it accepts:
+
+- **`VaelHero`** — a soul-bound ERC-721, one per wallet, free to mint. Each verified action grants
+  XP by type (portal 50, transfer 60, swap 100, supply 120, borrow 150), scaled 1.5x at five times
+  the quest minimum and 2x at twenty-five, and feeds one of strength, agility, or intellect. There
+  is no function that grants XP by hand.
+- **`RaidBoss`** — one community boss per season. Damage is `base(action) * (10 + heroLevel) / 10 *
+  tier`, so levelling your hero makes you matter more in the raid. When the boss dies the loot pool
+  splits by damage share, the last hitter takes a reserved 5%, and every contributor can claim a
+  RaidVictory badge.
+
+Both reject any caller that is not `QuestASC`, and both bind to it one-shot. Hooks run after the
+reward is paid, inside `try/catch` with a gas cap, so a broken game module can never cost a player
+their reward.
+
+`/hero` and `/raid` render with Phaser 3. React owns the wallet, the data, and every write; Phaser
+only draws.
+
 ## Repository
 
 | Path | What it is |
 |---|---|
-| `apps/web` | Next.js 16 app: quests, campaigns, Studio, leaderboard |
+| `apps/web` | Next.js 16 app: quests, campaigns, Studio, hero, raid, leaderboard |
 | `apps/api` | Express backend: quest agent, Supabase cache, Attestcoin proof worker |
 | `contracts` | Foundry project for Creditcoin and Sepolia |
 | `docs/SPEC.md` | Source of truth for architecture, contracts, constants, and phases |

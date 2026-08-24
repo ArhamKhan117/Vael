@@ -113,13 +113,23 @@ Generate a quest that fulfills the goal. Derive verificationParams from the goal
   ],
 ])
 
-const groqModel = new ChatGroq({
+// Built on first use, so a missing Groq key is a 503 from the AI routes rather than a crash that
+// stops the whole API from serving anything.
+let groqModel: ChatGroq | undefined
+function getGroqModel(): ChatGroq {
+  if (!groqModel) groqModel = buildGroqModel()
+  return groqModel
+}
+
+function buildGroqModel(): ChatGroq {
+  return new ChatGroq({
   apiKey: serviceEnv().GROQ_API_KEY,
   model: "openai/gpt-oss-20b",
   temperature: 0.3,
-})
+  })
+}
 
-const chain = questPrompt.pipe(groqModel).pipe(parser)
+const chain = () => questPrompt.pipe(getGroqModel()).pipe(parser)
 
 export async function generateQuestWithGroq(rawInput: unknown) {
   const input = generationInputSchema.parse(rawInput)
@@ -140,7 +150,7 @@ export async function generateQuestWithGroq(rawInput: unknown) {
   // Get format instructions to pass as variable
   const formatInstructions = parser.getFormatInstructions()
 
-  const questDraft = (await chain.invoke({
+  const questDraft = (await chain().invoke({
     projectName: input.projectName,
     protocol: protocol.name,
     protocolInfo,

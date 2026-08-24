@@ -45,6 +45,13 @@ const envSchema = z.object({
   WORKER_BATCH_MAX_SPAN: z.coerce.number().int().positive().default(1000),
   ATTESTATION_WAIT_TIMEOUT_MS: z.coerce.number().int().positive().default(1_200_000),
 
+  /**
+   * Where worker and indexer state lives. Explicit on purpose: a configured SUPABASE_URL used to
+   * silently switch the store, so an operator who set it for the AI cache found the worker
+   * quietly writing somewhere else.
+   */
+  WORKER_STORE: z.enum(["file", "supabase"]).default("file"),
+
   // Attestcoin
   SOURCE_CHAIN_KEY: z.coerce.number().int().nonnegative().default(1),
   PROOF_BUILDER_URL: z.string().url().default("https://prover.cc3-testnet.creditcoin.network"),
@@ -91,18 +98,42 @@ const serviceEnvSchema = z.object({
 
 export type ServiceEnv = z.infer<typeof serviceEnvSchema>
 
+/**
+ * Thrown when a route needs a third-party credential the operator has not configured.
+ *
+ * Carries an HTTP status so the error handler can answer 503 with something a human can act on,
+ * rather than a 500 that looks like a bug in Vael.
+ */
+export class ServiceUnavailableError extends Error {
+  readonly status = 503
+  constructor(missing: string) {
+    super(
+      `This endpoint needs credentials that are not configured: ${missing}. ` +
+        "The quest, proof, hero, and raid endpoints do not need them."
+    )
+    this.name = "ServiceUnavailableError"
+  }
+}
+
 let cachedServiceEnv: ServiceEnv | undefined
+
+/**
+ * Whether the third-party credentials are configured, without throwing.
+ *
+ * Used to decide whether to start the optional background jobs. Asking first is better than
+ * starting them and letting each tick fail: a log full of the same credential error every minute
+ * buries the errors that matter.
+ */
+export function hasServiceEnv(): boolean {
+  return serviceEnvSchema.safeParse(process.env).success
+}
 
 export function serviceEnv(): ServiceEnv {
   if (!cachedServiceEnv) {
     const parsed = serviceEnvSchema.safeParse(process.env)
     if (!parsed.success) {
       const missing = parsed.error.issues.map((issue) => issue.path.join(".")).join(", ")
-      throw new Error(
-        `Missing or invalid service credentials: ${missing}. ` +
-          "These are required for AI quest generation, IPFS pinning, and the Supabase cache. " +
-          "The Attestcoin worker does not need them."
-      )
+      throw new ServiceUnavailableError(missing)
     }
     cachedServiceEnv = parsed.data
   }

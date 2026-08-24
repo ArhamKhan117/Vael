@@ -5,7 +5,7 @@ player really did the thing.
 There is no trusted backend key anywhere in the completion path.
 This document describes exactly how that works, with the deployed addresses and the live evidence.
 
-Status: **milestone 3b complete.** All five action types are decoded end to end on the live networks:
+Status: **milestone 4 complete.** All five action types are decoded end to end on the live networks:
 a Vael portal check-in, an ERC-20 transfer, a Uniswap v3 swap, an Aave v3 supply, and an Aave v3
 borrow. Every one has a real Sepolia transaction and a real Creditcoin verification, listed in
 section 6.
@@ -227,6 +227,52 @@ The exact proof material for four of these is committed under `contracts/test/fi
 `contracts/test/RealFixtures.t.sol` replays those bytes through the real adapters offline, so the
 decoding is regression-tested against what the network actually produced rather than against
 hand-written shapes.
+
+## 6a. Game state changes only through verified proofs
+
+Hero XP and raid damage are not awarded by a backend, a cron job, or an owner function. They arrive
+as `ICompletionHook` callbacks from `QuestASC`, after it has verified an Attestcoin proof, and each
+module rejects any caller that is not QuestASC:
+
+```solidity
+// VaelHero.onQuestCompleted and RaidBoss.onQuestCompleted both begin
+if (msg.sender != questASC) revert ...OnlyQuestASC(msg.sender);
+```
+
+`setQuestASC` is one-shot on both, so no later owner action can point them at something that has
+not verified a proof. There is no `grantXP` and no `dealDamage` reachable from outside.
+
+You can check that without trusting this document:
+
+```bash
+# Reverts: the deployer is not QuestASC.
+cast call $VAEL_HERO_ADDRESS "onQuestCompleted(uint64,uint256,address,uint8,address,uint256,uint8,uint64,bytes32)" \
+  1 1 $DEPLOYER_ADDRESS 0 0x0000000000000000000000000000000000000000 0 1 0 $(cast keccak x) \
+  --from $DEPLOYER_ADDRESS --rpc-url creditcoin
+```
+
+### The receipts
+
+One Creditcoin transaction carries the proof, the payout, and both game modules' reactions:
+
+| Transaction | Events |
+|---|---|
+| [`0x8cb56237…893017`](https://creditcoin-testnet.blockscout.com/tx/0x8cb56237f0702384a76515425056ffeb9010e6c73aa066c0a14b5c46d6893017) | `QuestCompleted`, `QuestProofApplied`, `HeroXPGranted`, `RaidDamage` |
+| [`0x81ad34a2…b28301`](https://creditcoin-testnet.blockscout.com/tx/0x81ad34a268e852997cb7c5b03e550fb6c7a4793a3c58f386147f24d435b28301) | the same, plus `RaidDefeated` |
+
+Five verified portal actions took the hero to level 2 with strength 5, took a 500 HP boss to zero,
+and paid a 1000 VAEL loot pool. Every number is reproducible from the formulas and the proofs;
+`docs/E2E_LOG.md` works through the arithmetic.
+
+### Hooks cannot hold a reward hostage
+
+Each hook runs after the payout, inside `try/catch`, with a 400,000 gas cap. A hook that reverts or
+runs out of gas produces a `HookFailed` event and nothing else: the player still has their VAEL and
+their badge. Covered by tests that register a deliberately reverting hook and a deliberately
+gas-burning one and assert the reward lands anyway.
+
+This is also why a defeated boss is harmless rather than an error. `RaidBoss.onQuestCompleted`
+returns early when the season is over, so a quest completing between seasons still pays.
 
 ## 7. Setup
 

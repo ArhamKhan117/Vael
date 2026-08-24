@@ -12,18 +12,24 @@ export { SupabaseWorkerStore } from "./supabaseStore"
 export const DEFAULT_STATE_DIR = join(__dirname, "../../../.state")
 
 /**
- * Pick a store from the environment.
+ * Pick a store from `WORKER_STORE`, which defaults to `file`.
  *
- * Supabase when `SUPABASE_URL` is a real URL and a service role key is present; otherwise a JSON
- * file. The worker must be runnable by someone who has a funded testnet key and nothing else, so
- * the absence of Supabase is a supported configuration rather than an error.
+ * Explicit rather than inferred. Deciding from whether `SUPABASE_URL` happened to be set meant an
+ * operator who configured Supabase for the AI cache silently moved the worker's state with it, and
+ * the only symptom was a worker that appeared to have forgotten everything. Choosing `supabase`
+ * without the credentials is an error, not a quiet fallback: falling back would hide the same
+ * problem in the other direction.
  */
 export function createWorkerStore(stateDir: string = DEFAULT_STATE_DIR): WorkerStore {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const usable =
-    !!url && !!key && /^https?:\/\//.test(url) && !url.includes("FILL_ME") && key.length > 20
-
-  if (usable) return new SupabaseWorkerStore(url, key)
+  if (process.env.WORKER_STORE === "supabase") {
+    const url = process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key || !/^https?:\/\//.test(url)) {
+      throw new Error(
+        "WORKER_STORE=supabase but SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are not both set."
+      )
+    }
+    return new SupabaseWorkerStore(url, key)
+  }
   return new FileWorkerStore(stateDir)
 }

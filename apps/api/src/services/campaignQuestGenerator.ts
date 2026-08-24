@@ -107,13 +107,23 @@ Generate a quest from the campaign above. Every value (goal, verificationParams,
   ],
 ])
 
-const groqModel = new ChatGroq({
+// Built on first use, so a missing Groq key is a 503 from the AI routes rather than a crash that
+// stops the whole API from serving anything.
+let groqModel: ChatGroq | undefined
+function getGroqModel(): ChatGroq {
+  if (!groqModel) groqModel = buildGroqModel()
+  return groqModel
+}
+
+function buildGroqModel(): ChatGroq {
+  return new ChatGroq({
   apiKey: serviceEnv().GROQ_API_KEY,
   model: "openai/gpt-oss-20b",
   temperature: 0.3,
-})
+  })
+}
 
-const chain = campaignQuestPrompt.pipe(groqModel).pipe(parser)
+const chain = () => campaignQuestPrompt.pipe(getGroqModel()).pipe(parser)
 
 /** Serialize campaign for AI context with a compact, curated subset of fields. */
 function buildCampaignContext(campaign: Campaign): string {
@@ -202,7 +212,7 @@ export async function generateQuestFromCampaign(
 
   const protocolAddressToUse = getProtocolRouterAddress(protocolAddress)
 
-  const questDraft = (await chain.invoke({
+  const questDraft = (await chain().invoke({
     campaignContext: buildCampaignContext(campaign),
     protocol: protocol.name,
     protocolInfo: `${protocol.name} - ${protocol.description}`,
