@@ -17,6 +17,7 @@ import Link from "next/link";
 import Marquee from "react-fast-marquee";
 import { TypeAnimation } from "react-type-animation";
 import PartnershipCarousel from "@/components/partnership-carousel";
+import { LiveRaidBanner } from "@/components/live-raid-banner";
 import { FaqSection } from "@/components/faq-section";
 import { api } from "@/lib/api";
 // import TextType from "@/components/ui/TextType";
@@ -263,6 +264,10 @@ export default function Home() {
         {/* Invisible sentinel used by the navbar to detect when hero ends */}
         <div id="hero-end" className="absolute bottom-0 mt-24 h-px w-full" />
       </section>
+
+      <div className="m-5 md:m-10">
+        <LiveRaidBanner />
+      </div>
 
       <div className="border border-[#1A1A1A] m-5 md:m-10">
         <section className="p-10 space-y-8 border-b border-[#1A1A1A]">

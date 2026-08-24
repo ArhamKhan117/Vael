@@ -1,4 +1,6 @@
-"use client";
+"use client"
+
+import { LeaderboardTables } from "./leaderboard-client";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
@@ -475,6 +477,9 @@ export default function LeaderboardPage() {
     return (
         <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
             <div className="mx-auto w-full space-y-6">
+                {/* Chain-derived rankings. Everything below this is proof-backed. */}
+                <LeaderboardTables />
+
                 <TopStatsStrip />
                 <HallOfFameOrbit rows={leaderboardRows} />
 

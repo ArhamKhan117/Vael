@@ -25,6 +25,9 @@ import { CreditcoinIndexer } from "../indexer"
  * they are valid.
  */
 
+/** `QuestActionPerformed(uint256,address,uint8,address,uint256)`. */
+const PORTAL_TOPIC = "0x3ffa602a6835802daaea4f4c4102da0a312d481769471dd020a1512afd9d8022"
+
 const MAX_ATTEMPTS = 5
 const POLL_INTERVAL_MS = 30_000
 /** Sepolia confirmations before a log is considered stable enough to prove. */
@@ -201,12 +204,22 @@ export class AttestcoinWorker {
   private async questForLog(entry: {
     transactionHash: string
     address: string
+    topics: readonly string[]
   }): Promise<{ quest: IndexedQuest; reason: string } | undefined> {
     const emitter = entry.address.toLowerCase()
     const quests = await this.store.allQuests()
 
     const open = quests.filter((q) => q.accepted && !q.completed)
     if (open.length === 0) return undefined
+
+    // Vael's own portal event names the quest in topics[1], so there is nothing to guess. This
+    // matters whenever a player has several open quests against the same emitter: without it,
+    // every check-in would resolve to whichever they accepted last.
+    if (entry.topics[0] === PORTAL_TOPIC && entry.topics.length > 1) {
+      const named = Number(BigInt(entry.topics[1]!))
+      const quest = open.find((q) => q.questId === named)
+      if (quest) return { quest, reason: "named by the portal event" }
+    }
 
     const byEmitter = open
       .filter((q) => q.emitter === emitter)

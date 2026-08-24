@@ -7,6 +7,7 @@ import { campaignsRouter } from "./routes/campaigns"
 import { feedbackRouter } from "./routes/feedback"
 import { questProofsRouter } from "./routes/questProofs"
 import { questsRouter } from "./routes/quests"
+import { gameRouter } from "./routes/game"
 import { startQuestPolling } from "./polling/questPolling"
 
 // The cron scheduler starts itself on import.
@@ -27,6 +28,7 @@ app.use("/campaigns", campaignsRouter)
 app.use("/feedback", feedbackRouter)
 app.use("/quests", questsRouter)
 app.use("/quests", questProofsRouter)
+app.use("/", gameRouter)
 
 // There is deliberately no completion endpoint. A quest completes only when QuestASC
 // verifies an Attestcoin proof on Creditcoin. No backend key can stand in for that.
