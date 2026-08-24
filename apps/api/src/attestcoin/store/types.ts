@@ -33,6 +33,53 @@ export interface ProofSubmission {
   updatedAt: string
 }
 
+/**
+ * An indexed quest, as the chain describes it.
+ *
+ * The worker needs this to answer "which quest does this Sepolia log belong to?" for a third-party
+ * protocol whose event knows nothing about Vael. Everything here is derived from Creditcoin events,
+ * so the index is rebuildable and never a source of truth.
+ */
+export interface IndexedQuest {
+  questId: number
+  participant: string
+  sourceChainKey: number
+  actionType: number
+  emitter: string
+  token: string
+  minAmount: string
+  /** Set once QuestAccepted is seen, which is also the source-height anchor. */
+  acceptedAtSourceHeight?: number
+  accepted: boolean
+  completed: boolean
+  updatedAt: string
+}
+
+/** A hero, as the chain describes it. */
+export interface IndexedHero {
+  player: string
+  tokenId: number
+  level: number
+  xp: string
+  strength: number
+  agility: number
+  intellect: number
+  streak: number
+  updatedAt: string
+}
+
+/** One verified hit on the boss. */
+export interface IndexedRaidHit {
+  seasonId: number
+  player: string
+  damage: string
+  hpRemaining: string
+  actionType: number
+  replayKey: string
+  creditcoinBlock: number
+  createdAt: string
+}
+
 export interface WorkerCursor {
   chainKey: number
   emitter: string
@@ -69,6 +116,32 @@ export interface WorkerStore {
   getCursor(chainKey: number, emitter: string): Promise<WorkerCursor | undefined>
 
   setCursor(chainKey: number, emitter: string, lastBlock: number): Promise<void>
+
+  // ---------------------------------------------------------------- index
+
+  upsertQuest(quest: IndexedQuest): Promise<void>
+
+  getQuest(questId: number): Promise<IndexedQuest | undefined>
+
+  /**
+   * Quests this player has accepted and not completed, most recently accepted first.
+   *
+   * This is how a third-party log is resolved to a quest: a Uniswap `Swap` cannot name a quest, so
+   * the worker asks which of the player's open quests that action could satisfy.
+   */
+  openQuestsFor(participant: string): Promise<IndexedQuest[]>
+
+  allQuests(): Promise<IndexedQuest[]>
+
+  upsertHero(hero: IndexedHero): Promise<void>
+
+  getHero(player: string): Promise<IndexedHero | undefined>
+
+  allHeroes(): Promise<IndexedHero[]>
+
+  addRaidHit(hit: IndexedRaidHit): Promise<void>
+
+  raidHits(seasonId: number): Promise<IndexedRaidHit[]>
 }
 
 /** Statuses that still need the worker to do something. */

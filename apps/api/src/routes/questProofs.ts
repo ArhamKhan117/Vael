@@ -138,7 +138,11 @@ questProofsRouter.get("/:id/proof-status", async (req, res, next) => {
     if (frontier.ok) attestedHeight = Number(frontier.value.height)
 
     if (!latest) {
-      return res.json({ stage: "not_started", ...(attestedHeight ? { attestedHeight } : {}) })
+      // No submission yet. The index still knows whether the quest was completed, which happens
+      // whenever someone claimed it themselves rather than leaving it to the worker.
+      const indexed = await store.getQuest(questId)
+      const stage = indexed?.completed ? "verified" : "not_started"
+      return res.json({ stage, ...(attestedHeight ? { attestedHeight } : {}) })
     }
 
     return res.json({

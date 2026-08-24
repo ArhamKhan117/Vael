@@ -8,7 +8,8 @@ import { fetchProof, verifyMerkleRootLocally } from "./prove"
 import { submitProof } from "./submit"
 import { QUEST_ASC_ABI, QUEST_MANAGER_ABI } from "./questAscAbi"
 import { scanLogs } from "./watcher"
-import { ProofSubmission, WorkerStore, createWorkerStore } from "./store"
+import { IndexedQuest, ProofSubmission, WorkerStore, createWorkerStore } from "./store"
+import { CreditcoinIndexer } from "../indexer"
 
 /**
  * The long-running proof worker.
@@ -53,6 +54,7 @@ export class AttestcoinWorker {
   private readonly questManager: Contract
   private readonly questAscAddress: string
   private readonly store: WorkerStore
+  private readonly indexer: CreditcoinIndexer
   private stopping = false
 
   constructor(private readonly options: WorkerOptions = {}) {
@@ -62,6 +64,7 @@ export class AttestcoinWorker {
     this.questAscAddress = requireEnv("QUEST_ASC_ADDRESS")
     this.questManager = new Contract(env.QUEST_MANAGER_ADDRESS, QUEST_MANAGER_ABI, this.cc)
     this.store = options.store ?? createWorkerStore()
+    this.indexer = new CreditcoinIndexer(this.store, this.cc)
   }
 
   async start(): Promise<void> {
@@ -95,8 +98,19 @@ export class AttestcoinWorker {
     this.stopping = true
   }
 
-  /** One pass: observe, then advance every pending submission by one step. */
+  /** One pass: index Creditcoin, observe Sepolia, then advance every pending submission. */
   async tick(): Promise<void> {
+    // Indexing first, so a quest accepted moments ago is already resolvable when the Sepolia log
+    // for it turns up in the same pass.
+    const indexed = await this.indexer.scanOnce()
+    if (indexed.questsTouched > 0 || indexed.heroesTouched > 0 || indexed.raidHits > 0) {
+      log(
+        `indexed ${indexed.fromBlock}..${indexed.toBlock}: ` +
+          `${indexed.questsTouched} quest(s), ${indexed.heroesTouched} hero update(s), ` +
+          `${indexed.raidHits} raid hit(s)`
+      )
+    }
+
     const scannedTo = await this.observe()
     const pending = await this.store.pendingSubmissions()
     this.options.onTick?.({ pending: pending.length, scannedTo })
@@ -152,18 +166,20 @@ export class AttestcoinWorker {
 
     // Persist before any network work, so a crash here still leaves a record of what was seen.
     for (const entry of scan.value.logs) {
-      const questId = await this.questForLog(entry)
-      if (questId === undefined) continue
+      const match = await this.questForLog(entry)
+      if (!match) continue
       const created = await this.store.upsertSubmission({
-        questIdOnChain: questId,
-        participant: (await this.wallet.getAddress()).toLowerCase(),
+        questIdOnChain: match.quest.questId,
+        participant: match.quest.participant,
         sourceChainKey: SEPOLIA_CHAIN_KEY,
         sourceTxHash: entry.transactionHash,
         sourceBlock: entry.blockNumber,
-        actionType: 0,
+        actionType: match.quest.actionType,
         status: "detected",
       })
-      log(`detected ${created.sourceTxHash} for quest ${questId}`)
+      if (created.status === "detected" && created.attempts === 0) {
+        log(`detected ${created.sourceTxHash} for quest ${match.quest.questId} (${match.reason})`)
+      }
     }
 
     // Only advance over what was actually covered.
@@ -172,21 +188,37 @@ export class AttestcoinWorker {
   }
 
   /**
-   * Which quest, if any, a log belongs to.
+   * Which quest, if any, an observed Sepolia log belongs to.
    *
-   * milestone 3b resolves this from an explicit mapping supplied by the operator, because a
-   * third-party protocol's log carries no quest id. milestone 4 replaces it with the accepted-quest
-   * index once quests are indexed off chain.
+   * A third-party protocol's event cannot name a quest, so the answer comes from the chain-derived
+   * index: of the quests this deployment knows are accepted and not yet completed, which one names
+   * this emitter or this token? Most recently accepted first, because a player who accepted the
+   * same kind of quest twice means the newer one.
+   *
+   * Being wrong here is cheap and safe. The quest id is only a hint, and QuestASC re-checks every
+   * rule against the proved log: a mismatched guess is declined on chain, not paid.
    */
-  private async questForLog(entry: { transactionHash: string }): Promise<number | undefined> {
-    const mapping = process.env.WORKER_TX_QUEST_MAP
-    if (!mapping) return undefined
-    for (const pair of mapping.split(",")) {
-      const [hash, quest] = pair.split(":")
-      if (hash && quest && hash.toLowerCase() === entry.transactionHash.toLowerCase()) {
-        return Number(quest)
-      }
-    }
+  private async questForLog(entry: {
+    transactionHash: string
+    address: string
+  }): Promise<{ quest: IndexedQuest; reason: string } | undefined> {
+    const emitter = entry.address.toLowerCase()
+    const quests = await this.store.allQuests()
+
+    const open = quests.filter((q) => q.accepted && !q.completed)
+    if (open.length === 0) return undefined
+
+    const byEmitter = open
+      .filter((q) => q.emitter === emitter)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    if (byEmitter[0]) return { quest: byEmitter[0], reason: "emitter match" }
+
+    // An ERC-20 transfer is emitted by the token itself, so the rule's token is the emitter.
+    const byToken = open
+      .filter((q) => q.token === emitter)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    if (byToken[0]) return { quest: byToken[0], reason: "token match" }
+
     return undefined
   }
 

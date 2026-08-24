@@ -1,6 +1,9 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 import {
+  IndexedHero,
+  IndexedQuest,
+  IndexedRaidHit,
   PENDING_STATUSES,
   ProofSubmission,
   WorkerCursor,
@@ -178,5 +181,155 @@ export class SupabaseWorkerStore implements WorkerStore {
       { onConflict: "chain_key,emitter" }
     )
     if (error) throw new Error(`failed to write cursor: ${error.message}`)
+  }
+
+  // ---------------------------------------------------------------- index
+
+  async upsertQuest(quest: IndexedQuest): Promise<void> {
+    const { error } = await this.client.from("indexed_quests").upsert(
+      {
+        quest_id: quest.questId,
+        participant: quest.participant.toLowerCase(),
+        source_chain_key: quest.sourceChainKey,
+        action_type: quest.actionType,
+        emitter: quest.emitter.toLowerCase(),
+        token: quest.token.toLowerCase(),
+        min_amount: quest.minAmount,
+        accepted_at_source_height: quest.acceptedAtSourceHeight ?? null,
+        accepted: quest.accepted,
+        completed: quest.completed,
+        updated_at: quest.updatedAt,
+      },
+      { onConflict: "quest_id" }
+    )
+    if (error) throw new Error(`failed to index quest ${quest.questId}: ${error.message}`)
+  }
+
+  async getQuest(questId: number): Promise<IndexedQuest | undefined> {
+    const { data } = await this.client
+      .from("indexed_quests")
+      .select("*")
+      .eq("quest_id", questId)
+      .maybeSingle()
+    return data ? questFromRow(data) : undefined
+  }
+
+  async openQuestsFor(participant: string): Promise<IndexedQuest[]> {
+    const { data, error } = await this.client
+      .from("indexed_quests")
+      .select("*")
+      .eq("participant", participant.toLowerCase())
+      .eq("accepted", true)
+      .eq("completed", false)
+      .order("updated_at", { ascending: false })
+    if (error) throw new Error(`failed to read open quests: ${error.message}`)
+    return (data ?? []).map(questFromRow)
+  }
+
+  async allQuests(): Promise<IndexedQuest[]> {
+    const { data, error } = await this.client.from("indexed_quests").select("*")
+    if (error) throw new Error(`failed to read quests: ${error.message}`)
+    return (data ?? []).map(questFromRow)
+  }
+
+  async upsertHero(hero: IndexedHero): Promise<void> {
+    const { error } = await this.client.from("hero_snapshots").upsert(
+      {
+        address: hero.player.toLowerCase(),
+        token_id: hero.tokenId,
+        level: hero.level,
+        xp: hero.xp,
+        strength: hero.strength,
+        agility: hero.agility,
+        intellect: hero.intellect,
+        streak: hero.streak,
+        updated_at: hero.updatedAt,
+      },
+      { onConflict: "address" }
+    )
+    if (error) throw new Error(`failed to index hero: ${error.message}`)
+  }
+
+  async getHero(player: string): Promise<IndexedHero | undefined> {
+    const { data } = await this.client
+      .from("hero_snapshots")
+      .select("*")
+      .eq("address", player.toLowerCase())
+      .maybeSingle()
+    return data ? heroFromRow(data) : undefined
+  }
+
+  async allHeroes(): Promise<IndexedHero[]> {
+    const { data, error } = await this.client.from("hero_snapshots").select("*")
+    if (error) throw new Error(`failed to read heroes: ${error.message}`)
+    return (data ?? []).map(heroFromRow)
+  }
+
+  async addRaidHit(hit: IndexedRaidHit): Promise<void> {
+    // The replay key makes a hit idempotent, so a re-scan of the same range cannot double-count.
+    const { error } = await this.client.from("raid_damage").upsert(
+      {
+        season_id: hit.seasonId,
+        player: hit.player.toLowerCase(),
+        damage: hit.damage,
+        query_id: hit.replayKey,
+        creditcoin_tx_hash: null,
+        created_at: hit.createdAt,
+      },
+      { onConflict: "season_id,query_id" }
+    )
+    if (error) throw new Error(`failed to index raid hit: ${error.message}`)
+  }
+
+  async raidHits(seasonId: number): Promise<IndexedRaidHit[]> {
+    const { data, error } = await this.client
+      .from("raid_damage")
+      .select("*")
+      .eq("season_id", seasonId)
+      .order("created_at", { ascending: false })
+    if (error) throw new Error(`failed to read raid hits: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      seasonId: row.season_id,
+      player: row.player,
+      damage: String(row.damage),
+      hpRemaining: "0",
+      actionType: 0,
+      replayKey: row.query_id,
+      creditcoinBlock: 0,
+      createdAt: row.created_at,
+    }))
+  }
+}
+
+function questFromRow(row: any): IndexedQuest {
+  const quest: IndexedQuest = {
+    questId: row.quest_id,
+    participant: row.participant,
+    sourceChainKey: row.source_chain_key,
+    actionType: row.action_type,
+    emitter: row.emitter,
+    token: row.token,
+    minAmount: String(row.min_amount ?? "0"),
+    accepted: Boolean(row.accepted),
+    completed: Boolean(row.completed),
+    updatedAt: row.updated_at,
+  }
+  if (row.accepted_at_source_height != null) {
+    quest.acceptedAtSourceHeight = Number(row.accepted_at_source_height)
+  }
+  return quest
+}
+
+function heroFromRow(row: any): IndexedHero {
+  return {
+    player: row.address,
+    tokenId: Number(row.token_id ?? 0),
+    level: Number(row.level ?? 1),
+    xp: String(row.xp ?? "0"),
+    strength: Number(row.strength ?? 0),
+    agility: Number(row.agility ?? 0),
+    intellect: Number(row.intellect ?? 0),
+    streak: Number(row.streak ?? 0),
+    updatedAt: row.updated_at,
   }
 }
