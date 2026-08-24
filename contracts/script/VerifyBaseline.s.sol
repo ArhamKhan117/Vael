@@ -14,6 +14,8 @@ import {QuestManager} from "../src/QuestManager.sol";
 import {CampaignEscrow} from "../src/CampaignEscrow.sol";
 import {QuestASC} from "../src/QuestASC.sol";
 import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
+import {VaelHero} from "../src/game/VaelHero.sol";
+import {RaidBoss} from "../src/game/RaidBoss.sol";
 
 /**
  * @title VerifyBaseline
@@ -65,6 +67,8 @@ contract VerifyBaseline is Script {
         QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_ADDRESS"));
         QuestASC questASC = QuestASC(vm.envAddress("QUEST_ASC_ADDRESS"));
         address questPortal = vm.envAddress("QUEST_PORTAL_ADDRESS");
+        VaelHero hero = VaelHero(vm.envAddress("VAEL_HERO_ADDRESS"));
+        RaidBoss raid = RaidBoss(vm.envAddress("RAID_BOSS_ADDRESS"));
         uint64 sepoliaChainKey = uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1)));
         CampaignEscrow escrow = CampaignEscrow(vm.envAddress("CAMPAIGN_ESCROW_ADDRESS"));
 
@@ -78,6 +82,8 @@ contract VerifyBaseline is Script {
         _hasCode("BadgeNFT", address(badge));
         _hasCode("QuestManager", address(manager));
         _hasCode("QuestASC", address(questASC));
+        _hasCode("VaelHero", address(hero));
+        _hasCode("RaidBoss", address(raid));
         _hasCode("CampaignEscrow", address(escrow));
 
         console.log("=== QuestManager immutables ===");
@@ -140,13 +146,28 @@ contract VerifyBaseline is Script {
             address(questASC.VERIFIER()),
             0x0000000000000000000000000000000000000FD2
         );
+        // All five action types are decodable now. Whether a given log is accepted still depends
+        // on an adapter being registered for its signature and its emitter being allowlisted.
         _isTrue("QuestASC decodes Portal", questASC.isActionSupported(VaelTypes.ActionType.Portal));
-        require(
-            !questASC.isActionSupported(VaelTypes.ActionType.UniswapSwap),
-            "VerifyBaseline: UniswapSwap should not be supported in milestone 3a"
-        );
+        _isTrue("QuestASC decodes UniswapSwap", questASC.isActionSupported(VaelTypes.ActionType.UniswapSwap));
+        _isTrue("QuestASC decodes Erc20Transfer", questASC.isActionSupported(VaelTypes.ActionType.Erc20Transfer));
+        _isTrue("QuestASC decodes AaveSupply", questASC.isActionSupported(VaelTypes.ActionType.AaveSupply));
+        _isTrue("QuestASC decodes AaveBorrow", questASC.isActionSupported(VaelTypes.ActionType.AaveBorrow));
+
+        console.log("=== game modules ===");
+        // Order matters: RaidBoss reads the hero level VaelHero has just updated.
+        _eq("QuestASC.hooks[0] is VaelHero", address(questASC.hooks(0)), address(hero));
+        _eq("QuestASC.hooks[1] is RaidBoss", address(questASC.hooks(1)), address(raid));
+        require(questASC.hookCount() == 2, "VerifyBaseline: expected exactly two hooks");
         checks++;
-        console.log("ok   milestone 3b action types are still refused");
+        console.log("ok   exactly two hooks registered");
+
+        // Each module must refuse callers other than QuestASC, or anyone could mint XP.
+        _eq("VaelHero.questASC", hero.questASC(), address(questASC));
+        _eq("RaidBoss.questASC", raid.questASC(), address(questASC));
+        _eq("RaidBoss.HERO", address(raid.HERO()), address(hero));
+        _eq("RaidBoss.LOOT_TOKEN", address(raid.LOOT_TOKEN()), address(token));
+        _isTrue("BadgeNFT lets RaidBoss mint", badge.minters(address(raid)));
 
         console.log("");
         console.log("VerifyBaseline: all checks passed", checks);
