@@ -3,6 +3,25 @@ import * as Phaser from "phaser"
 
 import { EventBus, GameEvents, HeroStatePayload } from "../EventBus"
 
+const TILE = 16
+
+/**
+ * Frames in `tilemap_packed.png`, a 12x11 grid of 16x16 tiles indexed row-major.
+ *
+ * These were checked by eye against a labelled contact sheet of all 132 tiles, because the first
+ * guesses were all wrong in a way nothing would have caught: 84 is the wizard, not a warrior; 85 is
+ * an unarmoured villager; 88 is a bare-chested barbarian. A hero page showing the wrong class for
+ * everyone is the kind of bug that survives every test suite.
+ */
+const AFFINITY_FRAMES = {
+  warrior: 96, // full plate, closed helm
+  rogue: 112, // green hood and headband
+  mage: 84, // purple robe, pointed hat, white beard
+} as const
+
+/** Plain stone floor tile. */
+const FLOOR_FRAME = 40
+
 /**
  * The hero card.
  *
@@ -23,7 +42,13 @@ export class HeroScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("dungeon-tiles", "/game/kenney-tiny-dungeon/tilemap_packed.png")
+    // A spritesheet, not an image. `setCrop` on a plain image trims what is drawn but leaves the
+    // object's size and origin those of the whole 192x176 sheet, so the sprite lands off-centre and
+    // scaled wrong. Loading frames properly is the only way to address one 16x16 tile.
+    this.load.spritesheet("dungeon-tiles", "/game/kenney-tiny-dungeon/tilemap_packed.png", {
+      frameWidth: TILE,
+      frameHeight: TILE,
+    })
   }
 
   create() {
@@ -63,16 +88,10 @@ export class HeroScene extends Phaser.Scene {
   /** A simple tiled floor from the Kenney sheet, so the hero has somewhere to stand. */
   private drawFloor() {
     const { width, height } = this.scale
-    const tile = 16
     const scale = 2
-    for (let x = 0; x < width; x += tile * scale) {
-      for (let y = height / 2; y < height; y += tile * scale) {
-        this.add
-          .image(x, y, "dungeon-tiles")
-          .setOrigin(0)
-          .setScale(scale)
-          .setCrop(0, 0, tile, tile)
-          .setAlpha(0.25)
+    for (let x = 0; x < width; x += TILE * scale) {
+      for (let y = height / 2; y < height; y += TILE * scale) {
+        this.add.image(x, y, "dungeon-tiles", FLOOR_FRAME).setOrigin(0).setScale(scale).setAlpha(0.3)
       }
     }
   }
@@ -93,18 +112,20 @@ export class HeroScene extends Phaser.Scene {
 
     if (!state.hasHero) {
       this.levelText?.setText("No hero yet")
-      this.statsText?.setText("Mint one. It is free, soul-bound, and one per wallet.")
       this.xpLabel?.setText("")
-      this.mintButton = this.buildMintButton(width / 2, height / 2)
+      if (state.readOnly) {
+        this.statsText?.setText("This address has not minted a hero.")
+      } else {
+        this.statsText?.setText("Mint one. It is free, soul-bound, and one per wallet.")
+        this.mintButton = this.buildMintButton(width / 2, height / 2)
+      }
       return
     }
 
     // The sprite is chosen by dominant affinity, which is itself a record of what the player did.
-    const frame = { warrior: 84, rogue: 85, mage: 88 }[state.affinity] ?? 84
     this.sprite = this.add
-      .image(width / 2, height / 2 - 10, "dungeon-tiles")
+      .image(width / 2, height / 2 - 10, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
       .setScale(4)
-      .setCrop((frame % 12) * 16, Math.floor(frame / 12) * 16, 16, 16)
 
     this.levelText?.setText(`Level ${state.level}  ${state.affinity}`)
     this.statsText?.setText(
