@@ -197,3 +197,96 @@ gameRouter.get("/leaderboard", async (req, res, next) => {
     next(error)
   }
 })
+
+/**
+ * GET /stats
+ *
+ * The five numbers the landing page and the leaderboard show. Every one of them is a sum over rows
+ * the indexer wrote from Creditcoin's own events, or a read of the boss contract itself. There is
+ * no seeded, projected, or illustrative figure anywhere in this response: if nothing has happened
+ * yet the numbers are zero, and zero is the honest answer.
+ */
+gameRouter.get("/stats", async (_req, res, next) => {
+  try {
+    const store = createWorkerStore()
+    await store.init()
+
+    const [heroes, actions, rewards] = await Promise.all([
+      store.allHeroes(),
+      store.actions(),
+      store.allRewards(),
+    ])
+
+    const totalXp = heroes.reduce((sum, hero) => sum + BigInt(hero.xp), 0n)
+    const vaelReleased = rewards.reduce((sum, reward) => sum + BigInt(reward.amount), 0n)
+
+    // Raid damage comes from the boss itself rather than a sum of indexed hits, because the
+    // contract keeps the running total and cannot be behind.
+    let season: { seasonId: number; active: boolean; totalDamage: string } = {
+      seasonId: 0,
+      active: false,
+      totalDamage: "0",
+    }
+    const raidAddress = contractAddress("RAID_BOSS_ADDRESS")
+    if (raidAddress) {
+      const raid = new Contract(raidAddress, RAID_BOSS_READ_ABI, creditcoinProvider())
+      const seasonId: bigint = await raid.getFunction("currentSeasonId").staticCall()
+      if (seasonId > 0n) {
+        const s = await raid.getFunction("currentSeason").staticCall()
+        season = {
+          seasonId: Number(seasonId),
+          active: !s[5],
+          totalDamage: s[6].toString(),
+        }
+      }
+    }
+
+    return res.json({
+      heroesMinted: heroes.length,
+      totalHeroXp: totalXp.toString(),
+      proofsVerified: actions.length,
+      vaelReleased: vaelReleased.toString(),
+      season,
+      indexedThrough: (await store.getCursor(102031, "creditcoin-index"))?.lastBlock ?? 0,
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
+ * GET /actions/:address
+ *
+ * Every action this address proved, newest first. This is the history the profile page shows.
+ */
+gameRouter.get("/actions/:address", async (req, res, next) => {
+  try {
+    const address = String(req.params.address)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      return res.status(400).json({ message: "address must be a 20-byte hex address" })
+    }
+    const limit = Math.min(Number(req.query.limit ?? 50), 200)
+    const store = createWorkerStore()
+    await store.init()
+
+    const [actions, rewards] = await Promise.all([store.actions(address), store.allRewards()])
+    const rewardByQuest = new Map<number, string>()
+    for (const reward of rewards) {
+      if (reward.recipient.toLowerCase() === address.toLowerCase()) {
+        rewardByQuest.set(reward.questId, reward.amount)
+      }
+    }
+
+    return res.json({
+      address,
+      // `actionType` stays a number: the web app already mirrors VaelTypes.ActionType and owns
+      // the labels, and a second copy of that map here would only drift from it.
+      actions: actions.slice(0, limit).map((action) => ({
+        ...action,
+        vaelReleased: rewardByQuest.get(action.questId) ?? "0",
+      })),
+    })
+  } catch (error) {
+    next(error)
+  }
+})

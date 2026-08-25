@@ -15,7 +15,7 @@ import { startQuestPolling } from "./polling/questPolling"
 // when their dependencies actually exist. The proof, hero, and raid paths never need them.
 if (hasServiceEnv()) {
   // The cron scheduler starts itself on import.
-  void import("./cron/scheduler")
+  void import("./cron/scheduler.js")
   startQuestPolling()
 } else {
   console.log(

@@ -15,6 +15,9 @@ export const INDEXER_ABI = [
   "event SeasonStarted(uint64 indexed seasonId, uint256 maxHp, uint256 lootPool)",
   "event RaidDamage(uint64 indexed seasonId, address indexed player, uint256 damage, uint256 hpRemaining, uint8 actionType, bytes32 replayKey)",
   "event RaidDefeated(uint64 indexed seasonId, address indexed lastHitter, uint256 totalDamage)",
+  // RewardVault
+  "event RewardReleased(uint256 indexed questId, address indexed recipient, uint256 amount)",
+
   "event LootClaimed(uint64 indexed seasonId, address indexed player, uint256 amount, bool lastHitBonus)",
 ] as const
 

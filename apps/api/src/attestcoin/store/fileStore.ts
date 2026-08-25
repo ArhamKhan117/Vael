@@ -2,9 +2,11 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 
 import {
+  IndexedAction,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
+  IndexedReward,
   PENDING_STATUSES,
   ProofSubmission,
   WorkerCursor,
@@ -18,6 +20,21 @@ interface FileShape {
   quests: Record<string, IndexedQuest>
   heroes: Record<string, IndexedHero>
   raidHits: IndexedRaidHit[]
+  actions: Record<string, IndexedAction>
+  rewards: Record<string, IndexedReward>
+}
+
+/** A factory, not a shared constant: two stores must never alias the same maps. */
+function emptyShape(): FileShape {
+  return {
+    submissions: {},
+    cursors: {},
+    quests: {},
+    heroes: {},
+    raidHits: [],
+    actions: {},
+    rewards: {},
+  }
 }
 
 /**
@@ -31,7 +48,7 @@ export class FileWorkerStore implements WorkerStore {
   readonly kind = "file" as const
 
   private readonly path: string
-  private data: FileShape = { submissions: {}, cursors: {}, quests: {}, heroes: {}, raidHits: [] }
+  private data: FileShape = emptyShape()
 
   constructor(directory: string) {
     this.path = join(directory, "worker-state.json")
@@ -48,10 +65,12 @@ export class FileWorkerStore implements WorkerStore {
       if (!this.data.quests) this.data.quests = {}
       if (!this.data.heroes) this.data.heroes = {}
       if (!this.data.raidHits) this.data.raidHits = []
+      if (!this.data.actions) this.data.actions = {}
+      if (!this.data.rewards) this.data.rewards = {}
     } catch {
       // No file yet, or an unreadable one. Starting from empty is correct: chain state is the
       // source of truth and the cursors will simply rescan.
-      this.data = { submissions: {}, cursors: {}, quests: {}, heroes: {}, raidHits: [] }
+      this.data = emptyShape()
       this.flush()
     }
   }
@@ -174,5 +193,28 @@ export class FileWorkerStore implements WorkerStore {
     return this.data.raidHits
       .filter((h) => h.seasonId === seasonId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  async addAction(action: IndexedAction): Promise<void> {
+    if (this.data.actions[action.replayKey]) return
+    this.data.actions[action.replayKey] = action
+    this.flush()
+  }
+
+  async actions(player?: string): Promise<IndexedAction[]> {
+    const wanted = player?.toLowerCase()
+    return Object.values(this.data.actions)
+      .filter((a) => !wanted || a.player === wanted)
+      .sort((a, b) => b.creditcoinBlock - a.creditcoinBlock)
+  }
+
+  async addReward(reward: IndexedReward): Promise<void> {
+    if (this.data.rewards[reward.id]) return
+    this.data.rewards[reward.id] = reward
+    this.flush()
+  }
+
+  async allRewards(): Promise<IndexedReward[]> {
+    return Object.values(this.data.rewards)
   }
 }

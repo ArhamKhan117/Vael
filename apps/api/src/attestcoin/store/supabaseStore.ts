@@ -1,9 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 import {
+  IndexedAction,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
+  IndexedReward,
   PENDING_STATUSES,
   ProofSubmission,
   WorkerCursor,
@@ -296,6 +298,74 @@ export class SupabaseWorkerStore implements WorkerStore {
       actionType: 0,
       replayKey: row.query_id,
       creditcoinBlock: 0,
+      createdAt: row.created_at,
+    }))
+  }
+
+  async addAction(action: IndexedAction): Promise<void> {
+    // The replay key is unique on chain, so a rescan of the same range is a no-op here.
+    const { error } = await this.client.from("verified_actions").upsert(
+      {
+        replay_key: action.replayKey,
+        quest_id: action.questId,
+        player: action.player.toLowerCase(),
+        action_type: action.actionType,
+        source_block: action.sourceBlock,
+        amount: action.amount,
+        creditcoin_block: action.creditcoinBlock,
+        created_at: action.createdAt,
+      },
+      { onConflict: "replay_key" }
+    )
+    if (error) throw new Error(`failed to index verified action: ${error.message}`)
+  }
+
+  async actions(player?: string): Promise<IndexedAction[]> {
+    let query = this.client
+      .from("verified_actions")
+      .select("*")
+      .order("creditcoin_block", { ascending: false })
+    if (player) query = query.eq("player", player.toLowerCase())
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read verified actions: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      replayKey: row.replay_key,
+      questId: Number(row.quest_id),
+      player: row.player,
+      actionType: Number(row.action_type),
+      sourceBlock: Number(row.source_block),
+      amount: String(row.amount ?? "0"),
+      creditcoinBlock: Number(row.creditcoin_block),
+      createdAt: row.created_at,
+    }))
+  }
+
+  async addReward(reward: IndexedReward): Promise<void> {
+    const { error } = await this.client.from("reward_releases").upsert(
+      {
+        id: reward.id,
+        quest_id: reward.questId,
+        recipient: reward.recipient.toLowerCase(),
+        amount: reward.amount,
+        creditcoin_block: reward.creditcoinBlock,
+        creditcoin_tx_hash: reward.creditcoinTxHash,
+        created_at: reward.createdAt,
+      },
+      { onConflict: "id" }
+    )
+    if (error) throw new Error(`failed to index reward release: ${error.message}`)
+  }
+
+  async allRewards(): Promise<IndexedReward[]> {
+    const { data, error } = await this.client.from("reward_releases").select("*")
+    if (error) throw new Error(`failed to read reward releases: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      questId: Number(row.quest_id),
+      recipient: row.recipient,
+      amount: String(row.amount ?? "0"),
+      creditcoinBlock: Number(row.creditcoin_block),
+      creditcoinTxHash: row.creditcoin_tx_hash,
       createdAt: row.created_at,
     }))
   }

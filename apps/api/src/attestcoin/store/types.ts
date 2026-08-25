@@ -80,6 +80,39 @@ export interface IndexedRaidHit {
   createdAt: string
 }
 
+/**
+ * One action QuestASC verified and applied.
+ *
+ * This is the verified-action history: every row was written because the chain emitted
+ * `QuestProofApplied`, which it only does after a Merkle proof and a continuity proof both check
+ * out. `replayKey` is the log-scoped key QuestASC burns, so it is unique by construction and makes
+ * a rescan idempotent for free.
+ */
+export interface IndexedAction {
+  replayKey: string
+  questId: number
+  player: string
+  actionType: number
+  /** Height on the source chain the proved log came from. */
+  sourceBlock: number
+  /** Amount the adapter decoded, in the source token's own units. */
+  amount: string
+  creditcoinBlock: number
+  createdAt: string
+}
+
+/** One VAEL payout released by the vault when QuestASC completed a quest. */
+export interface IndexedReward {
+  /** `{creditcoinTxHash}:{questId}` - one release per quest per transaction. */
+  id: string
+  questId: number
+  recipient: string
+  amount: string
+  creditcoinBlock: number
+  creditcoinTxHash: string
+  createdAt: string
+}
+
 export interface WorkerCursor {
   chainKey: number
   emitter: string
@@ -142,6 +175,15 @@ export interface WorkerStore {
   addRaidHit(hit: IndexedRaidHit): Promise<void>
 
   raidHits(seasonId: number): Promise<IndexedRaidHit[]>
+
+  addAction(action: IndexedAction): Promise<void>
+
+  /** Newest first. Omit `player` for every action across every player. */
+  actions(player?: string): Promise<IndexedAction[]>
+
+  addReward(reward: IndexedReward): Promise<void>
+
+  allRewards(): Promise<IndexedReward[]>
 }
 
 /** Statuses that still need the worker to do something. */

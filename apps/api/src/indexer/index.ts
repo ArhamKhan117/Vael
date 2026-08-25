@@ -34,6 +34,8 @@ export interface IndexOutcome {
   questsTouched: number
   heroesTouched: number
   raidHits: number
+  actions: number
+  rewards: number
 }
 
 export class CreditcoinIndexer {
@@ -50,6 +52,7 @@ export class CreditcoinIndexer {
       process.env.QUEST_ASC_ADDRESS,
       process.env.VAEL_HERO_ADDRESS,
       process.env.RAID_BOSS_ADDRESS,
+      process.env.REWARD_VAULT_ADDRESS,
     ].filter((a): a is string => !!a && /^0x[0-9a-fA-F]{40}$/.test(a))
   }
 
@@ -70,6 +73,8 @@ export class CreditcoinIndexer {
       questsTouched: 0,
       heroesTouched: 0,
       raidHits: 0,
+      actions: 0,
+      rewards: 0,
     }
     if (from > head || this.addresses.length === 0) return outcome
 
@@ -155,6 +160,38 @@ export class CreditcoinIndexer {
       case "HeroLeveled": {
         await this.refreshHero(String(parsed.args.player))
         outcome.heroesTouched += 1
+        break
+      }
+      case "QuestProofApplied": {
+        // The verified-action history. QuestASC emits this only after a Merkle proof and a
+        // continuity proof have both checked out, so every row here is a proved action.
+        const block = await this.provider.getBlock(log.blockNumber)
+        await this.store.addAction({
+          replayKey: String(parsed.args.replayKey),
+          questId: Number(parsed.args.questId),
+          player: String(parsed.args.player).toLowerCase(),
+          actionType: Number(parsed.args.actionType),
+          sourceBlock: Number(parsed.args.sourceBlock),
+          amount: parsed.args.amount.toString(),
+          creditcoinBlock: log.blockNumber,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.actions += 1
+        break
+      }
+      case "RewardReleased": {
+        const block = await this.provider.getBlock(log.blockNumber)
+        const questId = Number(parsed.args.questId)
+        await this.store.addReward({
+          id: `${log.transactionHash}:${questId}`,
+          questId,
+          recipient: String(parsed.args.recipient).toLowerCase(),
+          amount: parsed.args.amount.toString(),
+          creditcoinBlock: log.blockNumber,
+          creditcoinTxHash: log.transactionHash,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.rewards += 1
         break
       }
       case "RaidDamage": {
