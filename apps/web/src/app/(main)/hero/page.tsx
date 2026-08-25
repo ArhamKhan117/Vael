@@ -1,7 +1,8 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { formatUnits } from "viem"
 
 import { Button } from "@/components/ui/button"
@@ -15,8 +16,24 @@ import { CREDITCOIN_EXPLORER_URL } from "@/lib/chains"
 const HeroCanvas = dynamic(() => import("@/game/HeroCanvas"), { ssr: false })
 
 export default function HeroPage() {
+  return (
+    <Suspense fallback={null}>
+      <HeroPageInner />
+    </Suspense>
+  )
+}
+
+function HeroPageInner() {
   const { wallet, isCreditcoinNetwork, switchToCreditcoin } = useReownWallet()
-  const address = wallet.address ?? undefined
+  const searchParams = useSearchParams()
+
+  // `?address=0x…` shows any hero read-only, with no wallet at all. Useful for sharing a hero,
+  // and useful for checking one without connecting.
+  const previewParam = searchParams.get("address")
+  const preview =
+    previewParam && /^0x[a-fA-F0-9]{40}$/.test(previewParam) ? previewParam : undefined
+  const isPreview = Boolean(preview)
+  const address = preview ?? wallet.address ?? undefined
   const { hero, loading, refetch } = useHero(address)
   const { mint, pending, error } = useMintHero()
   const [txHash, setTxHash] = useState<string | null>(null)
@@ -33,8 +50,9 @@ export default function HeroPage() {
       intellect: hero?.intellect ?? 0,
       streak: hero?.streak ?? 0,
       affinity: hero?.affinity ?? ("warrior" as const),
+      readOnly: isPreview,
     }
-  }, [hero])
+  }, [hero, isPreview])
 
   // React holds the data and pushes it in; the scene never fetches.
   useEffect(() => {
@@ -42,13 +60,15 @@ export default function HeroPage() {
   }, [payload])
 
   const handleMint = useCallback(async () => {
+    // Previewing another address must never sign anything.
+    if (isPreview) return
     if (!isCreditcoinNetwork) await switchToCreditcoin()
     const hash = await mint()
     if (hash) {
       setTxHash(hash)
       setTimeout(refetch, 4000)
     }
-  }, [isCreditcoinNetwork, mint, refetch, switchToCreditcoin])
+  }, [isCreditcoinNetwork, isPreview, mint, refetch, switchToCreditcoin])
 
   // The mint button inside the canvas asks React to sign.
   useEffect(() => {
@@ -60,8 +80,22 @@ export default function HeroPage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-10 md:px-10">
+      {isPreview && (
+        <div className="mb-4 rounded border border-sky-500/30 bg-sky-500/10 px-4 py-3">
+          <p className="text-xs text-sky-300">
+            Viewing{" "}
+            <span className="font-mono">
+              {preview!.slice(0, 6)}…{preview!.slice(-4)}
+            </span>
+            , read only. No wallet is connected to this view.
+          </p>
+        </div>
+      )}
+
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Your hero</h1>
+        <h1 className="text-2xl font-semibold text-white">
+          {isPreview ? "Hero" : "Your hero"}
+        </h1>
         <p className="mt-1 text-sm text-zinc-400">
           Soul-bound, one per wallet. Every point of XP came from a proof this chain verified
           itself, so the sheet below is a record of what you actually did on Ethereum.
@@ -74,9 +108,14 @@ export default function HeroPage() {
         <div className="rounded border border-[#1A1A1A] bg-black p-4">
           <h2 className="text-sm font-semibold text-white">Stats</h2>
           {!address ? (
-            <p className="mt-2 text-xs text-zinc-500">Connect a wallet to see your hero.</p>
+            <p className="mt-2 text-xs text-zinc-500">
+              Connect a wallet, or open <span className="font-mono">?address=0x…</span> to view any
+              hero.
+            </p>
           ) : loading ? (
             <p className="mt-2 text-xs text-zinc-500">Loading…</p>
+          ) : !hero?.hasHero && isPreview ? (
+            <p className="mt-2 text-xs text-zinc-500">This address has not minted a hero.</p>
           ) : !hero?.hasHero ? (
             <div className="mt-3 space-y-3">
               <p className="text-xs text-zinc-500">

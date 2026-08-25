@@ -78,6 +78,8 @@ export interface HeroStatePayload {
   intellect: number
   streak: number
   affinity: "warrior" | "rogue" | "mage"
+  /** True when the page is showing somebody else's hero, so the canvas offers no mint button. */
+  readOnly: boolean
 }
 
 export interface RaidStatePayload {
