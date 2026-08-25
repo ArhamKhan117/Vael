@@ -16,8 +16,10 @@ interface RaidSummary {
 /**
  * The live boss HP on the landing page.
  *
- * It renders nothing at all when there is no season or the API is unreachable, rather than showing
- * a zeroed bar: an empty space is honest, a bar at 0/0 looks like a defeated boss.
+ * Three states, and the difference between them matters. Before the first answer arrives, or when
+ * the API cannot be reached, the banner is absent: it has nothing true to say. When the chain
+ * reports no season, it says so in words. Only a real season draws a bar, because a bar at 0/0
+ * reads as a defeated boss and would be a lie by picture.
  */
 export function LiveRaidBanner() {
   const [raid, setRaid] = useState<RaidSummary | null>(null)
@@ -42,7 +44,25 @@ export function LiveRaidBanner() {
     }
   }, [])
 
-  if (!raid || raid.seasonId === 0 || !raid.maxHp) return null
+  if (!raid) return null
+
+  if (raid.seasonId === 0 || !raid.maxHp) {
+    return (
+      <Link
+        href="/raid"
+        className="block border border-[#1A1A1A] bg-black p-5 transition hover:border-zinc-700 md:p-6"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          Live raid
+        </p>
+        <p className="mt-1 text-lg font-semibold text-white">No season is running</p>
+        <p className="mt-2 text-[11px] text-zinc-600">
+          When one starts, every point of damage on the bar here will be a real DeFi action on
+          Ethereum, proved on Creditcoin.
+        </p>
+      </Link>
+    )
+  }
 
   const hp = Number(raid.hp ?? 0)
   const maxHp = Number(raid.maxHp)

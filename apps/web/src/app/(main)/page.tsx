@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAllQuests } from "@/hooks/useQuests";
 import Dither from "@/components/ui/Dither";
 import FaultyTerminal from "@/components/ui/FaultyTerminal";
 import {
@@ -18,6 +17,7 @@ import Marquee from "react-fast-marquee";
 import { TypeAnimation } from "react-type-animation";
 import PartnershipCarousel from "@/components/partnership-carousel";
 import { LiveRaidBanner } from "@/components/live-raid-banner";
+import { NetworkStats } from "@/components/network-stats";
 import { FaqSection } from "@/components/faq-section";
 import { api } from "@/lib/api";
 // import TextType from "@/components/ui/TextType";
@@ -26,30 +26,6 @@ import { api } from "@/lib/api";
 // const Dither = dynamic(() => import("@/components/ui/Dither"), {
 //   ssr: false,
 // });
-
-const CATEGORY_STYLE: Record<string, { code: string; codeBg: string; codeText: string; bonusDot: string }> = {
-  swap: { code: "SW", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-sky-400" },
-  liquidity: { code: "LP", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-emerald-400" },
-  stake: { code: "ST", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-indigo-400" },
-  lend: { code: "L", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-sky-400" },
-};
-
-function mapQuestToCard(q: Record<string, unknown>, idx: number) {
-  const cat = (String(q.category || "swap")).toLowerCase();
-  const style = CATEGORY_STYLE[cat] || CATEGORY_STYLE.swap;
-  const reward = q.reward_per_participant ? `${Number(q.reward_per_participant)} VAEL` : "- VAEL";
-  return {
-    id: String(q.quest_id_on_chain ?? q.id ?? idx),
-    code: style.code,
-    codeBg: style.codeBg,
-    codeText: style.codeText,
-    title: String(q.title || "Quest"),
-    description: String(q.description || ""),
-    reward,
-    bonusDot: style.bonusDot,
-    bonusLabel: "Badge NFT",
-  };
-}
 
 /** Creditcoin ecosystem surfaces Vael builds on. */
 const ECOSYSTEM = [
@@ -61,80 +37,6 @@ const ECOSYSTEM = [
   { name: "Credit Wallet", role: "Wallet" },
 ] as const;
 
-const FALLBACK_CAMPAIGNS = [
-  {
-    id: "#0004",
-    code: "LP",
-    codeBg: "bg-sky-500/15",
-    codeText: "text-sky-400",
-    title: "Aave Supply Quest",
-    description: "Supply USDC to Aave v3 on Sepolia and hold the position for 7 days.",
-    reward: "500 VAEL",
-    bonusDot: "bg-emerald-400",
-    bonusLabel: "Limited NFT",
-  },
-  {
-    id: "#0005",
-    code: "L",
-    codeBg: "bg-indigo-500/15",
-    codeText: "text-indigo-400",
-    title: "Aave Borrow Quest",
-    description:
-      "Borrow against your Aave v3 collateral on Sepolia and prove the Borrow event.",
-    reward: "750 VAEL",
-    bonusDot: "bg-sky-400",
-    bonusLabel: "Early Adopter NFT",
-  },
-  {
-    id: "#0006",
-    code: "SC",
-    codeBg: "bg-fuchsia-500/15",
-    codeText: "text-fuchsia-400",
-    title: "Portal Check-In",
-    description:
-      "Check in through the Vael Quest Portal on Sepolia to anchor your first proof.",
-    reward: "1200 VAEL",
-    bonusDot: "bg-fuchsia-400",
-    bonusLabel: "Portal Badge",
-  },
-  {
-    id: "#0007",
-    code: "N",
-    codeBg: "bg-blue-500/15",
-    codeText: "text-blue-300",
-    title: "First Transfer",
-    description:
-      "Transfer at least 25 USDC on Sepolia to an address you control.",
-    reward: "300 VAEL",
-    bonusDot: "bg-blue-300",
-    bonusLabel: "Transfer Badge",
-  },
-  {
-    id: "#0088",
-    code: "D",
-    codeBg: "bg-purple-500/15",
-    codeText: "text-purple-300",
-    title: "Uniswap Swap Quest",
-    description:
-      "Swap at least 25 USDC on Uniswap v3 on Ethereum Sepolia.",
-    reward: "600 VAEL",
-    bonusDot: "bg-purple-300",
-    bonusLabel: "Trader NFT",
-  },
-  {
-    id: "#0099",
-    code: "NFT",
-    codeBg: "bg-emerald-500/15",
-    codeText: "text-emerald-300",
-    title: "Weekly Combo",
-    description:
-      "Complete five verified quests in one week to earn a combo bonus.",
-    reward: "450 VAEL",
-    bonusDot: "bg-emerald-300",
-    bonusLabel: "Combo Badge",
-  },
-];
-
 type HomeFeedbackItem = {
   quote: string;
   name: string;
@@ -142,37 +44,10 @@ type HomeFeedbackItem = {
   rating: number;
 };
 
-const FALLBACK_FEEDBACK: HomeFeedbackItem[] = [
-  {
-    quote:
-      "We ran our first campaign on Vael and saw a clear bump in on-chain activity without adding extra ops overhead.",
-    name: "Alex",
-    role: "Co‑founder, DeFi protocol",
-    rating: 5,
-  },
-  {
-    quote:
-      "The automatic verification based on on-chain data is a game changer—no more screenshots or manual proof submissions.",
-    name: "Maya",
-    role: "Community lead",
-    rating: 5,
-  },
-  {
-    quote:
-      "As a user, I love that quests are simple, transparent, and rewards hit my wallet quickly after completion.",
-    name: "Jordan",
-    role: "DeFi power user",
-    rating: 4,
-  },
-];
-
 export default function Home() {
-  const { quests, loading } = useAllQuests();
-  const activeCampaigns = quests.length > 0
-    ? quests.slice(0, 8).map((q, i) => mapQuestToCard(q, i))
-    : FALLBACK_CAMPAIGNS;
-
-  const [homeFeedback, setHomeFeedback] = useState<HomeFeedbackItem[]>(FALLBACK_FEEDBACK);
+  // Empty until the API answers with something real. There is no placeholder set: an invented
+  // testimonial is a made-up number wearing a name.
+  const [homeFeedback, setHomeFeedback] = useState<HomeFeedbackItem[]>([]);
 
   useEffect(() => {
     const loadHomeFeedback = async () => {
@@ -265,8 +140,9 @@ export default function Home() {
         <div id="hero-end" className="absolute bottom-0 mt-24 h-px w-full" />
       </section>
 
-      <div className="m-5 md:m-10">
+      <div className="m-5 space-y-5 md:m-10">
         <LiveRaidBanner />
+        <NetworkStats />
       </div>
 
       <div className="border border-[#1A1A1A] m-5 md:m-10">
@@ -292,7 +168,7 @@ export default function Home() {
               </h2>
               <p className="mt-3 text-xs leading-relaxed text-zinc-400 md:text-sm">
                 Join the ultimate DeFi quest platform. Complete on-chain tasks and earn
-                rewards — all in a few simple steps.
+                rewards, all in a few simple steps.
               </p>
             </div>
 
@@ -382,68 +258,11 @@ export default function Home() {
               <PartnershipCarousel showHeading={false} />
             </div>
 
-            {/* Cards grid */}
-            {/* <div className="grid md:grid-cols-2 lg:grid-cols-4">
-              {activeCampaigns.map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className="flex h-full flex-col justify-between p-10 border-r border-b border-[#1A1A1A]"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                      <div className="inline-flex items-center gap-2">
-                        <span
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${campaign.codeBg} ${campaign.codeText}`}
-                        >
-                          {campaign.code}
-                        </span>
-                      </div>
-                      <span className="rounded-full border border-zinc-700 px-2 py-0.5">
-                        ID: {campaign.id}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-white">
-                        {campaign.title}
-                      </h3>
-                      <p className="text-xs leading-relaxed text-zinc-400">
-                        {campaign.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 space-y-2 text-[11px]">
-                      <div className="flex items-center justify-between text-zinc-500">
-                        <span>REWARD</span>
-                        <span className="text-xs font-semibold text-white">
-                          {campaign.reward}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-zinc-500">
-                        <span>BONUS</span>
-                        <span className="inline-flex items-center gap-1 text-xs text-white">
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${campaign.bonusDot}`}
-                          />
-                          {campaign.bonusLabel}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
-                    <Link href={`/quests/${campaign.id}`}>
-                      Join Quest
-                      <MoveRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
-              ))}
-            </div> */}
-            {/* #zigizaga */}
           </div>
         </section>
 
-        {/* Feedback / Social Proof */}
+        {/* Feedback. Rendered only when real feedback exists. */}
+        {homeFeedback.length > 0 && (
         <section className="border-b border-[#1A1A1A]">
           <div className="p-10 space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -455,8 +274,8 @@ export default function Home() {
                   What builders say about Vael.
                 </h2>
                 <p className="text-xs leading-relaxed text-zinc-400 md:text-sm">
-                  Vael is already helping DeFi users and teams run quests, drive on-chain
-                  activity, and reward their most active community members.
+                  Left by people who used Vael and signed with their wallet. Nothing on this page is
+                  written on their behalf.
                 </p>
               </div>
 
@@ -499,6 +318,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        )}
 
         <FaqSection />
 

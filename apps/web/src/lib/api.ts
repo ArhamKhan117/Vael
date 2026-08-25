@@ -163,22 +163,6 @@ class APIClient {
     })
   }
 
-  async getLeaderboard(limit: number = 100) {
-    return this.request<{
-      leaderboard: Array<{
-        user_id: string
-        wallet_address: string
-        total_xp: number
-        completed_quests: number
-        level: number
-        rank: number
-        updated_at: string
-        name?: string
-        email?: string
-        avatar_url?: string
-      }>
-    }>(`/quests/leaderboard?limit=${limit}`)
-  }
 
   async getUserQuests(walletAddress: string) {
     return this.request<{

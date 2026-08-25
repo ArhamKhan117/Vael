@@ -84,11 +84,13 @@ export function FaqSection() {
                                 </span>
                             </summary>
                             <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                                You gain XP by completing quests. Your level is calculated as:
-                                Level = floor(total XP / 5000) + 1. For example, 0-4,999 XP = Level
-                                1, 5,000-9,999 XP = Level 2, and so on. Higher levels unlock better
-                                badge NFTs and improve your leaderboard ranking. Your XP and level
-                                are tracked on-chain and displayed in your profile.
+                                Every verified proof grants XP to your hero, and XP is spent to
+                                level up rather than accumulated: leaving level L costs 100 + 50 x L
+                                XP, so level 1 to 2 costs 150, level 2 to 3 costs 200, and so on.
+                                One large action can carry you through several levels at once. The
+                                action also raises the stat it belongs to, and the highest stat
+                                decides which hero you see. All of it lives in VaelHero on
+                                Creditcoin, which accepts writes only from QuestASC.
                             </p>
                         </details>
 
