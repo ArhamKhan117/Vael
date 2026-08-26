@@ -6,6 +6,7 @@ import { WorkerStore, createWorkerStore } from "../attestcoin/store"
 import {
   INDEXER_ABI,
   QUEST_ASC_READ_ABI,
+  QUEST_MANAGER_READ_ABI,
   VAEL_HERO_READ_ABI,
 } from "./abi"
 
@@ -66,6 +67,46 @@ export class CreditcoinIndexer {
 
   async init(): Promise<void> {
     await this.store.init()
+    await this.warnOnMisconfiguredAddresses()
+  }
+
+  /**
+   * Compare the configured addresses against what the chain says they should be.
+   *
+   * A stale address here does not fail: the indexer simply watches a contract that emits nothing,
+   * and the only symptom is a number that stays at zero forever. That happened with a superseded
+   * RewardVault, and nothing anywhere reported it. Warning is enough; the deployment is the
+   * authority and refusing to start would be worse than running with a gap.
+   */
+  private async warnOnMisconfiguredAddresses(): Promise<void> {
+    const ascAddress = process.env.QUEST_ASC_ADDRESS
+    if (!ascAddress) return
+
+    const complain = (name: string, configured: string | undefined, onChain: string) => {
+      if (!configured || configured.toLowerCase() !== onChain.toLowerCase()) {
+        console.warn(
+          `[indexer] ${name} is configured as ${configured ?? "unset"} but the live deployment ` +
+            `uses ${onChain}. Events from it will be missed until the environment is corrected.`
+        )
+      }
+    }
+
+    try {
+      const asc = new Contract(ascAddress, QUEST_ASC_READ_ABI, this.provider)
+      const managerOnChain: string = await asc.getFunction("QUEST_MANAGER").staticCall()
+      complain("QUEST_MANAGER_ADDRESS", env.QUEST_MANAGER_ADDRESS, managerOnChain)
+
+      const manager = new Contract(managerOnChain, QUEST_MANAGER_READ_ABI, this.provider)
+      const [badge, vault] = await Promise.all([
+        manager.getFunction("BADGE_NFT").staticCall(),
+        manager.getFunction("REWARD_VAULT").staticCall(),
+      ])
+      complain("BADGE_NFT_ADDRESS", process.env.BADGE_NFT_ADDRESS, badge)
+      complain("REWARD_VAULT_ADDRESS", process.env.REWARD_VAULT_ADDRESS, vault)
+    } catch (error) {
+      // A check that cannot run must never stop the indexer from indexing.
+      console.warn(`[indexer] could not check configured addresses against the chain: ${error}`)
+    }
   }
 
   /** Scan from the persisted cursor to the safe head, in adaptive chunks. */

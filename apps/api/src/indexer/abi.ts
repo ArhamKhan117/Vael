@@ -29,10 +29,13 @@ export const INDEXER_ABI = [
 
 /** Reads used to fill in state the events do not carry. */
 export const QUEST_ASC_READ_ABI = [
+  "function QUEST_MANAGER() view returns (address)",
   "function rules(uint256 questId) view returns (uint8 actionType, address emitter, address token, uint256 minAmount, uint64 minSourceBlock, uint64 maxSourceBlock, bool playerMustMatch)",
 ] as const
 
 export const QUEST_MANAGER_READ_ABI = [
+  "function BADGE_NFT() view returns (address)",
+  "function REWARD_VAULT() view returns (address)",
   "function verificationContext(uint256 questId) view returns (bool exists, bool active, address assignedParticipant, uint64 expiry, uint64 sourceChainKey, uint256 campaignId)",
 ] as const
 

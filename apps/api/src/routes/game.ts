@@ -278,7 +278,7 @@ gameRouter.get("/actions/:address", async (req, res, next) => {
     }
 
     return res.json({
-      address,
+      address: address.toLowerCase(),
       // `actionType` stays a number: the web app already mirrors VaelTypes.ActionType and owns
       // the labels, and a second copy of that map here would only drift from it.
       actions: actions.slice(0, limit).map((action) => ({
