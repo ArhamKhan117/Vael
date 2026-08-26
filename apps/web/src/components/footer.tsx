@@ -34,6 +34,18 @@ export default function Footer() {
                                     path: "/quests",
                                 },
                                 {
+                                    label: "Academy",
+                                    path: "/academy",
+                                },
+                                {
+                                    label: "Hero",
+                                    path: "/hero",
+                                },
+                                {
+                                    label: "Raid",
+                                    path: "/raid",
+                                },
+                                {
                                     label: "Leaderboard",
                                     path: "/leaderboard",
                                 },

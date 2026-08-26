@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 import {
+  AcademyProgress,
   IndexedAction,
   IndexedHero,
   IndexedQuest,
@@ -354,6 +355,33 @@ export class SupabaseWorkerStore implements WorkerStore {
       { onConflict: "id" }
     )
     if (error) throw new Error(`failed to index reward release: ${error.message}`)
+  }
+
+  async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {
+    const { data, error } = await this.client
+      .from("academy_progress")
+      .select("*")
+      .eq("player", player.toLowerCase())
+      .maybeSingle()
+    if (error) throw new Error(`failed to read academy progress: ${error.message}`)
+    if (!data) return undefined
+    return {
+      player: data.player,
+      modules: (data.modules ?? {}) as AcademyProgress["modules"],
+      updatedAt: data.updated_at,
+    }
+  }
+
+  async saveAcademyProgress(progress: AcademyProgress): Promise<void> {
+    const { error } = await this.client.from("academy_progress").upsert(
+      {
+        player: progress.player.toLowerCase(),
+        modules: progress.modules,
+        updated_at: progress.updatedAt,
+      },
+      { onConflict: "player" }
+    )
+    if (error) throw new Error(`failed to save academy progress: ${error.message}`)
   }
 
   async allRewards(): Promise<IndexedReward[]> {

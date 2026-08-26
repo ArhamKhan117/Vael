@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 
 import {
+  AcademyProgress,
   IndexedAction,
   IndexedHero,
   IndexedQuest,
@@ -22,6 +23,7 @@ interface FileShape {
   raidHits: IndexedRaidHit[]
   actions: Record<string, IndexedAction>
   rewards: Record<string, IndexedReward>
+  academyProgress: Record<string, AcademyProgress>
 }
 
 /** A factory, not a shared constant: two stores must never alias the same maps. */
@@ -34,6 +36,7 @@ function emptyShape(): FileShape {
     raidHits: [],
     actions: {},
     rewards: {},
+    academyProgress: {},
   }
 }
 
@@ -67,6 +70,7 @@ export class FileWorkerStore implements WorkerStore {
       if (!this.data.raidHits) this.data.raidHits = []
       if (!this.data.actions) this.data.actions = {}
       if (!this.data.rewards) this.data.rewards = {}
+      if (!this.data.academyProgress) this.data.academyProgress = {}
     } catch {
       // No file yet, or an unreadable one. Starting from empty is correct: chain state is the
       // source of truth and the cursors will simply rescan.
@@ -216,5 +220,14 @@ export class FileWorkerStore implements WorkerStore {
 
   async allRewards(): Promise<IndexedReward[]> {
     return Object.values(this.data.rewards)
+  }
+
+  async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {
+    return this.data.academyProgress[player.toLowerCase()]
+  }
+
+  async saveAcademyProgress(progress: AcademyProgress): Promise<void> {
+    this.data.academyProgress[progress.player.toLowerCase()] = progress
+    this.flush()
   }
 }

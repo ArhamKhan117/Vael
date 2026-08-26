@@ -1,0 +1,87 @@
+{
+  "slug": "penguinswap-creditcoin",
+  "title": "PenguinSwap on Creditcoin",
+  "summary": "Trading on Creditcoin's own DEX, and why an action that happens here needs no proof at all.",
+  "lessons": [
+    {
+      "title": "A DEX on the chain the game lives on",
+      "body": [
+        "PenguinSwap is a decentralised exchange running on Creditcoin testnet. The mechanics will be familiar from any constant-product exchange: pools hold two tokens, a swap trades against the reserve, and liquidity providers earn a share of the fee in return for supplying both sides.",
+        "What differs is where it sits relative to Vael. Uniswap and Aave are on Ethereum, a chain Creditcoin cannot see. PenguinSwap is on Creditcoin itself, the same chain QuestASC and your hero already live on.",
+        "You need tCTC for gas before anything else. It is the native token of Creditcoin testnet and comes from the faucet in the Creditcoin docs, not from a bridge."
+      ]
+    },
+    {
+      "title": "Why a local action needs no proof",
+      "body": [
+        "Everything Vael proves is proved because it happened somewhere Creditcoin cannot see. A swap on Ethereum has to be carried across by a Merkle proof and a continuity proof, because no contract on Creditcoin has any record of an Ethereum block.",
+        "A swap on PenguinSwap has no such gap. It is a log in a Creditcoin block, and a Creditcoin contract can read Creditcoin state and events directly. There is no proof to build because there is nothing to bridge.",
+        "That is a real difference in the trust model and it cuts both ways. Local actions are cheaper and immediate, with no attestation wait. Cross-chain actions are what make the proof machinery necessary, and they are where Vael's central claim, that no backend key can complete a quest, actually gets tested."
+      ]
+    },
+    {
+      "title": "What that means for quests",
+      "body": [
+        "Every quest Vael can verify today reads a log from Ethereum Sepolia through the Attestcoin precompile: Portal check-ins, ERC-20 transfers, Uniswap v3 swaps, and Aave v3 supplies and borrows. Each is served by an adapter contract registered against the event signature it decodes.",
+        "A Creditcoin-native action would not go through that path. It would be verified by reading the local log directly, which is a different code path that Vael has not built. There is no PenguinSwap adapter deployed, so this module has no verified do quest attached to it yet, and saying otherwise would be inventing a feature.",
+        "The lessons and the quiz here still count toward your academy progress. The badge, as everywhere in Vael, comes only from a quest the chain actually verified, so use one of the other modules' quests to earn it."
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Which chain does PenguinSwap run on?",
+      "options": ["Ethereum mainnet", "Ethereum Sepolia", "Creditcoin", "Both Ethereum and Creditcoin"],
+      "answer": 2,
+      "why": "It is Creditcoin's own DEX, which is exactly what makes it different from Uniswap in Vael's terms."
+    },
+    {
+      "question": "What do you need before you can trade on Creditcoin testnet?",
+      "options": [
+        "Bridged ETH for gas",
+        "tCTC for gas, from the testnet faucet",
+        "A wrapped version of your Ethereum balance",
+        "A validator to sponsor the transaction"
+      ],
+      "answer": 1,
+      "why": "tCTC is the native gas token of Creditcoin testnet and comes from the faucet, not from a bridge."
+    },
+    {
+      "question": "Why does a PenguinSwap swap not need an Attestcoin proof?",
+      "options": [
+        "Because DEX trades are exempt from verification",
+        "Because it happens on Creditcoin, which a Creditcoin contract can read directly",
+        "Because the amounts are too small to be worth proving",
+        "Because PenguinSwap submits the proof for you"
+      ],
+      "answer": 1,
+      "why": "Proofs exist to close the gap between chains. There is no gap when the action is in a block the verifying chain produced."
+    },
+    {
+      "question": "Which actions can Vael verify today?",
+      "options": [
+        "Any transaction on any chain",
+        "Portal check-ins, ERC-20 transfers, Uniswap v3 swaps, and Aave v3 supplies and borrows on Ethereum Sepolia",
+        "Only Portal check-ins",
+        "Anything on Creditcoin, and nothing elsewhere"
+      ],
+      "answer": 1,
+      "why": "Each of those has an adapter contract registered against the event signature it decodes."
+    },
+    {
+      "question": "How would a Creditcoin-native quest be verified, if one existed?",
+      "options": [
+        "By a backend watching the chain and calling QuestASC",
+        "By the same Merkle and continuity proofs used for Ethereum",
+        "By reading the local log directly, with no proof to build",
+        "It could not be verified at all"
+      ],
+      "answer": 2,
+      "why": "A local log is already in state the contract can see. That is a different code path from the cross-chain one, and Vael has not built it."
+    }
+  ],
+  "doQuest": {
+    "available": false,
+    "unavailableReason": "There is no PenguinSwap adapter deployed. A Creditcoin-native action is verified by reading the local log rather than by an Attestcoin proof, and Vael has not built that path. Rather than link a quest that does not exist, this module leaves the slot empty."
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "slug": "uniswap-swaps",
+  "title": "Uniswap swaps",
+  "summary": "What actually happens when you swap on Uniswap v3, and which part of it Vael can prove.",
+  "lessons": [
+    {
+      "title": "A swap is a trade against a pool",
+      "body": [
+        "Uniswap has no order book and no counterparty waiting to take the other side. Every pair of tokens has a pool holding a reserve of both, and a swap is a trade against that reserve: you push one token in, the pool sends the other token out, and the price you get falls out of how much you moved the reserve.",
+        "Each pool is its own contract, identified by the two token addresses and a fee tier. On Uniswap v3 the common tiers are 0.05%, 0.30%, and 1.00%. The same pair can have a pool at more than one tier, and they trade at slightly different prices because they hold different liquidity.",
+        "You rarely call a pool directly. You call the router, which finds a route, splits it across pools if that is cheaper, and calls each pool for you. The router is a convenience; the pool is where the trade happens and where the event you can prove is emitted."
+      ]
+    },
+    {
+      "title": "Price impact, slippage, and the deadline",
+      "body": [
+        "Price impact is what your own trade does to the price. A small trade against a deep pool barely moves it. A large trade against a thin pool moves it a lot, and you pay that difference yourself. It is not a fee anyone charges you, it is the shape of the reserve curve.",
+        "Slippage tolerance is different: it is the worst price you are willing to accept between signing and landing. Blocks take time, other people trade in the meantime, and if the price has moved past your tolerance the swap reverts instead of filling badly. Setting it very high is how people get sandwiched.",
+        "Every router call also carries a deadline. Past it, the swap reverts. That exists so a transaction that sits unmined for an hour cannot suddenly execute at a price from an hour ago."
+      ]
+    },
+    {
+      "title": "The log Vael reads",
+      "body": [
+        "When a pool executes a trade it emits a Swap event: the sender, the recipient, the two signed amounts, and the price and liquidity after the trade. The two amounts are signed from the pool's point of view. Positive is what the pool received, negative is what it paid out.",
+        "Vael's Uniswap adapter reads the positive side, because that is the token you actually committed. Reading the side you received would let a favourable price satisfy a 'swap at least X' quest without you having risked X, and you do not control the price.",
+        "The player is taken from the recipient field, which is an indexed topic on the log, and never from the transaction sender. Anyone can pay gas for a transaction; only the log says who the trade was for. That is the same rule everywhere in Vael."
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "On Uniswap v3, where does the price you receive come from?",
+      "options": [
+        "An oracle the router queries before trading",
+        "The ratio of the pool's reserves and how far your trade moves them",
+        "A market maker who quotes each trade",
+        "The last price anyone traded at"
+      ],
+      "answer": 1,
+      "why": "There is no order book and no quoting counterparty. Price is a function of the pool's reserves, so your own trade moves it."
+    },
+    {
+      "question": "What is the difference between price impact and slippage tolerance?",
+      "options": [
+        "They are two names for the same number",
+        "Price impact is a protocol fee; slippage tolerance is a gas setting",
+        "Price impact is what your trade does to the price; slippage tolerance is the worst price you will accept before the swap reverts",
+        "Price impact applies to buys and slippage to sells"
+      ],
+      "answer": 2,
+      "why": "Impact is caused by your own size against the reserve. Tolerance is a guard against the price moving between signing and landing."
+    },
+    {
+      "question": "A v3 Swap event reports amount0 and amount1 as signed integers. What does a positive amount mean?",
+      "options": [
+        "The pool received that token",
+        "The pool paid out that token",
+        "The trade was profitable",
+        "The amount is denominated in the pool's fee tier"
+      ],
+      "answer": 0,
+      "why": "The amounts are written from the pool's point of view, so positive is the input side and negative is the output side."
+    },
+    {
+      "question": "Which side does Vael's adapter measure a swap quest against?",
+      "options": [
+        "The token you received, because that is the reward",
+        "The token you sent in, because that is what you committed",
+        "Whichever side is larger",
+        "The sum of both sides"
+      ],
+      "answer": 1,
+      "why": "Measuring the output would let a favourable price satisfy the quest without the player having committed the amount."
+    },
+    {
+      "question": "How does Vael decide which address a proved swap belongs to?",
+      "options": [
+        "The transaction sender",
+        "The address that paid the gas",
+        "The recipient field on the Swap log, which is an indexed topic",
+        "Whoever submits the proof on Creditcoin"
+      ],
+      "answer": 2,
+      "why": "Anyone can pay gas or relay a proof. Identity always comes from the indexed log field, never from the transaction."
+    }
+  ],
+  "doQuest": {
+    "available": true,
+    "actionType": 1,
+    "actionName": "Uniswap v3 swap",
+    "title": "Swap on Uniswap v3, Ethereum Sepolia",
+    "steps": [
+      "Accept a Uniswap swap quest on the quest board so the chain knows the rule and the source height it starts from.",
+      "Swap at least the quest minimum on Uniswap v3 on Ethereum Sepolia, with your own address as the recipient.",
+      "Wait for Attestcoin to attest a Sepolia height above your block, then claim. The proof is built from the pool's own log."
+    ]
+  }
+}

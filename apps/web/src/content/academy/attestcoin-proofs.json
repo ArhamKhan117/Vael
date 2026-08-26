@@ -1,0 +1,99 @@
+{
+  "slug": "attestcoin-proofs",
+  "title": "How an Attestcoin proof works",
+  "summary": "The mechanism the whole game rests on: how a transaction on Ethereum becomes something Creditcoin can verify for itself.",
+  "lessons": [
+    {
+      "title": "The problem: a chain cannot see another chain",
+      "body": [
+        "A contract on Creditcoin has no way to look at Ethereum. It cannot make a network call, and it has no memory of any block it did not produce. So when a game wants to reward you for a swap you made on Ethereum, something has to carry that fact across, and the usual answer is a trusted account that watches one chain and writes to the other.",
+        "That account is the weak point. Whoever holds its key can say a swap happened that never happened, and nothing on the receiving chain can tell the difference. Every reward then rests on that key rather than on anything that actually occurred.",
+        "Attestcoin removes the key from the trust path. Validators attest to Ethereum block digests on Creditcoin, and a precompile at a fixed address checks proofs against those attestations. Anyone can submit a proof; only a real transaction produces one that verifies."
+      ]
+    },
+    {
+      "title": "Two proofs, doing two different jobs",
+      "body": [
+        "A Merkle proof shows that your transaction and its receipt belong to a particular block. Attestcoin's tree is domain separated, hashing a leaf as 0x00 followed by the bytes and an inner node as 0x01 followed by the two children, which is what stops a leaf from being passed off as an inner node. Following the sibling hashes upward reproduces the block's Merkle root, and it only reproduces it for genuine members.",
+        "A continuity proof does the second job: showing that the block itself belongs to the attested chain. Attestations land every ten source blocks, so most blocks are not attestation endpoints, and the continuity proof walks the digest chain from the nearest attested point to your block. Each attested digest is the hash of the height, the Merkle root, and the previous digest, so the walk cannot skip or substitute a block.",
+        "One continuity proof proves exactly one height. A proof built to span several heights verifies only the lowest and fails for the rest, so proving ten transactions means ten proofs, not one wide one."
+      ]
+    },
+    {
+      "title": "What Vael does with a verified log",
+      "body": [
+        "The precompile does not return a verdict for the caller to interpret. It reverts on a bad proof, with messages like 'Merkle proof validation failed' or 'Continuity proof does not match attestation', and on success it hands back the decoded transaction and its receipt as raw bytes.",
+        "QuestASC then checks everything the proof itself cannot say. That the receipt status is 1, so the transaction did not revert. That the log came from a contract on the allowlist for that action. That the player named in the log is the player who accepted the quest. That the amount clears the quest minimum, and that the block falls inside the quest's window.",
+        "Finally it burns a replay key derived from the chain, block height, transaction index, and the position of the log inside the receipt. That key is why one transaction cannot be claimed twice, and why a transaction with several qualifying logs is handled per log rather than all at once. Proof material also perishes: attestations accumulate, so a proof fetched hours ago may no longer verify. Fetch it immediately before submitting."
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Why can a contract on Creditcoin not simply check Ethereum itself?",
+      "options": [
+        "Ethereum charges for reads",
+        "A contract cannot make network calls and has no record of blocks its own chain did not produce",
+        "The two chains use different hash functions",
+        "Creditcoin blocks are produced too quickly"
+      ],
+      "answer": 1,
+      "why": "Execution is deterministic and local. Anything from outside has to be carried in and verified, which is the problem Attestcoin solves."
+    },
+    {
+      "question": "What does a Merkle proof establish?",
+      "options": [
+        "That a block is part of the attested chain",
+        "That a transaction succeeded rather than reverted",
+        "That a transaction and its receipt belong to a particular block",
+        "That the player owns the address in the log"
+      ],
+      "answer": 2,
+      "why": "Membership in a block is the Merkle proof's job. Whether that block is real is the continuity proof's job."
+    },
+    {
+      "question": "Why is a continuity proof needed on top of a Merkle proof?",
+      "options": [
+        "Because Merkle proofs expire after ten blocks",
+        "Because attestations land only every ten blocks, so most blocks are not themselves attested",
+        "Because the receipt is stored separately from the transaction",
+        "Because the precompile cannot compute keccak256"
+      ],
+      "answer": 1,
+      "why": "A Merkle root you supply proves nothing on its own. Continuity ties that root back to a height the validators actually attested."
+    },
+    {
+      "question": "How does the Block Prover precompile report a bad proof?",
+      "options": [
+        "It returns false",
+        "It returns an empty byte string",
+        "It reverts with an error message",
+        "It emits a failure event and continues"
+      ],
+      "answer": 2,
+      "why": "It reverts with Error(string). A caller checking for a false return would never see a failure at all."
+    },
+    {
+      "question": "What stops the same Ethereum transaction from being claimed twice?",
+      "options": [
+        "The backend keeps a list of used transaction hashes",
+        "The proof can only be generated once",
+        "A replay key derived from the chain, height, transaction index, and log position, burned on chain",
+        "Quests expire after one claim"
+      ],
+      "answer": 2,
+      "why": "The key is stored on Creditcoin, so replay protection survives any backend. Scoping it to the log also lets one transaction carry several distinct actions."
+    }
+  ],
+  "doQuest": {
+    "available": true,
+    "actionType": 0,
+    "actionName": "Portal check-in",
+    "title": "Check in through the Vael Quest Portal on Sepolia",
+    "steps": [
+      "Accept a Portal check-in quest on the quest board.",
+      "Call the Vael Quest Portal on Ethereum Sepolia. It emits one clean log naming you, which makes it the simplest thing to prove.",
+      "Wait roughly eight minutes for Attestcoin to attest a Sepolia height above your block, then claim. You submit the proof yourself, and the chain checks it without asking anyone."
+    ]
+  }
+}

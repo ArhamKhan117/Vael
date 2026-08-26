@@ -113,6 +113,27 @@ export interface IndexedReward {
   createdAt: string
 }
 
+/**
+ * How far one address has got through one academy module.
+ *
+ * Nothing here gates anything on chain. Reading a lesson and passing a quiz are conveniences the
+ * player would otherwise track on paper; the badge still comes from a quest QuestASC verified, so
+ * a wiped or forged progress row changes what the page displays and nothing else.
+ */
+export interface AcademyModuleProgress {
+  /** Indices of the lesson cards marked read. */
+  lessonsRead: number[]
+  quizScore: number
+  quizPassed: boolean
+  updatedAt: string
+}
+
+export interface AcademyProgress {
+  player: string
+  modules: Record<string, AcademyModuleProgress>
+  updatedAt: string
+}
+
 export interface WorkerCursor {
   chainKey: number
   emitter: string
@@ -184,6 +205,10 @@ export interface WorkerStore {
   addReward(reward: IndexedReward): Promise<void>
 
   allRewards(): Promise<IndexedReward[]>
+
+  getAcademyProgress(player: string): Promise<AcademyProgress | undefined>
+
+  saveAcademyProgress(progress: AcademyProgress): Promise<void>
 }
 
 /** Statuses that still need the worker to do something. */

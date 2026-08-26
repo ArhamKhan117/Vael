@@ -33,3 +33,15 @@ create table if not exists reward_releases (
 );
 
 create index if not exists reward_releases_recipient_idx on reward_releases (recipient);
+
+-- Academy progress, one row per address.
+--
+-- Off-chain convenience only. Reading a lesson and passing a quiz gate nothing: the badge comes
+-- from a quest QuestASC verified, so a wiped or forged row here changes what the page shows and
+-- nothing else.
+create table if not exists academy_progress (
+  player text primary key,
+  -- { "<module slug>": { lessonsRead: number[], quizScore: number, quizPassed: boolean, updatedAt } }
+  modules jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);

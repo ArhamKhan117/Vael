@@ -2,6 +2,7 @@ import cors from "cors"
 import express from "express"
 
 import { env, hasServiceEnv } from "./config/env"
+import { academyRouter } from "./routes/academy"
 import { aiRouter } from "./routes/ai"
 import { campaignsRouter } from "./routes/campaigns"
 import { feedbackRouter } from "./routes/feedback"
@@ -33,6 +34,7 @@ app.get("/health", (_, res) => {
   res.json({ status: "ok", network: "Creditcoin testnet" })
 })
 
+app.use("/academy", academyRouter)
 app.use("/ai", aiRouter)
 app.use("/campaigns", campaignsRouter)
 app.use("/feedback", feedbackRouter)

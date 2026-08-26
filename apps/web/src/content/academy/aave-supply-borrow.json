@@ -1,0 +1,99 @@
+{
+  "slug": "aave-supply-borrow",
+  "title": "Aave supply and borrow",
+  "summary": "Lending without a lender: how supplying earns yield, how borrowing stays safe, and what liquidation really is.",
+  "lessons": [
+    {
+      "title": "Supplying is lending into a shared pool",
+      "body": [
+        "Aave does not match you with a borrower. Each asset has one pool, everybody's deposits go into it, and everybody's loans come out of it. When you supply, you receive an aToken, a receipt that represents your share of that pool.",
+        "The aToken balance grows on its own. You are not paid out at intervals; interest is folded into the balance continuously, so the number in your wallet goes up while you do nothing. Redeeming burns aTokens and returns the underlying asset plus whatever it accrued.",
+        "The interest rate is not set by a committee. It is a function of utilisation, the fraction of the pool currently borrowed. Low utilisation means cheap borrowing and thin yield. As utilisation climbs past a kink point the rate rises steeply, which pulls in suppliers and pushes out borrowers until the pool has liquidity again."
+      ]
+    },
+    {
+      "title": "Borrowing against your own collateral",
+      "body": [
+        "A loan on Aave has no credit check because it is over-collateralised: you post more value than you take out. Each asset has a loan-to-value ratio that says how much of its value can back a loan, so posting 100 units of an asset with a 75% LTV lets you borrow up to 75 units of value.",
+        "Your health factor is the single number to watch. Above 1 the position is safe, at or below 1 it can be liquidated. It moves when the price of your collateral falls, when the price of your debt rises, or when interest accrues on what you owe. Borrowing to the maximum leaves no room for any of that.",
+        "Liquidation is not a penalty the protocol collects for its own sake. Anyone can repay part of your debt and take a slice of your collateral at a discount, and that discount is what makes it worth someone's while to do it. It is the mechanism that keeps the pool solvent when a price moves faster than you do."
+      ]
+    },
+    {
+      "title": "Caps, and what the log says",
+      "body": [
+        "Pools carry a supply cap and a borrow cap. Hitting one is not a bug, it is the protocol refusing more exposure to that asset. On a testnet these caps fill quickly because a handful of people are testing with large numbers, so a supply that reverts with error 51 usually means the cap is full rather than that anything is wrong with your transaction.",
+        "A supply emits a Supply event and a borrow emits a Borrow event. Both name the reserve, the amount, and an onBehalfOf address, because Aave lets one address act for another.",
+        "Vael's Aave adapter takes the player from onBehalfOf, which is an indexed topic on the log. That means the position has to be credited to you, not merely paid for by you, and it means a relayer or a paymaster can never quietly become the player."
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What determines the interest rate on an Aave pool?",
+      "options": [
+        "A governance vote each week",
+        "Utilisation, the fraction of the pool currently borrowed",
+        "The average rate of the last hundred loans",
+        "An oracle that reads rates from traditional finance"
+      ],
+      "answer": 1,
+      "why": "The rate is a curve over utilisation, rising steeply past a kink so the pool always has liquidity left."
+    },
+    {
+      "question": "What does an aToken represent?",
+      "options": [
+        "A governance right over the pool",
+        "A fixed-term deposit that cannot be redeemed early",
+        "Your share of the supplied pool, with interest folded into the balance",
+        "A claim on a specific borrower's loan"
+      ],
+      "answer": 2,
+      "why": "aTokens are a receipt whose balance grows continuously. There is no specific borrower and no fixed term."
+    },
+    {
+      "question": "Your health factor falls to 0.95. What does that mean?",
+      "options": [
+        "You are 5% away from being liquidated",
+        "The position can be liquidated now",
+        "You owe a 5% fee at the end of the loan",
+        "Your collateral is earning 5% less than expected"
+      ],
+      "answer": 1,
+      "why": "At or below 1 the position is eligible for liquidation. It is a threshold, not a countdown."
+    },
+    {
+      "question": "Why does Aave pay liquidators a discount on the collateral they seize?",
+      "options": [
+        "To punish borrowers for taking risk",
+        "To fund the protocol treasury",
+        "To make it worth someone's while to repay bad debt quickly, which keeps the pool solvent",
+        "To keep the collateral price stable"
+      ],
+      "answer": 2,
+      "why": "Liquidation is a job somebody has to do fast and pay gas for. The discount is the incentive that gets it done."
+    },
+    {
+      "question": "Which field on an Aave Supply log does Vael use to identify the player?",
+      "options": [
+        "The transaction sender",
+        "The user field",
+        "The onBehalfOf field, an indexed topic",
+        "The reserve address"
+      ],
+      "answer": 2,
+      "why": "The position must be credited to the player. Taking the sender would let anyone who pays gas claim the action."
+    }
+  ],
+  "doQuest": {
+    "available": true,
+    "actionType": 3,
+    "actionName": "Aave v3 supply",
+    "title": "Supply to Aave v3, Ethereum Sepolia",
+    "steps": [
+      "Accept an Aave supply quest on the quest board.",
+      "Supply at least the quest minimum of the quest's asset to Aave v3 on Ethereum Sepolia, with your own address as onBehalfOf. If the supply reverts, check the asset's supply cap before anything else.",
+      "Wait for Attestcoin to attest a Sepolia height above your block, then claim. Borrow quests work the same way and prove the Borrow log instead."
+    ]
+  }
+}

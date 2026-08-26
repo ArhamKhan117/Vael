@@ -10,7 +10,14 @@ import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
 import ConnectWalletButton from "./connect-wallet-button";
 
-type CenterItemKey = "quests" | "leaderboard" | "dashboard/studio" | "feedback";
+type CenterItemKey =
+  | "quests"
+  | "academy"
+  | "hero"
+  | "raid"
+  | "leaderboard"
+  | "dashboard/studio"
+  | "feedback";
 
 const CENTER_ITEMS: {
   key: CenterItemKey;
@@ -23,6 +30,24 @@ const CENTER_ITEMS: {
       label: "Quests",
       title: "Quests",
       description: "Browse proof-verified quests and earn VAEL, badges, and hero XP.",
+    },
+    {
+      key: "academy",
+      label: "Academy",
+      title: "Academy",
+      description: "Learn what a swap, a supply, and a proof actually do, then go and do one.",
+    },
+    {
+      key: "hero",
+      label: "Hero",
+      title: "Hero",
+      description: "Your soul-bound hero, levelled only by proofs the chain verified.",
+    },
+    {
+      key: "raid",
+      label: "Raid",
+      title: "Raid",
+      description: "Every point of damage on the season boss is a real DeFi action.",
     },
     {
       key: "leaderboard",
