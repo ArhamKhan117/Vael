@@ -1,26 +1,18 @@
 import { Express } from "express"
 import request from "supertest"
 
-/**
- * Helper untuk test API endpoints
- */
+/** Supertest bound to an Express app. */
 export function testApp(app: Express) {
   return request(app)
 }
 
-/**
- * Mock wallet address untuk testing
- */
+/** A wallet address for tests that need one and do not care which. */
 export const MOCK_WALLET = "0x1234567890123456789012345678901234567890"
 
-/**
- * Mock quest ID untuk testing
- */
+/** A quest id for tests that need one and do not care which. */
 export const MOCK_QUEST_ID = 1
 
-/**
- * Helper untuk create mock quest data
- */
+/** Quest input with sensible defaults, overridable per test. */
 export function createMockQuestInput(overrides?: any) {
   return {
     projectName: "Test Project",
@@ -36,7 +28,7 @@ export function createMockQuestInput(overrides?: any) {
 }
 
 /**
- * Helper untuk wait async operations
+ * Wait, for tests that need a tick to pass.
  */
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

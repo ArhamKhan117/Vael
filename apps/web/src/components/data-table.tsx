@@ -74,7 +74,7 @@ export function DataTable<TData, TValue>({
   useEffect(() => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
 
-    // Ambil hanya ID-nya saja
+    // Ids only
     const selectedIds = selectedRows.map((row) => row.original);
 
     if (onSelectedRowsChange) {
@@ -88,12 +88,12 @@ export function DataTable<TData, TValue>({
   }, [table, onSelectionChange, onSelectedRowsChange, rowSelection]);
 
   useEffect(() => {
-    // Ambil semua rowId valid dari data baru
+    // Collect every valid rowId from the new data
     const validRowIds = new Set(
       table.getRowModel().rows.map((row) => row.id)
     );
 
-    // Filter rowSelection agar hanya berisi id yang masih ada
+    // Keep only the ids that still exist in the data
     setRowSelection((prev) => {
       const next: Record<string, boolean> = {};
       for (const key in prev) {

@@ -23,7 +23,7 @@ export interface QuestVerificationParams {
   actionType?: "swap" | "deposit" | "borrow" | "stake"
 }
 
-/** Metadata structure dari IPFS (subset yang dipakai) */
+/** IPFS metadata, the subset this service reads. */
 export interface QuestMetadataFromIpfs {
   verificationParams?: QuestVerificationParams
   category?: string
@@ -34,7 +34,7 @@ interface PinataResponse {
 }
 
 /**
- * Fetch quest metadata dari IPFS. Dipakai untuk ambil verificationParams.
+ * Fetch quest metadata from IPFS. Used to read back verificationParams.
  */
 export async function fetchQuestMetadataFromIpfs(
   metadataUri: string | null | undefined
