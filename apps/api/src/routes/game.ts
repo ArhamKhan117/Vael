@@ -290,3 +290,25 @@ gameRouter.get("/actions/:address", async (req, res, next) => {
     next(error)
   }
 })
+
+/**
+ * GET /badges/:address
+ *
+ * BadgeNFT is not enumerable, so this comes from the index rather than the contract. Each badge
+ * carries `rarityIsDerived`, which says whether the chain stated the rarity or whether it was
+ * computed from the badge level by the published rule. The deployed v2 does not store one.
+ */
+gameRouter.get("/badges/:address", async (req, res, next) => {
+  try {
+    const address = String(req.params.address)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      return res.status(400).json({ message: "address must be a 20-byte hex address" })
+    }
+    const store = createWorkerStore()
+    await store.init()
+    const badges = await store.badges(address)
+    return res.json({ address: address.toLowerCase(), badges })
+  } catch (error) {
+    next(error)
+  }
+})

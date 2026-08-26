@@ -36,6 +36,13 @@ export interface IndexOutcome {
   raidHits: number
   actions: number
   rewards: number
+  badges: number
+}
+
+/** Mirrors BadgeNFT.rarityForBadgeLevel: 1 is Common through 5 and above, Legendary. */
+export function rarityForBadgeLevel(badgeLevel: number): number {
+  if (badgeLevel >= 5) return 4
+  return Math.max(0, badgeLevel - 1)
 }
 
 export class CreditcoinIndexer {
@@ -53,6 +60,7 @@ export class CreditcoinIndexer {
       process.env.VAEL_HERO_ADDRESS,
       process.env.RAID_BOSS_ADDRESS,
       process.env.REWARD_VAULT_ADDRESS,
+      process.env.BADGE_NFT_ADDRESS,
     ].filter((a): a is string => !!a && /^0x[0-9a-fA-F]{40}$/.test(a))
   }
 
@@ -75,6 +83,7 @@ export class CreditcoinIndexer {
       raidHits: 0,
       actions: 0,
       rewards: 0,
+      badges: 0,
     }
     if (from > head || this.addresses.length === 0) return outcome
 
@@ -177,6 +186,24 @@ export class CreditcoinIndexer {
           createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
         })
         outcome.actions += 1
+        break
+      }
+      case "BadgeMinted": {
+        const block = await this.provider.getBlock(log.blockNumber)
+        const badgeLevel = Number(parsed.args.badgeLevel)
+        // v3 carries the rarity; v2 does not, so it is derived by the rule v3 itself applies.
+        const onEvent = parsed.fragment.inputs.length === 5
+        await this.store.addBadge({
+          tokenId: Number(parsed.args.tokenId),
+          player: String(parsed.args.to).toLowerCase(),
+          questId: Number(parsed.args.questId),
+          badgeLevel,
+          rarity: onEvent ? Number(parsed.args.rarity) : rarityForBadgeLevel(badgeLevel),
+          rarityIsDerived: !onEvent,
+          creditcoinBlock: log.blockNumber,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.badges += 1
         break
       }
       case "RewardReleased": {

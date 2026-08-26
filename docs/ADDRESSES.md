@@ -22,14 +22,16 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 |---|---|---|---|---|
 | `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | verified |
 | `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455574 | verified |
-| `BadgeNFT` | [`0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3`](https://creditcoin-testnet.blockscout.com/address/0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3) | [`0xe0381fdc…0b1430`](https://creditcoin-testnet.blockscout.com/tx/0xe0381fdcf2941dfffa0ec900332a0668f96e0465d80def5a0df4716f1c0b1430) | 5455361 | verified |
-| `QuestManager` | [`0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377`](https://creditcoin-testnet.blockscout.com/address/0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377) | [`0xeaed2e6c…1631cd`](https://creditcoin-testnet.blockscout.com/tx/0xeaed2e6c70b8499f4068c9b7edc03feec619efcaf47cb1421de2a59c611631cd) | 5458073 | verified |
-| `QuestASC` | [`0x467bF17dcf7A5988dC96b2F8e3Af571169176780`](https://creditcoin-testnet.blockscout.com/address/0x467bF17dcf7A5988dC96b2F8e3Af571169176780) | [`0x5997d123…f61985`](https://creditcoin-testnet.blockscout.com/tx/0x5997d1236f35f64844b2830b48c6558dba65d5a4fcea2df225cb382c7ff61985) | 5458075 | verified |
+| `BadgeNFT` | [`0xC3FF8f522408fF5FB2192519E70b875a9754aa94`](https://creditcoin-testnet.blockscout.com/address/0xC3FF8f522408fF5FB2192519E70b875a9754aa94) | [`0x0d043ac4…d1fa85`](https://creditcoin-testnet.blockscout.com/tx/0x0d043ac4248c7d17fd393ed3c67f9beacab83dd557cf9b534f7e248b96d1fa85) | 5459459 | verified |
+| `QuestManager` | [`0xD701A48cc22224Ca4679178db7a749dC68725EFD`](https://creditcoin-testnet.blockscout.com/address/0xD701A48cc22224Ca4679178db7a749dC68725EFD) | [`0x7a1251b5…2f6720`](https://creditcoin-testnet.blockscout.com/tx/0x7a1251b5c9a70bd6140192510aa7fd27a0120eaf13badb5e5858267c9f2f6720) | 5459463 | verified |
+| `QuestASC` | [`0x929eabBe43d498e7BA47BB69e8C9432703e969Aa`](https://creditcoin-testnet.blockscout.com/address/0x929eabBe43d498e7BA47BB69e8C9432703e969Aa) | [`0x4c7317c9…2c39ad`](https://creditcoin-testnet.blockscout.com/tx/0x4c7317c91235fd131e300b3e542e34d46cd2e55e9df44587a81a15ab012c39ad) | 5459464 | verified |
 | `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) | [`0xf9596fbd…8fe7c94`](https://creditcoin-testnet.blockscout.com/tx/0xf9596fbdf6e1aa693d251cbe6bc5f24294683992c4d5cef596a78ee828fe7c94) | 5458012 | verified |
 | `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) | [`0xef8b6a28…b0df12`](https://creditcoin-testnet.blockscout.com/tx/0xef8b6a28941cd98ca273add4a12180558bdaca6d60e63a645d99235aabb0df12) | 5458014 | verified |
 | `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) | [`0xcf9eb35e…c05952`](https://creditcoin-testnet.blockscout.com/tx/0xcf9eb35e244a609eabe19340ced2d592c926a83160b5c27ec5c67810dbc05952) | 5458010 | verified |
 | `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) | [`0xe5a85953…49d5a9`](https://creditcoin-testnet.blockscout.com/tx/0xe5a859535f8771140b58fc7c4b2f43f42d1c1d95823dfd7db1334c030e49d5a9) | 5458016 | verified |
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | verified |
+| `VaelHero` | [`0x8bE97BeBB253d7F660529e23e093F18645Fc974b`](https://creditcoin-testnet.blockscout.com/address/0x8bE97BeBB253d7F660529e23e093F18645Fc974b) | [`0xcc5bc0cd…515987`](https://creditcoin-testnet.blockscout.com/tx/0xcc5bc0cdf2bb45bf482f724e3f6bead4711d29afdc632bff8548637790515987) | 5459460 | verified |
+| `RaidBoss` | [`0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6`](https://creditcoin-testnet.blockscout.com/address/0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6) | [`0x9ad78bf5…bc989d`](https://creditcoin-testnet.blockscout.com/tx/0x9ad78bf5d060aefa85c963c91c47a74bf184ce6689ea5d09910aa8223cbc989d) | 5459462 | verified |
 | `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | verified |
 | `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | verified |
 | `ValidationRegistry` | [`0x9BE39f19b55792285D495302D872160dB2285a65`](https://creditcoin-testnet.blockscout.com/address/0x9BE39f19b55792285D495302D872160dB2285a65) | [`0x0e56c603…6bd9ca`](https://creditcoin-testnet.blockscout.com/tx/0x0e56c603808ddc5724251ecbf0fd29dbc31fa156b2f8e89617e25ac1326bd9ca) | 5455357 | verified |
@@ -67,9 +69,11 @@ over an already-proved log: it holds no privilege and cannot widen what is accep
 
 - **`VaelToken`** — ERC-20 reward token, VAEL, 18 decimals
 - **`RewardVault`** — Mints and releases VAEL per quest. Callable only by QuestManager
-- **`BadgeNFT`** — Soul-bound ERC-721 quest badges. Callable only by QuestManager
+- **`BadgeNFT`** — ERC-721 quest badges. Mintable only by QuestManager and RaidBoss. The **deployed v2 is transferable and carries no rarity**; the soul-bound v3 with a `Rarity` enum is written and tested but not deployed, see SPEC §17.1
 - **`QuestManager`** — Quest lifecycle. `recordCompletion` is `onlyQuestASC`
 - **`CampaignEscrow`** — Partner-funded campaign pools
+- **`VaelHero`** — Soul-bound hero. `grantXP` is `onlyQuestASC`
+- **`RaidBoss`** — Season boss. `dealDamage` is `onlyQuestASC`
 - **`IdentityRegistry`** — ERC-8004 agent identity
 - **`ReputationRegistry`** — ERC-8004 agent reputation
 - **`ValidationRegistry`** — ERC-8004 validation records. QuestManager's authorization here was granted then revoked: it holds the registry as an immutable but calls nothing on it, so the privilege was unused
@@ -228,10 +232,10 @@ REWARD_VAULT_ADDRESS_TX=0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159
 REWARD_VAULT_ADDRESS_BLOCK=5455360
 BADGE_NFT_ADDRESS=0xC3FF8f522408fF5FB2192519E70b875a9754aa94
 BADGE_NFT_ADDRESS_TX=0x0d043ac4248c7d17fd393ed3c67f9beacab83dd557cf9b534f7e248b96d1fa85
-BADGE_NFT_ADDRESS_BLOCK=5455361
+BADGE_NFT_ADDRESS_BLOCK=5459459
 QUEST_MANAGER_ADDRESS=0xD701A48cc22224Ca4679178db7a749dC68725EFD
 QUEST_MANAGER_ADDRESS_TX=0x7a1251b5c9a70bd6140192510aa7fd27a0120eaf13badb5e5858267c9f2f6720
-QUEST_MANAGER_ADDRESS_BLOCK=5455504
+QUEST_MANAGER_ADDRESS_BLOCK=5459463
 CAMPAIGN_ESCROW_ADDRESS=0xcF675302d19967788009592423E4E66bd69EA32b
 CAMPAIGN_ESCROW_ADDRESS_TX=0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6
 CAMPAIGN_ESCROW_ADDRESS_BLOCK=5455363

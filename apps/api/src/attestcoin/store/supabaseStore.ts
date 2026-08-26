@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js"
 import {
   AcademyProgress,
   IndexedAction,
+  IndexedBadge,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
@@ -355,6 +356,40 @@ export class SupabaseWorkerStore implements WorkerStore {
       { onConflict: "id" }
     )
     if (error) throw new Error(`failed to index reward release: ${error.message}`)
+  }
+
+  async addBadge(badge: IndexedBadge): Promise<void> {
+    const { error } = await this.client.from("indexed_badges").upsert(
+      {
+        token_id: badge.tokenId,
+        player: badge.player.toLowerCase(),
+        quest_id: badge.questId,
+        badge_level: badge.badgeLevel,
+        rarity: badge.rarity,
+        rarity_is_derived: badge.rarityIsDerived,
+        creditcoin_block: badge.creditcoinBlock,
+        created_at: badge.createdAt,
+      },
+      { onConflict: "token_id" }
+    )
+    if (error) throw new Error(`failed to index badge: ${error.message}`)
+  }
+
+  async badges(player?: string): Promise<IndexedBadge[]> {
+    let query = this.client.from("indexed_badges").select("*").order("token_id", { ascending: false })
+    if (player) query = query.eq("player", player.toLowerCase())
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read badges: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      tokenId: Number(row.token_id),
+      player: row.player,
+      questId: Number(row.quest_id),
+      badgeLevel: Number(row.badge_level),
+      rarity: Number(row.rarity),
+      rarityIsDerived: Boolean(row.rarity_is_derived),
+      creditcoinBlock: Number(row.creditcoin_block),
+      createdAt: row.created_at,
+    }))
   }
 
   async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {

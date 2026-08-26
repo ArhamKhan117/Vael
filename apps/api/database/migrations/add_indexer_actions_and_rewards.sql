@@ -45,3 +45,21 @@ create table if not exists academy_progress (
   modules jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+
+-- Badges, indexed from BadgeMinted.
+--
+-- BadgeNFT is not enumerable, so an address's badges cannot be listed from the contract.
+-- rarity_is_derived records where the rarity came from: v2 does not store one and it is computed
+-- from the badge level by the published rule; v3 carries it on the event.
+create table if not exists indexed_badges (
+  token_id bigint primary key,
+  player text not null,
+  quest_id bigint not null,
+  badge_level smallint not null,
+  rarity smallint not null,
+  rarity_is_derived boolean not null default true,
+  creditcoin_block bigint not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists indexed_badges_player_idx on indexed_badges (player, token_id desc);

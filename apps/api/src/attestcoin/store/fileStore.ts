@@ -4,6 +4,7 @@ import { dirname, join } from "node:path"
 import {
   AcademyProgress,
   IndexedAction,
+  IndexedBadge,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
@@ -24,6 +25,7 @@ interface FileShape {
   actions: Record<string, IndexedAction>
   rewards: Record<string, IndexedReward>
   academyProgress: Record<string, AcademyProgress>
+  badges: Record<string, IndexedBadge>
 }
 
 /** A factory, not a shared constant: two stores must never alias the same maps. */
@@ -37,6 +39,7 @@ function emptyShape(): FileShape {
     actions: {},
     rewards: {},
     academyProgress: {},
+    badges: {},
   }
 }
 
@@ -71,6 +74,7 @@ export class FileWorkerStore implements WorkerStore {
       if (!this.data.actions) this.data.actions = {}
       if (!this.data.rewards) this.data.rewards = {}
       if (!this.data.academyProgress) this.data.academyProgress = {}
+      if (!this.data.badges) this.data.badges = {}
     } catch {
       // No file yet, or an unreadable one. Starting from empty is correct: chain state is the
       // source of truth and the cursors will simply rescan.
@@ -220,6 +224,20 @@ export class FileWorkerStore implements WorkerStore {
 
   async allRewards(): Promise<IndexedReward[]> {
     return Object.values(this.data.rewards)
+  }
+
+  async addBadge(badge: IndexedBadge): Promise<void> {
+    const key = String(badge.tokenId)
+    if (this.data.badges[key]) return
+    this.data.badges[key] = badge
+    this.flush()
+  }
+
+  async badges(player?: string): Promise<IndexedBadge[]> {
+    const wanted = player?.toLowerCase()
+    return Object.values(this.data.badges)
+      .filter((badge) => !wanted || badge.player === wanted)
+      .sort((a, b) => b.tokenId - a.tokenId)
   }
 
   async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {

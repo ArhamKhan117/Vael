@@ -15,6 +15,12 @@ export const INDEXER_ABI = [
   "event SeasonStarted(uint64 indexed seasonId, uint256 maxHp, uint256 lootPool)",
   "event RaidDamage(uint64 indexed seasonId, address indexed player, uint256 damage, uint256 hpRemaining, uint8 actionType, bytes32 replayKey)",
   "event RaidDefeated(uint64 indexed seasonId, address indexed lastHitter, uint256 totalDamage)",
+  // BadgeNFT. Both signatures are declared: the deployed v2 emits four arguments and the rarity is
+  // derived from the badge level, v3 emits the rarity itself. Different argument lists mean
+  // different topic0 values, so one interface decodes whichever is live.
+  "event BadgeMinted(address indexed to, uint256 indexed questId, uint256 badgeLevel, uint256 tokenId)",
+  "event BadgeMinted(address indexed to, uint256 indexed questId, uint256 badgeLevel, uint256 tokenId, uint8 rarity)",
+
   // RewardVault
   "event RewardReleased(uint256 indexed questId, address indexed recipient, uint256 amount)",
 

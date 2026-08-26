@@ -101,6 +101,27 @@ export interface IndexedAction {
   createdAt: string
 }
 
+/**
+ * One badge minted to an address.
+ *
+ * BadgeNFT is not enumerable, so an address's badges cannot be listed from the contract. They are
+ * indexed from `BadgeMinted` instead. `rarityIsDerived` records where the rarity came from: the
+ * deployed v2 does not store one, so it is computed from the badge level by the published rule,
+ * and v3 carries it on the event. The flag exists so the UI never claims the chain said something
+ * it did not.
+ */
+export interface IndexedBadge {
+  tokenId: number
+  player: string
+  questId: number
+  badgeLevel: number
+  /** 0 Common through 4 Legendary. */
+  rarity: number
+  rarityIsDerived: boolean
+  creditcoinBlock: number
+  createdAt: string
+}
+
 /** One VAEL payout released by the vault when QuestASC completed a quest. */
 export interface IndexedReward {
   /** `{creditcoinTxHash}:{questId}` - one release per quest per transaction. */
@@ -205,6 +226,11 @@ export interface WorkerStore {
   addReward(reward: IndexedReward): Promise<void>
 
   allRewards(): Promise<IndexedReward[]>
+
+  addBadge(badge: IndexedBadge): Promise<void>
+
+  /** Newest first. Omit `player` for every badge. */
+  badges(player?: string): Promise<IndexedBadge[]>
 
   getAcademyProgress(player: string): Promise<AcademyProgress | undefined>
 

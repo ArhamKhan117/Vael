@@ -2,42 +2,57 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useAccount } from "wagmi"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { useProfile, useCompletedQuests } from "@/hooks/useProfile"
-import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { useRouter } from "next/navigation"
+import { useAccount } from "wagmi"
+import { Copy, Loader2 } from "lucide-react"
+
 import { EditAvatarDialog } from "@/components/edit-avatar-dialog"
+import { EditProfileDialog } from "@/components/edit-profile-dialog"
 import { Button } from "@/components/ui/button"
-import { Copy, Loader2, Edit2, MoveRight } from "lucide-react"
+import { ACADEMY_MODULES } from "@/content/academy"
+import { useAcademy } from "@/hooks/useAcademy"
+import { useHero, xpToNext } from "@/hooks/useGame"
+import { useProfile } from "@/hooks/useProfile"
+import {
+  RARITY_CLASSES,
+  RARITY_NAMES,
+  useChainProfile,
+} from "@/hooks/useProfileChain"
+import { ACTION_LABELS, ActionType } from "@/lib/attestcoin/types"
+import { CREDITCOIN_EXPLORER_URL } from "@/lib/chains"
 
 function getDefaultAvatar(seed: string) {
-  const s = seed.toLowerCase().replace(/[^a-z0-9]/g, "") || "default"
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${s}&size=256&radius=50`
+  return `https://api.dicebear.com/9.x/identicon/svg?seed=${seed}`
 }
 
 function shortAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
 
+function actionLabel(actionType: number) {
+  return ACTION_LABELS[actionType as ActionType] ?? `Action ${actionType}`
+}
+
+/** VAEL is 18 decimals. Whole tokens are all this page needs. */
+function vael(wei: string) {
+  return (BigInt(wei || "0") / 10n ** 18n).toLocaleString()
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
-  const { stats, loading, refetch } = useProfile(address ?? null)
-  const { quests: completedQuestsList, loading: completedLoading } =
-    useCompletedQuests(address ?? null)
+
+  // Off-chain decoration: a name and an avatar. Absent is fine and the page still works.
+  const { stats, refetch } = useProfile(address ?? null)
+  // Everything that matters comes from the chain and the index built from its events.
+  const { hero, loading: heroLoading } = useHero(address ?? undefined)
+  const { actions, badges, loading: chainLoading } = useChainProfile(address ?? undefined)
+  const { data: academy } = useAcademy(address ?? undefined)
 
   useEffect(() => {
-    if (!isConnected || !address) {
-      router.push("/")
-    }
+    if (!isConnected || !address) router.push("/")
   }, [isConnected, address, router])
-
-  const handleCopyAddress = async () => {
-    if (address) {
-      await navigator.clipboard.writeText(address)
-    }
-  }
 
   if (!isConnected || !address) {
     return (
@@ -47,256 +62,246 @@ export default function ProfilePage() {
     )
   }
 
-  if (loading && !stats) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-      </main>
-    )
-  }
-
   const avatarUrl = stats?.avatar_url ?? getDefaultAvatar(address)
   const displayName = stats?.name?.trim() || shortAddress(address)
-  const hasProfile = !!(stats?.name?.trim() && stats?.email?.trim())
-  const level = stats?.level ?? 1
-  const totalXp = stats?.total_xp ?? 0
-  const completedQuests = stats?.completed_quests ?? 0
-  const rank = stats?.rank
-  const xpForNextLevel = 5000
-  const xpInCurrentLevel = totalXp % xpForNextLevel
-  const xpNeeded = xpForNextLevel - xpInCurrentLevel
-  const xpPct =
-    xpNeeded === 0 ? 0 : (xpInCurrentLevel / xpForNextLevel) * 100
+
+  const level = hero?.level ?? 1
+  const xp = Number(hero?.xp ?? 0)
+  const needed = xpToNext(level)
+  const xpPct = needed === 0 ? 0 : Math.min(100, (xp / needed) * 100)
+
+  const academyDone = ACADEMY_MODULES.filter(
+    (module) => academy?.modules[module.slug]?.quizPassed
+  ).length
 
   return (
     <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Complete profile prompt */}
-        {!hasProfile && (
-          <div className="rounded border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <p className="text-sm text-amber-200">
-              Complete your profile with name and email to get personalized quests.
-            </p>
-            <EditProfileDialog
-              walletAddress={address}
-              stats={stats}
-              onSuccess={refetch}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 rounded border-amber-500/50 text-amber-200 hover:bg-amber-500/20"
-              >
-                Add Name & Email
-              </Button>
-            </EditProfileDialog>
-          </div>
-        )}
-
-        {/* Top identity bar */}
+        {/* Identity */}
         <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <EditAvatarDialog
-              walletAddress={address}
-              stats={stats}
-              onSuccess={refetch}
-            >
-              <div className="group relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-white/10 bg-zinc-900 ring-2 ring-transparent transition hover:ring-white/20">
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  fill
-                  className="object-cover"
-                  unoptimized={
-                    avatarUrl.startsWith("data:") ||
-                    avatarUrl.includes("dicebear")
-                  }
-                  sizes="80px"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition group-hover:opacity-100">
-                  <Edit2 className="h-6 w-6 text-white" />
-                </div>
-              </div>
+            <EditAvatarDialog walletAddress={address} stats={stats} onSuccess={refetch}>
+              <button type="button" className="relative h-16 w-16 overflow-hidden rounded-full border border-[#1A1A1A]">
+                <Image src={avatarUrl} alt="" fill sizes="64px" className="object-cover" unoptimized />
+              </button>
             </EditAvatarDialog>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="truncate text-xl font-semibold text-white">
-                  {displayName}
-                </h1>
-                <EditProfileDialog
-                  walletAddress={address}
-                  stats={stats}
-                  onSuccess={refetch}
-                >
-                  <button
-                    type="button"
-                    className="rounded p-1 text-zinc-400 transition hover:bg-white/5 hover:text-white"
-                    aria-label="Edit profile"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                </EditProfileDialog>
-              </div>
-              {stats?.email && (
-                <p className="mt-0.5 truncate text-sm text-zinc-400">
-                  {stats.email}
-                </p>
-              )}
-              <div className="mt-2 flex items-center gap-2">
-                <span className="rounded border border-[#1A1A1A] bg-[#18181B] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-                  {shortAddress(address)}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyAddress}
-                  className="h-7 px-2 text-zinc-500 hover:text-white"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">{displayName}</h1>
+              <button
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(address)}
+                className="mt-1 inline-flex items-center gap-1.5 font-mono text-xs text-zinc-500 hover:text-zinc-300"
+              >
+                {shortAddress(address)} <Copy className="h-3 w-3" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <EditProfileDialog
-              walletAddress={address}
-              stats={stats}
-              onSuccess={refetch}
-            >
-              <Button
-                variant="default"
-                className="rounded w-full font-semibold bg-white text-black hover:bg-white/80"
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                Edit Profile
+
+          <div className="flex flex-wrap gap-2">
+            <EditProfileDialog walletAddress={address} stats={stats} onSuccess={refetch}>
+              <Button variant="outline" size="sm" className="rounded border-zinc-700 text-zinc-300">
+                Edit profile
               </Button>
             </EditProfileDialog>
+            <Button asChild size="sm" className="rounded bg-white text-black hover:bg-white/90">
+              <Link href={`/hero?address=${address}`}>Hero sheet</Link>
+            </Button>
           </div>
         </section>
 
-        {/* Level / XP */}
-        <section>
-          <div className="overflow-hidden rounded border border-[#1A1A1A] bg-black p-5">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="grid h-9 w-9 place-items-center rounded border border-[#1A1A1A] bg-[#18181B] text-sm font-semibold text-zinc-200">
-                    L{level}
-                  </span>
-                  <span className="text-sm font-medium text-white">
-                    Level {level}
-                  </span>
-                </div>
-                <div className="text-[11px] text-zinc-500">
-                  {xpInCurrentLevel.toLocaleString()} / {xpForNextLevel.toLocaleString()} XP
-                </div>
-                <div className="h-2 w-full max-w-md overflow-hidden rounded-full bg-[#1A1A1A]">
-                  <div
-                    className="h-full bg-white transition-[width] duration-500"
-                    style={{ width: `${xpPct}%` }}
-                  />
+        {/* Hero card and level curve */}
+        <section className="rounded border border-[#1A1A1A] bg-black p-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-sm font-semibold text-white">Hero</h2>
+            <span className="text-[11px] text-zinc-600">
+              Levelled only by proofs the chain verified
+            </span>
+          </div>
+
+          {heroLoading && !hero ? (
+            <p className="mt-3 text-xs text-zinc-500">Loading…</p>
+          ) : !hero?.hasHero ? (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <p className="text-xs text-zinc-500">No hero yet. Minting is free.</p>
+              <Button asChild size="sm" className="rounded bg-white text-black hover:bg-white/90">
+                <Link href="/hero">Mint a hero</Link>
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-4 flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded border border-[#1A1A1A] bg-[#18181B] text-sm font-semibold text-zinc-200">
+                  L{level}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between text-[11px]">
+                    <span className="text-zinc-400">
+                      Level {level} · {hero.affinity}
+                    </span>
+                    <span className="text-zinc-500">
+                      {xp.toLocaleString()} / {needed.toLocaleString()} XP to level {level + 1}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded bg-[#1A1A1A]">
+                    <div className="h-full bg-white" style={{ width: `${xpPct}%` }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Stats */}
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded border border-[#1A1A1A] bg-black p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              XP Points
-            </div>
-            <div className="mt-2 text-lg font-semibold text-white">
-              {totalXp.toLocaleString()}
-            </div>
-          </div>
-          <div className="rounded border border-[#1A1A1A] bg-black p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Current Level
-            </div>
-            <div className="mt-2 text-lg font-semibold text-white">
-              {level}
-            </div>
-          </div>
-          <div className="rounded border border-[#1A1A1A] bg-black p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Quests Completed
-            </div>
-            <div className="mt-2 text-lg font-semibold text-white">
-              {completedQuests}
-            </div>
-          </div>
-          <div className="rounded border border-[#1A1A1A] bg-black p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Leaderboard Rank
-            </div>
-            <div className="mt-2 text-lg font-semibold text-white">
-              {rank != null ? `#${rank}` : "—"}
-            </div>
-          </div>
-        </section>
-
-        {/* Completed Quests */}
-        <section className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
-          <div className="border-b border-[#1A1A1A] p-5">
-            <div className="text-sm font-semibold text-white">
-              Completed Quests
-            </div>
-            <div className="mt-1 text-[11px] text-zinc-500">
-              Quests you have completed
-            </div>
-          </div>
-          <div className="p-5">
-            {completedLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-              </div>
-            ) : completedQuestsList.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">
-                No completed quests yet. Complete quests to earn XP and rewards.
+              <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  ["Strength", hero.strength],
+                  ["Agility", hero.agility],
+                  ["Intellect", hero.intellect],
+                  ["Streak", hero.streak],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="rounded border border-[#1A1A1A] px-3 py-2">
+                    <dt className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">{label}</dt>
+                    <dd className="mt-0.5 text-sm text-zinc-200">{String(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 text-[11px] text-zinc-600">
+                Leaving level L costs 100 + 50 x L XP, so the bar resets each level rather than
+                filling once.
               </p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {completedQuestsList.map((q) => (
-                  <Link
-                    key={q.quest_id_on_chain}
-                    href={`/quests/${q.quest_id_on_chain}`}
-                    className="flex items-center justify-between gap-4 rounded border border-[#1A1A1A] bg-[#0F0F10] p-4 transition hover:border-zinc-600"
+            </>
+          )}
+        </section>
+
+        {/* Badges */}
+        <section className="rounded border border-[#1A1A1A] bg-black p-5">
+          <h2 className="text-sm font-semibold text-white">Badges</h2>
+          {chainLoading && badges.length === 0 ? (
+            <p className="mt-3 text-xs text-zinc-500">Loading…</p>
+          ) : badges.length === 0 ? (
+            <p className="mt-3 text-xs text-zinc-500">
+              None yet. A badge is minted by QuestASC when it verifies a quest proof.
+            </p>
+          ) : (
+            <>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {badges.map((badge) => (
+                  <div
+                    key={badge.tokenId}
+                    className={`rounded border px-3 py-2.5 ${RARITY_CLASSES[badge.rarity] ?? RARITY_CLASSES[0]}`}
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-white">
-                        {q.title ?? `Quest #${q.quest_id_on_chain}`}
-                      </div>
-                      {q.quest_type && (
-                        <span className="mt-1 inline-block rounded border border-zinc-700 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-500">
-                          {q.quest_type}
-                        </span>
-                      )}
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-xs font-semibold">
+                        {RARITY_NAMES[badge.rarity] ?? "Common"}
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-500">#{badge.tokenId}</span>
                     </div>
-                    <MoveRight className="h-4 w-4 shrink-0 text-zinc-500" />
-                  </Link>
+                    <p className="mt-1 text-[11px] text-zinc-500">
+                      Quest {badge.questId} · level {badge.badgeLevel}
+                    </p>
+                  </div>
                 ))}
               </div>
-            )}
-          </div>
+              {badges.some((badge) => badge.rarityIsDerived) && (
+                <p className="mt-3 text-[11px] leading-relaxed text-zinc-600">
+                  The deployed BadgeNFT does not store a rarity, so the rarities above are computed
+                  from each badge&apos;s level by the published rule. The version that records
+                  rarity on chain ships with the consolidated redeploy.
+                </p>
+              )}
+            </>
+          )}
         </section>
 
-        {/* Quick links */}
-        <section className="flex gap-3">
-          <Button
-            asChild
-            variant="default"
-            className="rounded font-semibold bg-white text-black hover:bg-white/80"
-          >
-            <Link href="/quests">View Quests</Link>
+        {/* Academy */}
+        <section className="rounded border border-[#1A1A1A] bg-black p-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-sm font-semibold text-white">Academy</h2>
+            <Link href="/academy" className="text-[11px] text-zinc-500 hover:text-zinc-300">
+              Open academy
+            </Link>
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            {academyDone} of {ACADEMY_MODULES.length} quizzes passed
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {ACADEMY_MODULES.map((module) => {
+              const progress = academy?.modules[module.slug]
+              const read = progress?.lessonsRead.length ?? 0
+              return (
+                <li
+                  key={module.slug}
+                  className="flex items-center justify-between gap-3 text-[11px]"
+                >
+                  <Link href={`/academy/${module.slug}`} className="text-zinc-400 hover:text-zinc-200">
+                    {module.title}
+                  </Link>
+                  <span className={progress?.quizPassed ? "text-emerald-400" : "text-zinc-600"}>
+                    {read}/{module.lessons.length} lessons ·{" "}
+                    {progress?.quizPassed
+                      ? `passed ${progress.quizScore}/5`
+                      : progress?.quizScore
+                        ? `best ${progress.quizScore}/5`
+                        : "not taken"}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+
+        {/* Verified actions */}
+        <section className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
+          <header className="border-b border-[#1A1A1A] px-5 py-4">
+            <h2 className="text-sm font-semibold text-white">Verified actions</h2>
+            <p className="mt-1 text-[11px] text-zinc-600">
+              Every row is one QuestProofApplied event. Creditcoin emitted it after checking a
+              Merkle proof and a continuity proof, so nothing here can be added by hand.
+            </p>
+          </header>
+
+          {chainLoading && actions.length === 0 ? (
+            <p className="px-5 py-6 text-xs text-zinc-500">Loading…</p>
+          ) : actions.length === 0 ? (
+            <p className="px-5 py-6 text-xs text-zinc-500">
+              Nothing verified yet. Complete a quest and it appears here.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[#1A1A1A]">
+              {actions.map((action) => (
+                <li
+                  key={action.replayKey}
+                  className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="text-zinc-200">{actionLabel(action.actionType)}</p>
+                    <p className="mt-0.5 text-[11px] text-zinc-600">
+                      Quest {action.questId} · Sepolia block{" "}
+                      {action.sourceBlock.toLocaleString()} ·{" "}
+                      {new Date(action.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {action.vaelReleased !== "0" && (
+                      <p className="text-emerald-400">{vael(action.vaelReleased)} VAEL</p>
+                    )}
+                    <a
+                      href={`${CREDITCOIN_EXPLORER_URL}/block/${action.creditcoinBlock}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[10px] text-sky-400 hover:underline"
+                    >
+                      block {action.creditcoinBlock.toLocaleString()}
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="flex flex-wrap gap-3">
+          <Button asChild className="rounded bg-white font-semibold text-black hover:bg-white/80">
+            <Link href="/quests">View quests</Link>
           </Button>
-          <Button
-            asChild
-            variant="default"
-            className="rounded font-semibold bg-white text-black hover:bg-white/80"
-          >
-            <Link href="/leaderboard">View Leaderboard</Link>
+          <Button asChild className="rounded bg-white font-semibold text-black hover:bg-white/80">
+            <Link href="/leaderboard">View leaderboard</Link>
           </Button>
         </section>
       </div>
