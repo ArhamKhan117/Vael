@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS proof_submissions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   quest_id_on_chain BIGINT NOT NULL,
   participant TEXT NOT NULL,
-  source_chain_key SMALLINT NOT NULL DEFAULT 1, -- 1 Sepolia, 3 Ethereum mainnet
+  -- BIGINT, not SMALLINT: the indexer also stores a Creditcoin chain id (102031) as a key.
+  source_chain_key BIGINT NOT NULL DEFAULT 1, -- 1 Sepolia, 3 Ethereum mainnet
   source_tx_hash TEXT NOT NULL,
   source_block BIGINT,
   action_type SMALLINT, -- 0 Portal, 1 UniswapSwap, 2 Erc20Transfer, 3 AaveSupply, 4 AaveBorrow
@@ -26,7 +27,8 @@ CREATE INDEX IF NOT EXISTS idx_proof_submissions_participant ON proof_submission
 
 -- Per-emitter log cursor so the watcher resumes where it stopped after a restart.
 CREATE TABLE IF NOT EXISTS worker_cursors (
-  chain_key SMALLINT NOT NULL,
+  -- BIGINT: the Creditcoin index uses chain id 102031 as its cursor key, which overflows SMALLINT.
+  chain_key BIGINT NOT NULL,
   emitter TEXT NOT NULL,
   last_block BIGINT NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -71,7 +73,7 @@ CREATE TABLE IF NOT EXISTS academy_progress (
 );
 
 -- Existing submissions predate the proof pipeline; bring them onto the same shape.
-ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS source_chain_key SMALLINT NOT NULL DEFAULT 1;
+ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS source_chain_key BIGINT NOT NULL DEFAULT 1;
 ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS query_id TEXT;
 ALTER TABLE quest_submissions DROP COLUMN IF EXISTS mirror_node_payload;
 
@@ -81,7 +83,7 @@ ALTER TABLE quest_submissions DROP COLUMN IF EXISTS mirror_node_payload;
 CREATE TABLE IF NOT EXISTS indexed_quests (
   quest_id BIGINT PRIMARY KEY,
   participant TEXT NOT NULL,
-  source_chain_key SMALLINT NOT NULL DEFAULT 1,
+  source_chain_key BIGINT NOT NULL DEFAULT 1,
   action_type SMALLINT NOT NULL,
   emitter TEXT NOT NULL,
   token TEXT,
