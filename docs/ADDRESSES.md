@@ -1,7 +1,7 @@
 # Deployed addresses
 
 All Vael game state lives on Creditcoin testnet (chain id 102031).
-Ethereum Sepolia (11155111) carries only the source actions players prove; nothing is deployed there yet.
+Ethereum Sepolia (11155111) carries the source actions players prove, plus `QuestPortal`.
 
 Every address below was read back from the chain with `cast call` at the block its write landed in.
 Re-assert the whole wiring at any time, keylessly and without sending a transaction:
@@ -197,14 +197,42 @@ Quest ids 1 and 2 on this deployment were created by smoke runs.
 
 | Contract | Address | Deploy tx | Source |
 |---|---|---|---|
-| `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x0f26d55b…ba61dd`](https://sepolia.etherscan.io/tx/0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd) | verified on Blockscout |
+| `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x0f26d55b…ba61dd`](https://sepolia.etherscan.io/tx/0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd) | verified on Etherscan and Blockscout |
 
-Verified on [eth-sepolia.blockscout.com](https://eth-sepolia.blockscout.com), not Etherscan: no
-Etherscan API key is configured in `contracts/.env`.
+Verified on both [Etherscan](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1#code)
+and [eth-sepolia.blockscout.com](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1).
+Constructor arguments are `(owner, treasury)`, both the deployer address, read back off the live contract before submitting.
+Confirmed through the Etherscan API rather than the submit output: `getsourcecode` returns `QuestPortal`, solc `v0.8.28+commit.7893614a`, optimizer on at 200 runs, and 29,488 bytes of source.
 
 Note that this address is identical to `IdentityRegistry` on Creditcoin. Same deployer, same nonce,
 different chain. It is a live illustration of why `QuestASC` scopes every emitter check by
 `chainKey` rather than by address alone.
+
+## Badge metadata
+
+Every badge level points at a metadata document pinned to IPFS.
+Before this, all ten levels held `ipfs://placeholder`, so a badge a player earned resolved to nothing.
+Regenerate the art with `node apps/web/scripts/make-badges.mjs`, re-pin with `pnpm --filter @vael/api pin-badges`, and re-wire with `contracts/script/set-badge-uris.sh`.
+The manifest lives at `apps/api/scripts/badge-cids.json`.
+
+| Level | Name | Rarity | Metadata CID | Image CID |
+|---|---|---|---|---|
+| 1 | Initiate | Common | `QmfDNGL7khGCv8yd1zzNN93oVmp9YcSbPcndrY8obY82qb` | `QmZh3ix5CHposdiJfDt8FD2WXCYsvZQQL35nTfNZTL5pAn` |
+| 2 | Apprentice | Uncommon | `QmPrqxiuEbAPPAdcrAP9r5hg2Wkmqz26S5HNREFcZKkxjC` | `QmPU7Gcuk3ZKZxrkLv6vzHm6vybXEUeVJjRNYoAW9tx5z5` |
+| 3 | Adept | Rare | `QmcGif83wh4x99fwK248uk94DE9S8diCtzxzpi1iZiFTot` | `QmbTKV6WyYFfbJkvy98EPrSLWohpbRD8yRtPYcgKNCeCeY` |
+| 4 | Veteran | Epic | `QmVG8QcCB2Vtqdnj1PJ98b5E5JdfS5ofP6kNtVUndRQoGc` | `Qmba8MNBQAsjoLQEtHU6TcUW8B7pSQrpkWPYXbrUY43msB` |
+| 5 | Champion | Legendary | `QmVMRvs9Bf1v9sHupLwkRRmSSf784LFy2WhoQWexBc6LgQ` | `QmbX4heuZSBqVsGoMaacjyssB6uqk4fEjM3EKEstCLPBfm` |
+| 6 | Warden | Legendary | `QmXqTH6edmgFoyGqJTZAsar4b4W1tc5wHPqXpgEyLbcEjF` | `QmWXVpK4DUdANUjTLqWeXDxo9yYo3XPsvx8x8FUdQc1vDT` |
+| 7 | Sentinel | Legendary | `QmSRjPS8utVrz348MxjG1Cub6kSHxdpgnjPcEJ7oWnA38h` | `QmXYcq1Nh3uakpMAT8VHAErTbtpbzEMTnaRWtYEv23gSoq` |
+| 8 | Archon | Legendary | `QmUtNCx3MhLk33VvMTos9FCzXuFxmutXVaEFW556UrViT6` | `QmbcXLZtgAQErDoZsf4VxRXKktGUTemrcgU9JEZmeXfGN5` |
+| 9 | Paragon | Legendary | `QmNm79zvrR4TjfWT379kB7NP3ZRgP81t1qeNpbJfYBBAnk` | `QmTnnce2P9JMmGCkazEFMgowCqvSSKbb6vxG6PYig4jpUU` |
+| 10 | Ascendant | Legendary | `QmWuvFHfFCK6M1nbLYQWK2z6xbxjrTGHQTaRWStWmDKgzu` | `QmSX7Pd5m8rJNzwkVcrVbrAefoU5nwmDpNm9F2fL1Td5Ne` |
+
+Rarity follows BadgeNFT v3's rule, 1 Common through 5 and above Legendary, so the metadata already reads the way the deployed contract will once v3 ships.
+
+**The seven badges minted before this wiring still resolve to `ipfs://placeholder`.**
+BadgeNFT v2 stores a token's URI at mint through `ERC721URIStorage` and offers no way to change it afterwards, so `setBadgeURI` only affects future mints.
+BadgeNFT v3 builds `tokenURI` on demand from the level's URI, which removes the problem by construction; see SPEC §17.1.
 
 ## Machine-readable
 

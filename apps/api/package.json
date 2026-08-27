@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "e2e:portal": "tsx scripts/e2e-portal.ts",
     "worker": "tsx scripts/worker.ts",
-    "reindex": "tsx scripts/reindex.ts"
+    "reindex": "tsx scripts/reindex.ts",
+    "pin-badges": "tsx scripts/pin-badges.ts"
   },
   "keywords": [
     "vael",

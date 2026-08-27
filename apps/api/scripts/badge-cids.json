@@ -1,0 +1,74 @@
+{
+  "badges": [
+    {
+      "level": 1,
+      "name": "Initiate",
+      "rarity": "Common",
+      "imageCid": "QmZh3ix5CHposdiJfDt8FD2WXCYsvZQQL35nTfNZTL5pAn",
+      "metadataCid": "QmfDNGL7khGCv8yd1zzNN93oVmp9YcSbPcndrY8obY82qb"
+    },
+    {
+      "level": 2,
+      "name": "Apprentice",
+      "rarity": "Uncommon",
+      "imageCid": "QmPU7Gcuk3ZKZxrkLv6vzHm6vybXEUeVJjRNYoAW9tx5z5",
+      "metadataCid": "QmPrqxiuEbAPPAdcrAP9r5hg2Wkmqz26S5HNREFcZKkxjC"
+    },
+    {
+      "level": 3,
+      "name": "Adept",
+      "rarity": "Rare",
+      "imageCid": "QmbTKV6WyYFfbJkvy98EPrSLWohpbRD8yRtPYcgKNCeCeY",
+      "metadataCid": "QmcGif83wh4x99fwK248uk94DE9S8diCtzxzpi1iZiFTot"
+    },
+    {
+      "level": 4,
+      "name": "Veteran",
+      "rarity": "Epic",
+      "imageCid": "Qmba8MNBQAsjoLQEtHU6TcUW8B7pSQrpkWPYXbrUY43msB",
+      "metadataCid": "QmVG8QcCB2Vtqdnj1PJ98b5E5JdfS5ofP6kNtVUndRQoGc"
+    },
+    {
+      "level": 5,
+      "name": "Champion",
+      "rarity": "Legendary",
+      "imageCid": "QmbX4heuZSBqVsGoMaacjyssB6uqk4fEjM3EKEstCLPBfm",
+      "metadataCid": "QmVMRvs9Bf1v9sHupLwkRRmSSf784LFy2WhoQWexBc6LgQ"
+    },
+    {
+      "level": 6,
+      "name": "Warden",
+      "rarity": "Legendary",
+      "imageCid": "QmWXVpK4DUdANUjTLqWeXDxo9yYo3XPsvx8x8FUdQc1vDT",
+      "metadataCid": "QmXqTH6edmgFoyGqJTZAsar4b4W1tc5wHPqXpgEyLbcEjF"
+    },
+    {
+      "level": 7,
+      "name": "Sentinel",
+      "rarity": "Legendary",
+      "imageCid": "QmXYcq1Nh3uakpMAT8VHAErTbtpbzEMTnaRWtYEv23gSoq",
+      "metadataCid": "QmSRjPS8utVrz348MxjG1Cub6kSHxdpgnjPcEJ7oWnA38h"
+    },
+    {
+      "level": 8,
+      "name": "Archon",
+      "rarity": "Legendary",
+      "imageCid": "QmbcXLZtgAQErDoZsf4VxRXKktGUTemrcgU9JEZmeXfGN5",
+      "metadataCid": "QmUtNCx3MhLk33VvMTos9FCzXuFxmutXVaEFW556UrViT6"
+    },
+    {
+      "level": 9,
+      "name": "Paragon",
+      "rarity": "Legendary",
+      "imageCid": "QmTnnce2P9JMmGCkazEFMgowCqvSSKbb6vxG6PYig4jpUU",
+      "metadataCid": "QmNm79zvrR4TjfWT379kB7NP3ZRgP81t1qeNpbJfYBBAnk"
+    },
+    {
+      "level": 10,
+      "name": "Ascendant",
+      "rarity": "Legendary",
+      "imageCid": "QmSX7Pd5m8rJNzwkVcrVbrAefoU5nwmDpNm9F2fL1Td5Ne",
+      "metadataCid": "QmWuvFHfFCK6M1nbLYQWK2z6xbxjrTGHQTaRWStWmDKgzu"
+    }
+  ]
+}
