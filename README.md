@@ -105,12 +105,20 @@ their reward.
 `/hero` and `/raid` render with Phaser 3. React owns the wallet, the data, and every write; Phaser
 only draws.
 
+`/academy` teaches what a swap, a supply, and a proof actually do: four modules of three lessons and
+a five-question quiz, each ending in an action to go and perform for real.
+Progress is a bookmark and grants nothing; a module's badge comes from its quest, which QuestASC
+mints after verifying a proof like any other.
+
+Every figure on the site is counted from a Creditcoin event or read from a contract.
+An empty network shows zeros rather than a placeholder.
+
 ## Repository
 
 | Path | What it is |
 |---|---|
-| `apps/web` | Next.js 16 app: quests, campaigns, Studio, hero, raid, leaderboard |
-| `apps/api` | Express backend: quest agent, Supabase cache, Attestcoin proof worker |
+| `apps/web` | Next.js 16 app: quests, campaigns, Studio, hero, raid, academy, profile, leaderboard |
+| `apps/api` | Express backend: quest agent, Creditcoin indexer, Attestcoin proof worker |
 | `contracts` | Foundry project for Creditcoin and Sepolia |
 | `docs/SPEC.md` | Source of truth for architecture, contracts, constants, and phases |
 | `docs/HACKATHON_REQUIREMENTS.md` | Requirement checklist |
