@@ -30,6 +30,12 @@ VAULT="$(lookup REWARD_VAULT_ADDRESS)"
 BADGE="$(lookup BADGE_NFT_ADDRESS)"
 MANAGER="$(lookup QUEST_MANAGER_ADDRESS)"
 ESCROW="$(lookup CAMPAIGN_ESCROW_ADDRESS)"
+HERO="$(lookup VAEL_HERO_ADDRESS)"
+RAID="$(lookup RAID_BOSS_ADDRESS)"
+ARENA="$(lookup ARENA_ADDRESS)"
+LOOT="$(lookup LOOT_ADDRESS)"
+EQUIPMENT="$(lookup EQUIPMENT_ADDRESS)"
+MARKET="$(lookup MARKETPLACE_ADDRESS)"
 
 # submit ADDRESS PATH:NAME ENCODED_CONSTRUCTOR_ARGS
 submit() {
@@ -59,6 +65,9 @@ submit "$TOKEN"      src/tokens/VaelToken.sol:VaelToken \
 submit "$VAULT"      src/RewardVault.sol:RewardVault \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
+# BadgeNFT and VaelHero in this tree are v3 and v2, which are written but not deployed. Submitting
+# them against the live v2 and v1 addresses fails on a bytecode mismatch; the explorer already
+# holds the source those were verified with. See docs/SPEC.md §17.1.
 submit "$BADGE"      src/BadgeNFT.sol:BadgeNFT \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
@@ -68,6 +77,20 @@ submit "$MANAGER"    src/QuestManager.sol:QuestManager \
 
 submit "$ESCROW"     src/CampaignEscrow.sol:CampaignEscrow \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
+
+# milestone 6 modules. Each is standalone, so each constructor names only what it reads.
+[ -n "$ARENA" ] && submit "$ARENA" src/game/Arena.sol:Arena \
+  "$(cast abi-encode 'constructor(address,address,address)' "$DEPLOYER_ADDRESS" "$TOKEN" "$HERO")"
+
+[ -n "$LOOT" ] && submit "$LOOT" src/game/Loot.sol:Loot \
+  "$(cast abi-encode 'constructor(address,address)' "$DEPLOYER_ADDRESS" "$RAID")"
+
+[ -n "$EQUIPMENT" ] && submit "$EQUIPMENT" src/game/Equipment.sol:Equipment \
+  "$(cast abi-encode 'constructor(address,address)' "$HERO" "$LOOT")"
+
+[ -n "$MARKET" ] && submit "$MARKET" src/game/Marketplace.sol:Marketplace \
+  "$(cast abi-encode 'constructor(address,address,address,address)' \
+     "$DEPLOYER_ADDRESS" "$TOKEN" "$LOOT" "$DEPLOYER_ADDRESS")"
 
 # A submission returning OK does not mean the contract ended up verified: QuestASC v3 was
 # accepted and stayed unverified, and nothing noticed because the submit output looked fine.

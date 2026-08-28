@@ -32,6 +32,10 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | verified |
 | `VaelHero` | [`0x8bE97BeBB253d7F660529e23e093F18645Fc974b`](https://creditcoin-testnet.blockscout.com/address/0x8bE97BeBB253d7F660529e23e093F18645Fc974b) | [`0xcc5bc0cd…515987`](https://creditcoin-testnet.blockscout.com/tx/0xcc5bc0cdf2bb45bf482f724e3f6bead4711d29afdc632bff8548637790515987) | 5459460 | verified |
 | `RaidBoss` | [`0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6`](https://creditcoin-testnet.blockscout.com/address/0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6) | [`0x9ad78bf5…bc989d`](https://creditcoin-testnet.blockscout.com/tx/0x9ad78bf5d060aefa85c963c91c47a74bf184ce6689ea5d09910aa8223cbc989d) | 5459462 | verified |
+| `Arena` | [`0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be`](https://creditcoin-testnet.blockscout.com/address/0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be) | [`0x721329e7…aa48ee`](https://creditcoin-testnet.blockscout.com/tx/0x721329e797bfb819edc3c356f5f4fe2d8348fd15f9d5177c26e1729839aa48ee) | 5460598 | verified |
+| `Loot` | [`0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86`](https://creditcoin-testnet.blockscout.com/address/0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86) | [`0xd91caa06…7744dd`](https://creditcoin-testnet.blockscout.com/tx/0xd91caa06e7942daeab53579547c388a25560b8a44f52afc8d042fb3ff17744dd) | 5460599 | verified |
+| `Equipment` | [`0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517`](https://creditcoin-testnet.blockscout.com/address/0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517) | [`0xe03fe4c2…315dfe`](https://creditcoin-testnet.blockscout.com/tx/0xe03fe4c24587badbaa94245e94127d988939046d721584a31dcca07492315dfe) | 5460600 | verified |
+| `Marketplace` | [`0x5d816890b23593E997f66292b7B446E5a8379D56`](https://creditcoin-testnet.blockscout.com/address/0x5d816890b23593E997f66292b7B446E5a8379D56) | [`0x1d24568f…beb575`](https://creditcoin-testnet.blockscout.com/tx/0x1d24568fa6df7bd0868c96bacfe31f9d854ad8ea3b6179f2604435b8d5beb575) | 5460601 | verified |
 | `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | verified |
 | `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | verified |
 | `ValidationRegistry` | [`0x9BE39f19b55792285D495302D872160dB2285a65`](https://creditcoin-testnet.blockscout.com/address/0x9BE39f19b55792285D495302D872160dB2285a65) | [`0x0e56c603…6bd9ca`](https://creditcoin-testnet.blockscout.com/tx/0x0e56c603808ddc5724251ecbf0fd29dbc31fa156b2f8e89617e25ac1326bd9ca) | 5455357 | verified |
@@ -74,6 +78,10 @@ over an already-proved log: it holds no privilege and cannot widen what is accep
 - **`CampaignEscrow`** — Partner-funded campaign pools
 - **`VaelHero`** — Soul-bound hero. `grantXP` is `onlyQuestASC`
 - **`RaidBoss`** — Season boss. `dealDamage` is `onlyQuestASC`
+- **`Arena`** — Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it
+- **`Loot`** — ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists
+- **`Equipment`** — Four slots per hero, items escrowed while equipped
+- **`Marketplace`** — Fixed-price loot sales for VAEL, 2% to the treasury
 - **`IdentityRegistry`** — ERC-8004 agent identity
 - **`ReputationRegistry`** — ERC-8004 agent reputation
 - **`ValidationRegistry`** — ERC-8004 validation records. QuestManager's authorization here was granted then revoked: it holds the registry as an immutable but calls nothing on it, so the privilege was unused
@@ -207,6 +215,22 @@ Confirmed through the Etherscan API rather than the submit output: `getsourcecod
 Note that this address is identical to `IdentityRegistry` on Creditcoin. Same deployer, same nonce,
 different chain. It is a live illustration of why `QuestASC` scopes every emitter check by
 `chainKey` rather than by address alone.
+
+## milestone 6 modules
+
+Arena, Loot, Equipment, and Marketplace are standalone.
+None is a completion hook, a badge minter, or anything QuestASC calls, and `VerifyBaseline` asserts that QuestASC still has exactly two hooks and that neither new contract can mint a badge.
+That is what let them ship without redeploying anything.
+
+| Wiring | Transaction |
+|---|---|
+| `Loot.setArena(Arena)` | [`0x1dd39c7e…c0006`](https://creditcoin-testnet.blockscout.com/tx/0x1dd39c7e6d26096602167b33705209df4a62e827b58bcb7d169d6db1c66c0006) |
+| `Arena.setRewards(Loot)` | [`0x5966a7b2…ce9bf`](https://creditcoin-testnet.blockscout.com/tx/0x5966a7b2932b50a6eb29bbd908e6a9e3f793107754b626d82432a64d46dce9bf) |
+| `Arena.setEquipment(Equipment)` | [`0x66e1ecd6…20c74`](https://creditcoin-testnet.blockscout.com/tx/0x66e1ecd6837958fbc7b8a8f46c68607f6bf9f8ec4814133b30d2014ff0d20c74) |
+
+Eleven item kinds are registered, one transaction each, with every rarity populated.
+An empty pool would make Loot fall back down the ladder and quietly pay a raid's biggest contributor in a lower tier than they earned, so `VerifyBaseline` checks all five pools.
+Item stats and metadata come from `apps/web/src/content/items.json` through `apps/api/scripts/item-cids.json`; the registration transactions are recorded as `W6_ITEM_*` in the machine-readable block.
 
 ## Badge metadata
 
@@ -446,3 +470,29 @@ W4_RAID_ASC_TX=0x40ae6bf426b0a53ce05d8d0e9e1b8fad41000ca57ee6c290408bf559c99e6b9
 W4_HOOK_HERO_TX=0x7ff2bc1f5ec0c1f6d0e8299ae35e159e6de8e8ca9bc919c6345f59c959e4cd79
 W4_HOOK_RAID_TX=0x3e7c1229e8dedb8ea60812462d741ac6598f1ccbbddcacdf86efb76b18100965
 W4_BADGE_MINTER_TX=0xea1a7cfdf01fd836a65a02039b74e5724813ffa8c722ad96bebc0f660964ebad
+ARENA_ADDRESS=0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be
+ARENA_ADDRESS_TX=0x721329e797bfb819edc3c356f5f4fe2d8348fd15f9d5177c26e1729839aa48ee
+ARENA_ADDRESS_BLOCK=5460598
+LOOT_ADDRESS=0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86
+LOOT_ADDRESS_TX=0xd91caa06e7942daeab53579547c388a25560b8a44f52afc8d042fb3ff17744dd
+LOOT_ADDRESS_BLOCK=5460599
+EQUIPMENT_ADDRESS=0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517
+EQUIPMENT_ADDRESS_TX=0xe03fe4c24587badbaa94245e94127d988939046d721584a31dcca07492315dfe
+EQUIPMENT_ADDRESS_BLOCK=5460600
+MARKETPLACE_ADDRESS=0x5d816890b23593E997f66292b7B446E5a8379D56
+MARKETPLACE_ADDRESS_TX=0x1d24568fa6df7bd0868c96bacfe31f9d854ad8ea3b6179f2604435b8d5beb575
+MARKETPLACE_ADDRESS_BLOCK=5460601
+W6_LOOT_ARENA_TX=0x1dd39c7e6d26096602167b33705209df4a62e827b58bcb7d169d6db1c66c0006
+W6_ARENA_REWARDS_TX=0x5966a7b2932b50a6eb29bbd908e6a9e3f793107754b626d82432a64d46dce9bf
+W6_ARENA_EQUIPMENT_TX=0x66e1ecd6837958fbc7b8a8f46c68607f6bf9f8ec4814133b30d2014ff0d20c74
+W6_ITEM_RUSTED_BLADE_TX=0xfffaad1504f6023fd3d47f84db01e14f8ad9232365b776fd83e374dc735e1b48
+W6_ITEM_PADDED_VEST_TX=0xbdfbdf0e20a5b6a5758dce869479ea6652f16cf7aa296d0ac960d5a3f3e752f9
+W6_ITEM_IRON_SWORD_TX=0xab9c91f7591b37679795c8d362ea7516ee5bcc90426716d0bdc49e0418bed9b2
+W6_ITEM_SWIFT_CHARM_TX=0x30b6c8b12fad57d18b57c7b9752d012e8e151dec7e35f7cffcbdb57cee95e986
+W6_ITEM_PLATE_HARNESS_TX=0xb3d07a5ff0f521161b36fda3dd716aeab2effd5ae5bc9602bea9c5bfb35f349b
+W6_ITEM_SCHOLARS_SCROLL_TX=0x3dc82d802a67c6e78c1860f3b7292aa93dd0c7b3c09dbdeae1eef69db40a37f6
+W6_ITEM_ARCANE_CODEX_TX=0xe1ccedea1abb9ccf8ea1ec67317b3ffb5822b570dd41e88ba1cfc206292d371f
+W6_ITEM_WARHAMMER_TX=0x4068e699c6066665cf792a583886563b4f04971bd2e30cd1d0c2be722346a9a9
+W6_ITEM_GILDED_AEGIS_TX=0xa01a6e1113d078467716f64a9ef3f0bb1d6274b76152158a599cc3923fa65ebf
+W6_ITEM_BLESSED_BLADE_TX=0xdfda03b741776c82f7d6386664639b4f9d19d1a355619af1f1029542c6124698
+W6_ITEM_SEERS_CRYSTAL_TX=0x8547ddac5d835e4ff595b2be1870051525dca6d76fab84f387d3ddfa8724ebb5

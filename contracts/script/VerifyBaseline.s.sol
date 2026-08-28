@@ -16,6 +16,10 @@ import {QuestASC} from "../src/QuestASC.sol";
 import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 import {VaelHero} from "../src/game/VaelHero.sol";
 import {RaidBoss} from "../src/game/RaidBoss.sol";
+import {Arena} from "../src/game/Arena.sol";
+import {Loot} from "../src/game/Loot.sol";
+import {Equipment} from "../src/game/Equipment.sol";
+import {Marketplace} from "../src/game/Marketplace.sol";
 
 /**
  * @title VerifyBaseline
@@ -71,6 +75,10 @@ contract VerifyBaseline is Script {
         RaidBoss raid = RaidBoss(vm.envAddress("RAID_BOSS_ADDRESS"));
         uint64 sepoliaChainKey = uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1)));
         CampaignEscrow escrow = CampaignEscrow(vm.envAddress("CAMPAIGN_ESCROW_ADDRESS"));
+        Arena arena = Arena(vm.envAddress("ARENA_ADDRESS"));
+        Loot loot = Loot(vm.envAddress("LOOT_ADDRESS"));
+        Equipment equipment = Equipment(vm.envAddress("EQUIPMENT_ADDRESS"));
+        Marketplace market = Marketplace(vm.envAddress("MARKETPLACE_ADDRESS"));
 
         console.log("=== code present ===");
         _hasCode("IdentityRegistry", address(identity));
@@ -168,6 +176,44 @@ contract VerifyBaseline is Script {
         _eq("RaidBoss.HERO", address(raid.HERO()), address(hero));
         _eq("RaidBoss.LOOT_TOKEN", address(raid.LOOT_TOKEN()), address(token));
         _isTrue("BadgeNFT lets RaidBoss mint", badge.minters(address(raid)));
+
+        console.log("=== milestone 6 modules ===");
+        _hasCode("Arena", address(arena));
+        _hasCode("Loot", address(loot));
+        _hasCode("Equipment", address(equipment));
+        _hasCode("Marketplace", address(market));
+
+        // None of these is a hook, a minter, or anything QuestASC calls. That is the point: they
+        // read core state and hold no privilege over it, which is why adding them cost no redeploy.
+        require(questASC.hookCount() == 2, "VerifyBaseline: milestone 6 must not have added a hook");
+        checks++;
+        console.log("ok   milestone 6 added no hook to QuestASC");
+        _isTrue("BadgeNFT does not let Arena mint", !badge.minters(address(arena)));
+        _isTrue("BadgeNFT does not let Loot mint", !badge.minters(address(loot)));
+
+        _eq("Arena.STAKE_TOKEN", address(arena.STAKE_TOKEN()), address(token));
+        _eq("Arena.HERO", address(arena.HERO()), address(hero));
+        _eq("Arena.rewards is Loot", address(arena.rewards()), address(loot));
+        _eq("Arena.equipment is Equipment", address(arena.equipment()), address(equipment));
+
+        _eq("Loot.RAID is RaidBoss", address(loot.RAID()), address(raid));
+        _eq("Loot.arena is Arena", loot.arena(), address(arena));
+
+        _eq("Equipment.HERO", address(equipment.HERO()), address(hero));
+        _eq("Equipment.LOOT", address(equipment.LOOT()), address(loot));
+
+        _eq("Marketplace.PAYMENT_TOKEN", address(market.PAYMENT_TOKEN()), address(token));
+        _eq("Marketplace.LOOT", address(market.LOOT()), address(loot));
+        _eq("Marketplace.treasury", market.treasury(), deployer);
+
+        // Every rarity needs at least one item, or Loot falls back down the ladder and a raid's
+        // biggest contributor is quietly paid in a lower tier than they earned.
+        for (uint8 rarity = 0; rarity <= 4; rarity++) {
+            _isTrue(
+                string.concat("Loot drop pool ", vm.toString(rarity), " is populated"),
+                loot.dropPool(Loot.Rarity(rarity)).length > 0
+            );
+        }
 
         console.log("");
         console.log("VerifyBaseline: all checks passed", checks);
