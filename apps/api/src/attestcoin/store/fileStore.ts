@@ -5,6 +5,10 @@ import {
   AcademyProgress,
   IndexedAction,
   IndexedBadge,
+  IndexedChallenge,
+  IndexedDrop,
+  IndexedEquipmentEvent,
+  IndexedListing,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
@@ -26,6 +30,10 @@ interface FileShape {
   rewards: Record<string, IndexedReward>
   academyProgress: Record<string, AcademyProgress>
   badges: Record<string, IndexedBadge>
+  challenges: Record<string, IndexedChallenge>
+  drops: Record<string, IndexedDrop>
+  equipmentEvents: Record<string, IndexedEquipmentEvent>
+  listings: Record<string, IndexedListing>
 }
 
 /** A factory, not a shared constant: two stores must never alias the same maps. */
@@ -40,6 +48,10 @@ function emptyShape(): FileShape {
     rewards: {},
     academyProgress: {},
     badges: {},
+    challenges: {},
+    drops: {},
+    equipmentEvents: {},
+    listings: {},
   }
 }
 
@@ -75,6 +87,10 @@ export class FileWorkerStore implements WorkerStore {
       if (!this.data.rewards) this.data.rewards = {}
       if (!this.data.academyProgress) this.data.academyProgress = {}
       if (!this.data.badges) this.data.badges = {}
+      if (!this.data.challenges) this.data.challenges = {}
+      if (!this.data.drops) this.data.drops = {}
+      if (!this.data.equipmentEvents) this.data.equipmentEvents = {}
+      if (!this.data.listings) this.data.listings = {}
     } catch {
       // No file yet, or an unreadable one. Starting from empty is correct: chain state is the
       // source of truth and the cursors will simply rescan.
@@ -238,6 +254,65 @@ export class FileWorkerStore implements WorkerStore {
     return Object.values(this.data.badges)
       .filter((badge) => !wanted || badge.player === wanted)
       .sort((a, b) => b.tokenId - a.tokenId)
+  }
+
+  async upsertChallenge(challenge: IndexedChallenge): Promise<void> {
+    this.data.challenges[String(challenge.challengeId)] = challenge
+    this.flush()
+  }
+
+  async getChallenge(challengeId: number): Promise<IndexedChallenge | undefined> {
+    return this.data.challenges[String(challengeId)]
+  }
+
+  async challenges(filter?: { address?: string; status?: string }): Promise<IndexedChallenge[]> {
+    const who = filter?.address?.toLowerCase()
+    return Object.values(this.data.challenges)
+      .filter((c) => !filter?.status || c.status === filter.status)
+      .filter((c) => !who || c.challenger === who || c.opponent === who)
+      .sort((a, b) => b.challengeId - a.challengeId)
+  }
+
+  async addDrop(drop: IndexedDrop): Promise<void> {
+    if (this.data.drops[drop.id]) return
+    this.data.drops[drop.id] = drop
+    this.flush()
+  }
+
+  async drops(player?: string): Promise<IndexedDrop[]> {
+    const who = player?.toLowerCase()
+    return Object.values(this.data.drops)
+      .filter((d) => !who || d.player === who)
+      .sort((a, b) => b.creditcoinBlock - a.creditcoinBlock)
+  }
+
+  async addEquipmentEvent(event: IndexedEquipmentEvent): Promise<void> {
+    if (this.data.equipmentEvents[event.id]) return
+    this.data.equipmentEvents[event.id] = event
+    this.flush()
+  }
+
+  async equipmentEvents(heroTokenId?: number): Promise<IndexedEquipmentEvent[]> {
+    return Object.values(this.data.equipmentEvents)
+      .filter((e) => heroTokenId === undefined || e.heroTokenId === heroTokenId)
+      .sort((a, b) => b.creditcoinBlock - a.creditcoinBlock)
+  }
+
+  async upsertListing(listing: IndexedListing): Promise<void> {
+    this.data.listings[String(listing.listingId)] = listing
+    this.flush()
+  }
+
+  async getListing(listingId: number): Promise<IndexedListing | undefined> {
+    return this.data.listings[String(listingId)]
+  }
+
+  async listings(filter?: { status?: string; seller?: string }): Promise<IndexedListing[]> {
+    const who = filter?.seller?.toLowerCase()
+    return Object.values(this.data.listings)
+      .filter((l) => !filter?.status || l.status === filter.status)
+      .filter((l) => !who || l.seller === who)
+      .sort((a, b) => b.listingId - a.listingId)
   }
 
   async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {

@@ -155,6 +155,69 @@ export interface AcademyProgress {
   updatedAt: string
 }
 
+/** One arena duel, updated as it moves through its lifecycle. */
+export interface IndexedChallenge {
+  challengeId: number
+  challenger: string
+  opponent: string
+  stake: string
+  status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled"
+  winner?: string
+  payout?: string
+  burned?: string
+  seed?: string
+  /** The round log, 0x-prefixed hex, three bytes per swing. A client replays the duel from it. */
+  rounds?: string
+  openedAtBlock: number
+  acceptedAtBlock?: number
+  resolvedAtBlock?: number
+  updatedAt: string
+}
+
+/** One item minted, from a raid claim or an arena win. */
+export interface IndexedDrop {
+  /** `{creditcoinTxHash}:{logIndex}` - a player can win two items in one transaction. */
+  id: string
+  player: string
+  itemId: number
+  rarity: number
+  /** "raid" or "arena". */
+  reason: string
+  /** Set for a raid drop: the season and the share of damage that earned it. */
+  seasonId?: number
+  shareBps?: number
+  creditcoinBlock: number
+  creditcoinTxHash: string
+  createdAt: string
+}
+
+/** One equip or unequip. */
+export interface IndexedEquipmentEvent {
+  id: string
+  heroTokenId: number
+  slot: number
+  itemId: number
+  owner: string
+  equipped: boolean
+  creditcoinBlock: number
+  createdAt: string
+}
+
+/** One marketplace listing, updated as it is sold or cancelled. */
+export interface IndexedListing {
+  listingId: number
+  seller: string
+  itemId: number
+  amount: number
+  price: string
+  status: "active" | "sold" | "cancelled"
+  buyer?: string
+  fee?: string
+  listedAtBlock: number
+  closedAtBlock?: number
+  updatedAt: string
+}
+
 export interface WorkerCursor {
   chainKey: number
   emitter: string
@@ -231,6 +294,27 @@ export interface WorkerStore {
 
   /** Newest first. Omit `player` for every badge. */
   badges(player?: string): Promise<IndexedBadge[]>
+
+  upsertChallenge(challenge: IndexedChallenge): Promise<void>
+
+  getChallenge(challengeId: number): Promise<IndexedChallenge | undefined>
+
+  /** Newest first. `address` matches either side of the duel. */
+  challenges(filter?: { address?: string; status?: string }): Promise<IndexedChallenge[]>
+
+  addDrop(drop: IndexedDrop): Promise<void>
+
+  drops(player?: string): Promise<IndexedDrop[]>
+
+  addEquipmentEvent(event: IndexedEquipmentEvent): Promise<void>
+
+  equipmentEvents(heroTokenId?: number): Promise<IndexedEquipmentEvent[]>
+
+  upsertListing(listing: IndexedListing): Promise<void>
+
+  getListing(listingId: number): Promise<IndexedListing | undefined>
+
+  listings(filter?: { status?: string; seller?: string }): Promise<IndexedListing[]>
 
   getAcademyProgress(player: string): Promise<AcademyProgress | undefined>
 

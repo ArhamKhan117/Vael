@@ -2,7 +2,12 @@ import { Contract, Interface, JsonRpcProvider, Log } from "ethers"
 
 import { env } from "../config/env"
 import { creditcoinProvider } from "../attestcoin/config"
-import { WorkerStore, createWorkerStore } from "../attestcoin/store"
+import {
+  IndexedChallenge,
+  IndexedListing,
+  WorkerStore,
+  createWorkerStore,
+} from "../attestcoin/store"
 import {
   INDEXER_ABI,
   QUEST_ASC_READ_ABI,
@@ -38,6 +43,21 @@ export interface IndexOutcome {
   actions: number
   rewards: number
   badges: number
+  arena: number
+  drops: number
+  equipment: number
+  listings: number
+}
+
+/** Decode a short ASCII tag packed into a bytes32, such as "raid" or "arena". */
+export function decodeTag(hex: string): string {
+  const bytes = hex.replace(/^0x/, "").replace(/(00)+$/, "")
+  let out = ""
+  for (let i = 0; i + 1 < bytes.length; i += 2) {
+    const code = parseInt(bytes.slice(i, i + 2), 16)
+    if (code >= 32 && code < 127) out += String.fromCharCode(code)
+  }
+  return out
 }
 
 /** Mirrors BadgeNFT.rarityForBadgeLevel: 1 is Common through 5 and above, Legendary. */
@@ -62,6 +82,10 @@ export class CreditcoinIndexer {
       process.env.RAID_BOSS_ADDRESS,
       process.env.REWARD_VAULT_ADDRESS,
       process.env.BADGE_NFT_ADDRESS,
+      process.env.ARENA_ADDRESS,
+      process.env.LOOT_ADDRESS,
+      process.env.EQUIPMENT_ADDRESS,
+      process.env.MARKETPLACE_ADDRESS,
     ].filter((a): a is string => !!a && /^0x[0-9a-fA-F]{40}$/.test(a))
   }
 
@@ -125,6 +149,10 @@ export class CreditcoinIndexer {
       actions: 0,
       rewards: 0,
       badges: 0,
+      arena: 0,
+      drops: 0,
+      equipment: 0,
+      listings: 0,
     }
     if (from > head || this.addresses.length === 0) return outcome
 
@@ -277,9 +305,214 @@ export class CreditcoinIndexer {
         outcome.raidHits += 1
         break
       }
+      // ---------------------------------------------------------------- arena
+
+      case "ArenaChallenged": {
+        await this.store.upsertChallenge({
+          challengeId: Number(parsed.args.challengeId),
+          challenger: String(parsed.args.challenger).toLowerCase(),
+          opponent: String(parsed.args.opponent).toLowerCase(),
+          stake: parsed.args.stake.toString(),
+          status: "open",
+          openedAtBlock: log.blockNumber,
+          updatedAt: new Date().toISOString(),
+        })
+        outcome.arena += 1
+        break
+      }
+      case "ArenaAccepted": {
+        await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
+          ...existing,
+          status: "accepted",
+          acceptedAtBlock: log.blockNumber,
+        }))
+        outcome.arena += 1
+        break
+      }
+      case "ArenaResolved": {
+        const winner = String(parsed.args.winner).toLowerCase()
+        await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
+          ...existing,
+          status: "resolved",
+          winner,
+          payout: parsed.args.payout.toString(),
+          burned: parsed.args.burned.toString(),
+          seed: String(parsed.args.seed),
+          rounds: String(parsed.args.rounds),
+          resolvedAtBlock: log.blockNumber,
+        }))
+        outcome.arena += 1
+        break
+      }
+      case "ArenaDrawn": {
+        await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
+          ...existing,
+          status: "drawn",
+          seed: String(parsed.args.seed),
+          rounds: String(parsed.args.rounds),
+          resolvedAtBlock: log.blockNumber,
+        }))
+        outcome.arena += 1
+        break
+      }
+      case "ArenaCancelled":
+      case "ArenaExpired": {
+        await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
+          ...existing,
+          status: parsed.name === "ArenaCancelled" ? "cancelled" : "expired",
+          resolvedAtBlock: log.blockNumber,
+        }))
+        outcome.arena += 1
+        break
+      }
+
+      // ---------------------------------------------------------------- loot
+
+      case "LootMinted": {
+        const block = await this.provider.getBlock(log.blockNumber)
+        await this.store.addDrop({
+          id: `${log.transactionHash}:${log.index}`,
+          player: String(parsed.args.to).toLowerCase(),
+          itemId: Number(parsed.args.itemId),
+          rarity: Number(parsed.args.rarity),
+          // The reason is a short bytes32 tag, "raid" or "arena", padded with zeros.
+          reason: decodeTag(String(parsed.args.reason)),
+          creditcoinBlock: log.blockNumber,
+          creditcoinTxHash: log.transactionHash,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.drops += 1
+        break
+      }
+      case "LootClaimed": {
+        // RaidBoss emits a four-argument LootClaimed for VAEL; only Loot's five-argument one
+        // carries an item, and only that one belongs here.
+        if (parsed.fragment.inputs.length !== 5) break
+        const id = `${log.transactionHash}:${log.index}`
+        const existing = (await this.store.drops(String(parsed.args.player))).find((d) => d.id === id)
+        if (existing) break
+        // The matching LootMinted in the same transaction carries the drop itself; this event adds
+        // the season and the share that earned it, so the row is patched rather than duplicated.
+        await this.patchDropInTx(log.transactionHash, Number(parsed.args.itemId), {
+          seasonId: Number(parsed.args.seasonId),
+          shareBps: Number(parsed.args.shareBps),
+        })
+        outcome.drops += 1
+        break
+      }
+
+      // ---------------------------------------------------------------- equipment
+
+      case "Equipped":
+      case "Unequipped": {
+        const block = await this.provider.getBlock(log.blockNumber)
+        await this.store.addEquipmentEvent({
+          id: `${log.transactionHash}:${log.index}`,
+          heroTokenId: Number(parsed.args.heroTokenId),
+          slot: Number(parsed.args.slot),
+          itemId: Number(parsed.args.itemId),
+          owner: String(parsed.args.owner).toLowerCase(),
+          equipped: parsed.name === "Equipped",
+          creditcoinBlock: log.blockNumber,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.equipment += 1
+        break
+      }
+
+      // ---------------------------------------------------------------- marketplace
+
+      case "Listed": {
+        await this.store.upsertListing({
+          listingId: Number(parsed.args.listingId),
+          seller: String(parsed.args.seller).toLowerCase(),
+          itemId: Number(parsed.args.itemId),
+          amount: Number(parsed.args.amount),
+          price: parsed.args.price.toString(),
+          status: "active",
+          listedAtBlock: log.blockNumber,
+          updatedAt: new Date().toISOString(),
+        })
+        outcome.listings += 1
+        break
+      }
+      case "Cancelled": {
+        await this.patchListing(Number(parsed.args.listingId), (existing) => ({
+          ...existing,
+          status: "cancelled",
+          closedAtBlock: log.blockNumber,
+        }))
+        outcome.listings += 1
+        break
+      }
+      case "Sold": {
+        await this.patchListing(Number(parsed.args.listingId), (existing) => ({
+          ...existing,
+          status: "sold",
+          buyer: String(parsed.args.buyer).toLowerCase(),
+          fee: parsed.args.fee.toString(),
+          closedAtBlock: log.blockNumber,
+        }))
+        outcome.listings += 1
+        break
+      }
+
       default:
         break
     }
+  }
+
+  /**
+   * Update a challenge that must already exist.
+   *
+   * A rescan always replays ArenaChallenged before the events that follow it, so the row is there.
+   * If it is not, the scan started mid-life and the row is written from what this event knows,
+   * which is better than dropping the duel entirely.
+   */
+  private async patchChallenge(
+    challengeId: number,
+    patch: (existing: IndexedChallenge) => IndexedChallenge
+  ): Promise<void> {
+    const existing = (await this.store.getChallenge(challengeId)) ?? {
+      challengeId,
+      challenger: "",
+      opponent: "",
+      stake: "0",
+      status: "open" as const,
+      openedAtBlock: 0,
+      updatedAt: new Date().toISOString(),
+    }
+    await this.store.upsertChallenge({ ...patch(existing), updatedAt: new Date().toISOString() })
+  }
+
+  private async patchListing(
+    listingId: number,
+    patch: (existing: IndexedListing) => IndexedListing
+  ): Promise<void> {
+    const existing = (await this.store.getListing(listingId)) ?? {
+      listingId,
+      seller: "",
+      itemId: 0,
+      amount: 0,
+      price: "0",
+      status: "active" as const,
+      listedAtBlock: 0,
+      updatedAt: new Date().toISOString(),
+    }
+    await this.store.upsertListing({ ...patch(existing), updatedAt: new Date().toISOString() })
+  }
+
+  /** Add the raid context to the drop LootMinted already recorded in the same transaction. */
+  private async patchDropInTx(
+    txHash: string,
+    itemId: number,
+    extra: { seasonId: number; shareBps: number }
+  ): Promise<void> {
+    const drop = (await this.store.drops()).find(
+      (d) => d.creditcoinTxHash === txHash && d.itemId === itemId
+    )
+    if (!drop) return
+    await this.store.addDrop({ ...drop, ...extra })
   }
 
   /** Read the rule and the participant, which together make a quest matchable. */

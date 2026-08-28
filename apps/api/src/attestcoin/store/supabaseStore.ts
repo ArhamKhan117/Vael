@@ -4,6 +4,10 @@ import {
   AcademyProgress,
   IndexedAction,
   IndexedBadge,
+  IndexedChallenge,
+  IndexedDrop,
+  IndexedEquipmentEvent,
+  IndexedListing,
   IndexedHero,
   IndexedQuest,
   IndexedRaidHit,
@@ -392,6 +396,165 @@ export class SupabaseWorkerStore implements WorkerStore {
     }))
   }
 
+  async upsertChallenge(challenge: IndexedChallenge): Promise<void> {
+    const { error } = await this.client.from("arena_challenges").upsert(
+      {
+        challenge_id: challenge.challengeId,
+        challenger: challenge.challenger.toLowerCase(),
+        opponent: challenge.opponent.toLowerCase(),
+        stake: challenge.stake,
+        status: challenge.status,
+        winner: challenge.winner ?? null,
+        payout: challenge.payout ?? null,
+        burned: challenge.burned ?? null,
+        seed: challenge.seed ?? null,
+        rounds: challenge.rounds ?? null,
+        opened_at_block: challenge.openedAtBlock,
+        accepted_at_block: challenge.acceptedAtBlock ?? null,
+        resolved_at_block: challenge.resolvedAtBlock ?? null,
+        updated_at: challenge.updatedAt,
+      },
+      { onConflict: "challenge_id" }
+    )
+    if (error) throw new Error(`failed to index challenge: ${error.message}`)
+  }
+
+  async getChallenge(challengeId: number): Promise<IndexedChallenge | undefined> {
+    const { data, error } = await this.client
+      .from("arena_challenges")
+      .select("*")
+      .eq("challenge_id", challengeId)
+      .maybeSingle()
+    if (error) throw new Error(`failed to read challenge: ${error.message}`)
+    return data ? challengeFromRow(data) : undefined
+  }
+
+  async challenges(filter?: { address?: string; status?: string }): Promise<IndexedChallenge[]> {
+    let query = this.client.from("arena_challenges").select("*").order("challenge_id", { ascending: false })
+    if (filter?.status) query = query.eq("status", filter.status)
+    if (filter?.address) {
+      const who = filter.address.toLowerCase()
+      query = query.or(`challenger.eq.${who},opponent.eq.${who}`)
+    }
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read challenges: ${error.message}`)
+    return (data ?? []).map(challengeFromRow)
+  }
+
+  async addDrop(drop: IndexedDrop): Promise<void> {
+    const { error } = await this.client.from("loot_drops").upsert(
+      {
+        id: drop.id,
+        player: drop.player.toLowerCase(),
+        item_id: drop.itemId,
+        rarity: drop.rarity,
+        reason: drop.reason,
+        season_id: drop.seasonId ?? null,
+        share_bps: drop.shareBps ?? null,
+        creditcoin_block: drop.creditcoinBlock,
+        creditcoin_tx_hash: drop.creditcoinTxHash,
+        created_at: drop.createdAt,
+      },
+      { onConflict: "id" }
+    )
+    if (error) throw new Error(`failed to index drop: ${error.message}`)
+  }
+
+  async drops(player?: string): Promise<IndexedDrop[]> {
+    let query = this.client.from("loot_drops").select("*").order("creditcoin_block", { ascending: false })
+    if (player) query = query.eq("player", player.toLowerCase())
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read drops: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      player: row.player,
+      itemId: Number(row.item_id),
+      rarity: Number(row.rarity),
+      reason: row.reason,
+      ...(row.season_id != null ? { seasonId: Number(row.season_id) } : {}),
+      ...(row.share_bps != null ? { shareBps: Number(row.share_bps) } : {}),
+      creditcoinBlock: Number(row.creditcoin_block),
+      creditcoinTxHash: row.creditcoin_tx_hash,
+      createdAt: row.created_at,
+    }))
+  }
+
+  async addEquipmentEvent(event: IndexedEquipmentEvent): Promise<void> {
+    const { error } = await this.client.from("equipment_events").upsert(
+      {
+        id: event.id,
+        hero_token_id: event.heroTokenId,
+        slot: event.slot,
+        item_id: event.itemId,
+        owner: event.owner.toLowerCase(),
+        equipped: event.equipped,
+        creditcoin_block: event.creditcoinBlock,
+        created_at: event.createdAt,
+      },
+      { onConflict: "id" }
+    )
+    if (error) throw new Error(`failed to index equipment event: ${error.message}`)
+  }
+
+  async equipmentEvents(heroTokenId?: number): Promise<IndexedEquipmentEvent[]> {
+    let query = this.client
+      .from("equipment_events")
+      .select("*")
+      .order("creditcoin_block", { ascending: false })
+    if (heroTokenId !== undefined) query = query.eq("hero_token_id", heroTokenId)
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read equipment events: ${error.message}`)
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      heroTokenId: Number(row.hero_token_id),
+      slot: Number(row.slot),
+      itemId: Number(row.item_id),
+      owner: row.owner,
+      equipped: Boolean(row.equipped),
+      creditcoinBlock: Number(row.creditcoin_block),
+      createdAt: row.created_at,
+    }))
+  }
+
+  async upsertListing(listing: IndexedListing): Promise<void> {
+    const { error } = await this.client.from("market_listings").upsert(
+      {
+        listing_id: listing.listingId,
+        seller: listing.seller.toLowerCase(),
+        item_id: listing.itemId,
+        amount: listing.amount,
+        price: listing.price,
+        status: listing.status,
+        buyer: listing.buyer ?? null,
+        fee: listing.fee ?? null,
+        listed_at_block: listing.listedAtBlock,
+        closed_at_block: listing.closedAtBlock ?? null,
+        updated_at: listing.updatedAt,
+      },
+      { onConflict: "listing_id" }
+    )
+    if (error) throw new Error(`failed to index listing: ${error.message}`)
+  }
+
+  async getListing(listingId: number): Promise<IndexedListing | undefined> {
+    const { data, error } = await this.client
+      .from("market_listings")
+      .select("*")
+      .eq("listing_id", listingId)
+      .maybeSingle()
+    if (error) throw new Error(`failed to read listing: ${error.message}`)
+    return data ? listingFromRow(data) : undefined
+  }
+
+  async listings(filter?: { status?: string; seller?: string }): Promise<IndexedListing[]> {
+    let query = this.client.from("market_listings").select("*").order("listing_id", { ascending: false })
+    if (filter?.status) query = query.eq("status", filter.status)
+    if (filter?.seller) query = query.eq("seller", filter.seller.toLowerCase())
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read listings: ${error.message}`)
+    return (data ?? []).map(listingFromRow)
+  }
+
   async getAcademyProgress(player: string): Promise<AcademyProgress | undefined> {
     const { data, error } = await this.client
       .from("academy_progress")
@@ -465,4 +628,41 @@ function heroFromRow(row: any): IndexedHero {
     streak: Number(row.streak ?? 0),
     updatedAt: row.updated_at,
   }
+}
+
+function challengeFromRow(row: any): IndexedChallenge {
+  const challenge: IndexedChallenge = {
+    challengeId: Number(row.challenge_id),
+    challenger: row.challenger,
+    opponent: row.opponent,
+    stake: String(row.stake ?? "0"),
+    status: row.status,
+    openedAtBlock: Number(row.opened_at_block),
+    updatedAt: row.updated_at,
+  }
+  if (row.winner) challenge.winner = row.winner
+  if (row.payout != null) challenge.payout = String(row.payout)
+  if (row.burned != null) challenge.burned = String(row.burned)
+  if (row.seed) challenge.seed = row.seed
+  if (row.rounds) challenge.rounds = row.rounds
+  if (row.accepted_at_block != null) challenge.acceptedAtBlock = Number(row.accepted_at_block)
+  if (row.resolved_at_block != null) challenge.resolvedAtBlock = Number(row.resolved_at_block)
+  return challenge
+}
+
+function listingFromRow(row: any): IndexedListing {
+  const listing: IndexedListing = {
+    listingId: Number(row.listing_id),
+    seller: row.seller,
+    itemId: Number(row.item_id),
+    amount: Number(row.amount),
+    price: String(row.price ?? "0"),
+    status: row.status,
+    listedAtBlock: Number(row.listed_at_block),
+    updatedAt: row.updated_at,
+  }
+  if (row.buyer) listing.buyer = row.buyer
+  if (row.fee != null) listing.fee = String(row.fee)
+  if (row.closed_at_block != null) listing.closedAtBlock = Number(row.closed_at_block)
+  return listing
 }

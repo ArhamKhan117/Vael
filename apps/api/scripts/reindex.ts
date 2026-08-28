@@ -47,11 +47,25 @@ async function main() {
   for (;;) {
     const outcome = await indexer.scanOnce()
     if (outcome.toBlock < outcome.fromBlock) break
+    const counts = [
+      ["quests", outcome.questsTouched],
+      ["heroes", outcome.heroesTouched],
+      ["raid hits", outcome.raidHits],
+      ["actions", outcome.actions],
+      ["rewards", outcome.rewards],
+      ["badges", outcome.badges],
+      ["arena", outcome.arena],
+      ["drops", outcome.drops],
+      ["equipment", outcome.equipment],
+      ["listings", outcome.listings],
+    ] as const
+    const summary = counts
+      .filter(([, n]) => n > 0)
+      .map(([label, n]) => `${n} ${label}`)
+      .join(", ")
     console.log(
-      `${outcome.fromBlock}-${outcome.toBlock}: ${outcome.logsSeen} logs, ` +
-        `${outcome.questsTouched} quests, ${outcome.heroesTouched} heroes, ` +
-        `${outcome.raidHits} raid hits, ${outcome.actions} actions, ` +
-        `${outcome.rewards} rewards, ${outcome.badges} badges`
+      `${outcome.fromBlock}-${outcome.toBlock}: ${outcome.logsSeen} logs` +
+        (summary ? `, ${summary}` : "")
     )
   }
 
