@@ -17,6 +17,12 @@ import {VaelTypes} from "../interfaces/IVaelTypes.sol";
 ///
 /// Soul-bound because a hero is a record of what an address did. A transferable one would be a
 /// tradeable claim about someone else's history.
+///
+/// **This is v2, and it is not the deployed contract.** Two things changed: the streak multiplier
+/// is now spent rather than merely recorded, and a one-time import can carry v1's heroes across.
+/// A hero cannot be migrated by its owner, because it is soul-bound and holds state no ERC-721
+/// interface exposes, so the import is the only way a redeploy does not erase everybody's history.
+/// See `docs/SPEC.md` §17.1 for the redeploy this ships in.
 contract VaelHero is ERC721, Ownable, ICompletionHook {
     struct Hero {
         uint32 level;
@@ -41,9 +47,14 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     uint64 internal constant XP_AAVE_BORROW = 150;
 
     /// @notice Sepolia blocks within which a further action continues a streak.
-    /// @dev 7200 blocks is roughly a day at 12 second blocks. Recorded now, spent in milestone 6: the
-    /// streak multiplier is not applied to XP yet, so the number here is data, not balance.
+    /// @dev 7200 blocks is roughly a day at 12 second blocks.
     uint64 public constant STREAK_WINDOW_BLOCKS = 7200;
+
+    /// @notice Streak beyond which the XP multiplier stops growing.
+    /// @dev The multiplier is 1 + 0.1 per streak, so a streak of 10 is x2 and anything above it is
+    /// still x2. Uncapped, a player who never missed a day would out-earn everyone by an amount
+    /// that has nothing to do with what they did that day.
+    uint16 public constant MAX_STREAK_BONUS = 10;
 
     /// @notice The only address allowed to grant XP. Set once.
     address public questASC;
@@ -52,6 +63,15 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     mapping(uint256 tokenId => Hero) private _heroes;
 
     uint256 private _nextTokenId = 1;
+
+    /// @notice Whether the one-time v1 import is still open.
+    /// @dev Closed by the owner immediately after migrating, and it cannot be reopened. While it
+    /// is open the owner can write hero state directly, which is exactly the privilege the rest of
+    /// this contract exists to deny, so the window has to be short and its closing has to be final.
+    bool public importClosed;
+
+    /// @notice How many heroes the import carried across.
+    uint256 public importedCount;
 
     event HeroMinted(address indexed player, uint256 indexed tokenId);
     event HeroXPGranted(
@@ -64,6 +84,8 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     );
     event HeroLeveled(address indexed player, uint256 indexed tokenId, uint32 newLevel);
     event QuestASCUpdated(address indexed questASC);
+    event HeroImported(address indexed player, uint256 indexed tokenId, uint32 level, uint64 xp);
+    event ImportClosed(uint256 heroesImported);
 
     error VaelHero__OnlyQuestASC(address caller);
     error VaelHero__QuestASCAlreadySet(address current);
@@ -71,6 +93,9 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     error VaelHero__AlreadyHasHero(address player);
     error VaelHero__SoulBound();
     error VaelHero__NoHero(address player);
+    error VaelHero__ImportClosed();
+    error VaelHero__TokenTaken(uint256 tokenId);
+    error VaelHero__LengthMismatch();
 
     constructor(address owner_) ERC721("Vael Hero", "VHERO") Ownable(owner_) {}
 
@@ -99,6 +124,46 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
 
         _safeMint(msg.sender, tokenId);
         emit HeroMinted(msg.sender, tokenId);
+    }
+
+    // ---------------------------------------------------------------- migration
+
+    /// @notice Carry one v1 hero across, keeping its token id.
+    /// @dev Only while the import is open, only for a token id and a player that are both free,
+    /// and never for a hero this contract already has. Keeping the token id means a badge, a
+    /// screenshot, or an explorer link from v1 still points at the same hero.
+    function importHero(address player, uint256 tokenId, Hero calldata data) public onlyOwner {
+        if (importClosed) revert VaelHero__ImportClosed();
+        if (player == address(0)) revert VaelHero__NoHero(player);
+        if (tokenId == 0 || _ownerOf(tokenId) != address(0)) revert VaelHero__TokenTaken(tokenId);
+        if (heroOf[player] != 0) revert VaelHero__AlreadyHasHero(player);
+
+        heroOf[player] = tokenId;
+        _heroes[tokenId] = data;
+        if (tokenId >= _nextTokenId) _nextTokenId = tokenId + 1;
+        importedCount += 1;
+
+        _safeMint(player, tokenId);
+        emit HeroImported(player, tokenId, data.level, data.xp);
+    }
+
+    /// @notice Carry a batch across.
+    function importHeroes(address[] calldata players, uint256[] calldata tokenIds, Hero[] calldata data)
+        external
+        onlyOwner
+    {
+        if (players.length != tokenIds.length || players.length != data.length) {
+            revert VaelHero__LengthMismatch();
+        }
+        for (uint256 i = 0; i < players.length; i++) {
+            importHero(players[i], tokenIds[i], data[i]);
+        }
+    }
+
+    /// @notice Shut the import for good.
+    function closeImport() external onlyOwner {
+        importClosed = true;
+        emit ImportClosed(importedCount);
     }
 
     // ---------------------------------------------------------------- the hook
@@ -136,12 +201,9 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     ) private {
         Hero storage hero = _heroes[tokenId];
 
-        uint64 gained = _xpFor(actionType, tier);
-        hero.xp += gained;
-        _applyAffinity(hero, actionType);
-
-        // Streak is recorded, not yet spent. A further action inside the window continues it;
-        // anything later starts again at 1.
+        // The streak is settled before the XP is worked out, so this action is paid at the streak
+        // it just extended rather than at yesterday's. A further action inside the window
+        // continues it; anything later starts again at 1.
         if (sourceBlock != 0) {
             if (
                 hero.lastActionSourceBlock != 0 &&
@@ -154,6 +216,10 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
             }
             hero.lastActionSourceBlock = sourceBlock;
         }
+
+        uint64 gained = xpFor(actionType, tier, hero.streak);
+        hero.xp += gained;
+        _applyAffinity(hero, actionType);
 
         emit HeroXPGranted(player, tokenId, actionType, tier, gained, replayKey);
 
@@ -172,11 +238,24 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
         return 100 + 50 * uint64(level);
     }
 
+    /// @notice The streak multiplier in basis points: 1 + 0.1 per streak, capped at x2.
+    /// @dev `docs/SPEC.md` §4.1 and milestone 6 both state it as `1 + 0.1 * streak`, so a streak of 1,
+    /// the first action after a gap, is already worth x1.1 and a streak of 10 is worth x2.
+    function streakMultiplierBps(uint16 streak) public pure returns (uint256) {
+        uint256 steps = streak > MAX_STREAK_BONUS ? MAX_STREAK_BONUS : streak;
+        return 10_000 + steps * 1_000;
+    }
+
     /// @notice Base XP for an action, scaled by tier: x1, x1.5, x2.
     /// @dev The 1.5 is done as `* 3 / 2` so tier 2 on an odd base rounds down rather than needing
     /// a fixed-point type for a number this small.
-    function xpFor(uint8 actionType, uint8 tier) external pure returns (uint64) {
+    function xpFor(uint8 actionType, uint8 tier) public pure returns (uint64) {
         return _xpFor(actionType, tier);
+    }
+
+    /// @notice XP for an action at a given streak.
+    function xpFor(uint8 actionType, uint8 tier, uint16 streak) public pure returns (uint64) {
+        return uint64((uint256(_xpFor(actionType, tier)) * streakMultiplierBps(streak)) / 10_000);
     }
 
     function _xpFor(uint8 actionType, uint8 tier) private pure returns (uint64) {
