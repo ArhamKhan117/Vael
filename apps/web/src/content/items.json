@@ -1,0 +1,138 @@
+{
+  "slots": [
+    "weapon",
+    "armour",
+    "trinket",
+    "relic"
+  ],
+  "rarities": [
+    "Common",
+    "Uncommon",
+    "Rare",
+    "Epic",
+    "Legendary"
+  ],
+  "items": [
+    {
+      "slug": "rusted-blade",
+      "name": "Rusted Blade",
+      "slot": 0,
+      "rarity": 0,
+      "strength": 2,
+      "agility": 0,
+      "intellect": 0,
+      "blurb": "Notched, pitted, and still sharper than nothing.",
+      "image": "/items/rusted-blade.png"
+    },
+    {
+      "slug": "padded-vest",
+      "name": "Padded Vest",
+      "slot": 1,
+      "rarity": 0,
+      "strength": 1,
+      "agility": 0,
+      "intellect": 1,
+      "blurb": "Layered cloth and hope.",
+      "image": "/items/padded-vest.png"
+    },
+    {
+      "slug": "iron-sword",
+      "name": "Iron Sword",
+      "slot": 0,
+      "rarity": 1,
+      "strength": 4,
+      "agility": 0,
+      "intellect": 0,
+      "blurb": "Plain, balanced, and honest about what it is.",
+      "image": "/items/iron-sword.png"
+    },
+    {
+      "slug": "swift-charm",
+      "name": "Swift Charm",
+      "slot": 2,
+      "rarity": 1,
+      "strength": 0,
+      "agility": 3,
+      "intellect": 0,
+      "blurb": "Light enough to forget you are wearing it.",
+      "image": "/items/swift-charm.png"
+    },
+    {
+      "slug": "plate-harness",
+      "name": "Plate Harness",
+      "slot": 1,
+      "rarity": 2,
+      "strength": 3,
+      "agility": 0,
+      "intellect": 4,
+      "blurb": "Fitted steel. Heavy, and worth the weight.",
+      "image": "/items/plate-harness.png"
+    },
+    {
+      "slug": "scholars-scroll",
+      "name": "Scholar's Scroll",
+      "slot": 2,
+      "rarity": 2,
+      "strength": 0,
+      "agility": 2,
+      "intellect": 4,
+      "blurb": "Someone else's notes, and better than yours.",
+      "image": "/items/scholars-scroll.png"
+    },
+    {
+      "slug": "arcane-codex",
+      "name": "Arcane Codex",
+      "slot": 3,
+      "rarity": 2,
+      "strength": 0,
+      "agility": 0,
+      "intellect": 6,
+      "blurb": "Half of it is marginalia. That is the useful half.",
+      "image": "/items/arcane-codex.png"
+    },
+    {
+      "slug": "warhammer",
+      "name": "Warhammer",
+      "slot": 0,
+      "rarity": 3,
+      "strength": 10,
+      "agility": 0,
+      "intellect": 0,
+      "blurb": "No finesse. None needed.",
+      "image": "/items/warhammer.png"
+    },
+    {
+      "slug": "gilded-aegis",
+      "name": "Gilded Aegis",
+      "slot": 1,
+      "rarity": 3,
+      "strength": 5,
+      "agility": 0,
+      "intellect": 7,
+      "blurb": "Gold over steel, which is less foolish than it looks.",
+      "image": "/items/gilded-aegis.png"
+    },
+    {
+      "slug": "blessed-blade",
+      "name": "Blessed Blade",
+      "slot": 0,
+      "rarity": 4,
+      "strength": 12,
+      "agility": 4,
+      "intellect": 0,
+      "blurb": "Awarded for carrying a season.",
+      "image": "/items/blessed-blade.png"
+    },
+    {
+      "slug": "seers-crystal",
+      "name": "Seer's Crystal",
+      "slot": 3,
+      "rarity": 4,
+      "strength": 0,
+      "agility": 5,
+      "intellect": 10,
+      "blurb": "It shows you the next round. Only the next one.",
+      "image": "/items/seers-crystal.png"
+    }
+  ]
+}
