@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { formatUnits } from "viem"
 
 import { Button } from "@/components/ui/button"
+import { InventoryPanel } from "@/components/inventory-panel"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import { useHero, useMintHero, xpToNext } from "@/hooks/useGame"
 import { EventBus, GameEvents } from "@/game/EventBus"
@@ -79,7 +80,7 @@ function HeroPageInner() {
   }, [handleMint])
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-10 md:px-10">
+    <main className="mx-auto w-full max-w-4xl px-5 pb-20 pt-24 md:px-10">
       {isPreview && (
         <div className="mb-4 rounded border border-sky-500/30 bg-sky-500/10 px-4 py-3">
           <p className="text-xs text-sky-300">
@@ -175,6 +176,10 @@ function HeroPageInner() {
           </p>
         </div>
       </section>
+
+      <div className="mt-6">
+        <InventoryPanel address={address} readOnly={isPreview} />
+      </div>
     </main>
   )
 }

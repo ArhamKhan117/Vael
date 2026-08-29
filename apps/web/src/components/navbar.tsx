@@ -15,6 +15,8 @@ type CenterItemKey =
   | "academy"
   | "hero"
   | "raid"
+  | "arena"
+  | "market"
   | "leaderboard"
   | "dashboard/studio"
   | "feedback";
@@ -48,6 +50,18 @@ const CENTER_ITEMS: {
       label: "Raid",
       title: "Raid",
       description: "Every point of damage on the season boss is a real DeFi action.",
+    },
+    {
+      key: "arena",
+      label: "Arena",
+      title: "Arena",
+      description: "Duels fought with stats that were earned through verified proofs.",
+    },
+    {
+      key: "market",
+      label: "Market",
+      title: "Market",
+      description: "Buy and sell loot for VAEL. Items are escrowed the moment they are listed.",
     },
     {
       key: "leaderboard",

@@ -9,6 +9,7 @@ import { Copy, Loader2 } from "lucide-react"
 
 import { EditAvatarDialog } from "@/components/edit-avatar-dialog"
 import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { InventoryPanel } from "@/components/inventory-panel"
 import { Button } from "@/components/ui/button"
 import { ACADEMY_MODULES } from "@/content/academy"
 import { useAcademy } from "@/hooks/useAcademy"
@@ -208,6 +209,8 @@ export default function ProfilePage() {
             </>
           )}
         </section>
+
+        <InventoryPanel address={address} />
 
         {/* Academy */}
         <section className="rounded border border-[#1A1A1A] bg-black p-5">

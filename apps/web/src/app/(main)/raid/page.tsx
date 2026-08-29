@@ -86,7 +86,7 @@ export default function RaidPage() {
   const canClaim = Boolean(raid?.defeated && mine && BigInt(mine.pendingLoot) > 0n)
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-10 md:px-10">
+    <main className="mx-auto w-full max-w-4xl px-5 pb-20 pt-24 md:px-10">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-white">Raid</h1>
         <p className="mt-1 text-sm text-zinc-400">

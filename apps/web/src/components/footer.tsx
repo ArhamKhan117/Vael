@@ -46,6 +46,14 @@ export default function Footer() {
                                     path: "/raid",
                                 },
                                 {
+                                    label: "Arena",
+                                    path: "/arena",
+                                },
+                                {
+                                    label: "Market",
+                                    path: "/market",
+                                },
+                                {
                                     label: "Leaderboard",
                                     path: "/leaderboard",
                                 },

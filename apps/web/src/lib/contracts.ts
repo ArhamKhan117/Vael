@@ -17,6 +17,10 @@ export const CONTRACT_ADDRESSES = {
   QUEST_ASC: address(process.env.NEXT_PUBLIC_QUEST_ASC_ADDRESS),
   VAEL_HERO: address(process.env.NEXT_PUBLIC_VAEL_HERO_ADDRESS),
   RAID_BOSS: address(process.env.NEXT_PUBLIC_RAID_BOSS_ADDRESS),
+  ARENA: address(process.env.NEXT_PUBLIC_ARENA_ADDRESS),
+  LOOT: address(process.env.NEXT_PUBLIC_LOOT_ADDRESS),
+  EQUIPMENT: address(process.env.NEXT_PUBLIC_EQUIPMENT_ADDRESS),
+  MARKETPLACE: address(process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS),
   /** ERC-20 a partner funds a campaign with. */
   REWARD_STABLE: address(process.env.NEXT_PUBLIC_REWARD_STABLE_ADDRESS),
 
