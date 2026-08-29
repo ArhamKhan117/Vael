@@ -76,7 +76,7 @@ export default function ProfilePage() {
   ).length
 
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Identity */}
         <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

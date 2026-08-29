@@ -114,7 +114,7 @@ export default function ProfileCompletePage() {
   }
 
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10 relative z-20 flex flex-col justify-center">
+    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10 relative z-20 flex flex-col justify-center">
       <div className="mx-auto max-w-md">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-white md:text-3xl">

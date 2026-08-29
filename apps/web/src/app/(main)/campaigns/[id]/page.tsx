@@ -57,7 +57,7 @@ export default function CampaignDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+      <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
         <div className="mx-auto max-w-2xl py-20 text-center text-zinc-400">
           Loading campaign...
         </div>
@@ -67,7 +67,7 @@ export default function CampaignDetailPage() {
 
   if (!campaign) {
     return (
-      <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+      <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
         <div className="mx-auto max-w-2xl py-20 text-center">
           <p className="text-zinc-400">Campaign not found</p>
           <Button asChild variant="default" className="mt-4">
@@ -89,7 +89,7 @@ export default function CampaignDetailPage() {
     .trim();
 
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
       <div className="mx-auto max-w-2xl space-y-8">
         <Link
           href="/quests"

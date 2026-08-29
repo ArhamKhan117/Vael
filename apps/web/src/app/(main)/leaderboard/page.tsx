@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function LeaderboardPage() {
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <header>
           <h1 className="text-2xl font-semibold text-white">Leaderboard</h1>

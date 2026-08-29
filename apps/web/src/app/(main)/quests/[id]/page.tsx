@@ -203,7 +203,7 @@ export default function QuestDetailPage() {
   const isCompleted = progress?.completed ?? false
 
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
       <div className="mx-auto w-full space-y-8">
         <Link
           href="/quests"

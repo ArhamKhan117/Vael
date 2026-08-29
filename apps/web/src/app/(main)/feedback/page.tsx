@@ -160,7 +160,7 @@ export default function FeedbackPage() {
     };
 
     return (
-        <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+        <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
             <div className="space-y-8">
                 <section>
                     <div className="mx-auto flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
