@@ -2,11 +2,35 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useAccount, useWriteContract } from "wagmi"
+import { createPublicClient, fallback, http } from "viem"
 
-import { CREDITCOIN_CHAIN_ID } from "@/lib/chains"
+import { CREDITCOIN_CHAIN_ID, CREDITCOIN_RPC_URLS, creditcoinTestnet } from "@/lib/chains"
 import { CONTRACT_ADDRESSES } from "@/lib/contracts"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+
+/**
+ * A plain viem client for the allowance reads below, built on first use.
+ *
+ * Deliberately not wagmi's `usePublicClient`: that returns whatever the connector's config happens
+ * to provide, and when it came back without a usable client the allowance check silently fell
+ * through to approving every time, which is exactly the signature this is here to avoid.
+ *
+ * Built lazily and never at module scope. `createPublicClient` throws when a transport has no URL,
+ * and a page that constructs one while being prerendered fails the build rather than the request.
+ */
+let readerClient: ReturnType<typeof createPublicClient> | null = null
+
+function reader() {
+  if (readerClient) return readerClient
+  const urls = CREDITCOIN_RPC_URLS.filter((url): url is string => Boolean(url))
+  if (urls.length === 0) return null
+  readerClient = createPublicClient({
+    chain: creditcoinTestnet,
+    transport: fallback(urls.map((url) => http(url))),
+  })
+  return readerClient
+}
 
 // ---------------------------------------------------------------- ABIs
 
@@ -322,7 +346,7 @@ export function useListings(status = "active", refreshMs = 15_000) {
  */
 export function useModuleWrites() {
   const { writeContractAsync } = useWriteContract()
-  const { isConnected } = useAccount()
+  const { address, isConnected } = useAccount()
   const [pending, setPending] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -348,32 +372,73 @@ export function useModuleWrites() {
     [isConnected]
   )
 
+  /**
+   * Approve VAEL only when the allowance is actually short.
+   *
+   * The obvious version approves every time, which works and costs the player a signature they did
+   * not need to give. `true` means "you may proceed", whether that took a transaction or not.
+   */
   const approveVael = useCallback(
-    (spender: `0x${string}`, amount: bigint) =>
-      run("approve", () =>
-        writeContractAsync({
-          abi: erc20Abi,
-          address: CONTRACT_ADDRESSES.VAEL_TOKEN,
-          functionName: "approve",
-          args: [spender, amount],
-          chainId: CREDITCOIN_CHAIN_ID,
-        })
-      ),
-    [run, writeContractAsync]
+    async (spender: `0x${string}`, amount: bigint) => {
+      const client = reader()
+      if (address && client) {
+        try {
+          const allowance = await client.readContract({
+            abi: erc20Abi,
+            address: CONTRACT_ADDRESSES.VAEL_TOKEN,
+            functionName: "allowance",
+            args: [address, spender],
+          })
+          if (allowance >= amount) return true
+        } catch {
+          // A read that fails is not a reason to block the write; fall through and approve.
+        }
+      }
+      return Boolean(
+        await run("approve", () =>
+          writeContractAsync({
+            abi: erc20Abi,
+            address: CONTRACT_ADDRESSES.VAEL_TOKEN,
+            functionName: "approve",
+            args: [spender, amount],
+            chainId: CREDITCOIN_CHAIN_ID,
+          })
+        )
+      )
+    },
+    [address, run, writeContractAsync]
   )
 
+  /** Same idea for items: an operator already approved for all needs no second blessing. */
   const approveLoot = useCallback(
-    (operator: `0x${string}`) =>
-      run("approve-items", () =>
-        writeContractAsync({
-          abi: erc1155Abi,
-          address: CONTRACT_ADDRESSES.LOOT,
-          functionName: "setApprovalForAll",
-          args: [operator, true],
-          chainId: CREDITCOIN_CHAIN_ID,
-        })
-      ),
-    [run, writeContractAsync]
+    async (operator: `0x${string}`) => {
+      const client = reader()
+      if (address && client) {
+        try {
+          const approved = await client.readContract({
+            abi: erc1155Abi,
+            address: CONTRACT_ADDRESSES.LOOT,
+            functionName: "isApprovedForAll",
+            args: [address, operator],
+          })
+          if (approved) return true
+        } catch {
+          // As above.
+        }
+      }
+      return Boolean(
+        await run("approve-items", () =>
+          writeContractAsync({
+            abi: erc1155Abi,
+            address: CONTRACT_ADDRESSES.LOOT,
+            functionName: "setApprovalForAll",
+            args: [operator, true],
+            chainId: CREDITCOIN_CHAIN_ID,
+          })
+        )
+      )
+    },
+    [address, run, writeContractAsync]
   )
 
   const challenge = useCallback(

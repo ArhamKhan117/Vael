@@ -9,8 +9,22 @@ function urlList(value: string | undefined): string[] {
     .filter((url) => url.length > 0)
 }
 
-const CREDITCOIN_RPC_URL =
-  process.env.NEXT_PUBLIC_CREDITCOIN_RPC_URL ?? "https://rpc.cc3-testnet.creditcoin.network"
+/**
+ * An env var that exists but is empty is not a value.
+ *
+ * `??` only catches undefined, so a blank `NEXT_PUBLIC_CREDITCOIN_RPC_URL` in a .env file put an
+ * empty string at the head of the transport list. viem's `http("")` throws, which failed a
+ * prerender, and every read built on that list silently gave up.
+ */
+function orDefault(value: string | undefined, fallbackUrl: string): string {
+  const trimmed = (value ?? "").trim()
+  return trimmed.length > 0 ? trimmed : fallbackUrl
+}
+
+const CREDITCOIN_RPC_URL = orDefault(
+  process.env.NEXT_PUBLIC_CREDITCOIN_RPC_URL,
+  "https://rpc.cc3-testnet.creditcoin.network"
+)
 
 export const CREDITCOIN_RPC_URLS = [
   CREDITCOIN_RPC_URL,
@@ -18,7 +32,7 @@ export const CREDITCOIN_RPC_URLS = [
 ]
 
 export const SEPOLIA_RPC_URLS = [
-  ...(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ? [process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL] : []),
+  ...urlList(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
   ...urlList(process.env.NEXT_PUBLIC_SEPOLIA_RPC_FALLBACK_URLS),
   "https://ethereum-sepolia-rpc.publicnode.com",
 ]
