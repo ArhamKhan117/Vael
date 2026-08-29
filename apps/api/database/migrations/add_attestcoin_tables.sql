@@ -62,15 +62,11 @@ CREATE TABLE IF NOT EXISTS raid_damage (
 
 CREATE INDEX IF NOT EXISTS idx_raid_damage_season_player ON raid_damage(season_id, LOWER(player));
 
--- Academy progress. Module badges are still minted through a proof-gated quest.
-CREATE TABLE IF NOT EXISTS academy_progress (
-  address TEXT NOT NULL,
-  module TEXT NOT NULL,
-  step INTEGER NOT NULL DEFAULT 0,
-  quiz_score INTEGER,
-  completed_at TIMESTAMP WITH TIME ZONE,
-  PRIMARY KEY (address, module)
-);
+-- Academy progress is NOT declared here. This file predates the academy, and the row-per-module
+-- shape it used to declare is not the one the store reads. Because both used
+-- CREATE TABLE IF NOT EXISTS, whichever ran first won, and on a database where this file ran first
+-- every academy read failed with "column academy_progress.player does not exist".
+-- The single declaration now lives in add_indexer_actions_and_rewards.sql.
 
 -- Existing submissions predate the proof pipeline; bring them onto the same shape.
 ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS source_chain_key BIGINT NOT NULL DEFAULT 1;
