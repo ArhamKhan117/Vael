@@ -24,6 +24,15 @@ export default function PhaserGame({ scene, width = 640, height = 360, onReady }
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
 
+  // Callers pass `onReady` as an inline arrow, so it is a new function on every render. Holding it
+  // in a ref keeps it out of the effect's dependencies: with it in there, every re-render of the
+  // page destroyed the game and built a new one, and `game.destroy` does not finish synchronously.
+  // A scene caught mid-destruction still had its EventBus subscription, so the next state emit
+  // reached it with `sys.displayList` already null and Phaser threw "Cannot read properties of
+  // null (reading 'add')" on the first game object it tried to create.
+  const onReadyRef = useRef(onReady)
+  onReadyRef.current = onReady
+
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return
 
@@ -39,7 +48,7 @@ export default function PhaserGame({ scene, width = 640, height = 360, onReady }
       scene,
     })
 
-    const handleReady = (key: string) => onReady?.(key)
+    const handleReady = (key: string) => onReadyRef.current?.(key)
     EventBus.on(GameEvents.SceneReady, handleReady)
 
     return () => {
@@ -47,7 +56,7 @@ export default function PhaserGame({ scene, width = 640, height = 360, onReady }
       gameRef.current?.destroy(true)
       gameRef.current = null
     }
-  }, [scene, width, height, onReady])
+  }, [scene, width, height])
 
   return (
     <div

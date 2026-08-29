@@ -20,7 +20,13 @@ const AFFINITY_FRAMES = {
 } as const
 
 /** Plain stone floor tile. */
-const FLOOR_FRAME = 40
+/**
+ * Frame 49 is sandy floor with visible grit. Frame 40, which this used, is a grey brick *wall*, and
+ * tiling it across the bottom half of the canvas made the hero look like they were standing in
+ * front of a wall. Frame 48 is the same floor without the grit, which at low opacity reads as a
+ * plain brown bar. Verified against a labelled contact sheet of the tilemap.
+ */
+const FLOOR_FRAME = 49
 
 /**
  * The hero card.
@@ -62,7 +68,7 @@ export class HeroScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     this.statsText = this.add
-      .text(width / 2, height - 52, "", {
+      .text(width / 2, height - 100, "", {
         fontFamily: "monospace",
         fontSize: "12px",
         color: "#a1a1aa",
@@ -72,7 +78,7 @@ export class HeroScene extends Phaser.Scene {
 
     this.xpBar = this.add.graphics()
     this.xpLabel = this.add
-      .text(width / 2, height - 20, "", {
+      .text(width / 2, height - 62, "", {
         fontFamily: "monospace",
         fontSize: "10px",
         color: "#71717a",
@@ -82,21 +88,26 @@ export class HeroScene extends Phaser.Scene {
     EventBus.on(GameEvents.HeroState, this.onHeroState, this)
     EventBus.emit(GameEvents.SceneReady, "HeroScene")
 
-    this.events.once("shutdown", () => EventBus.off(GameEvents.HeroState, this.onHeroState))
+    this.events.once("shutdown", () => EventBus.off(GameEvents.HeroState, this.onHeroState, this))
   }
 
-  /** A simple tiled floor from the Kenney sheet, so the hero has somewhere to stand. */
+  /** One row of floor under the hero's feet, not a wall behind them. */
   private drawFloor() {
     const { width, height } = this.scale
-    const scale = 2
+    const scale = 3
+    const top = height - TILE * scale
     for (let x = 0; x < width; x += TILE * scale) {
-      for (let y = height / 2; y < height; y += TILE * scale) {
-        this.add.image(x, y, "dungeon-tiles", FLOOR_FRAME).setOrigin(0).setScale(scale).setAlpha(0.3)
-      }
+      this.add.image(x, top, "dungeon-tiles", FLOOR_FRAME).setOrigin(0).setScale(scale).setAlpha(0.55)
     }
   }
 
   private onHeroState(state: HeroStatePayload) {
+    // A scene being torn down can still hold a subscription for a moment, and drawing into it
+    // throws because Phaser has already dropped its display list. Test that directly rather
+    // than asking `scene.isActive()`: the first state arrives during `create()`, when the
+    // scene is CREATING rather than RUNNING, and isActive() would refuse the only render that
+    // matters.
+    if (!this.sys?.displayList) return
     this.state = state
     this.render()
   }
@@ -134,7 +145,7 @@ export class HeroScene extends Phaser.Scene {
 
     const barWidth = Math.min(320, width - 64)
     const barX = (width - barWidth) / 2
-    const barY = height - 36
+    const barY = height - 82
     const ratio = state.xpToNext > 0 ? Math.min(1, state.xp / state.xpToNext) : 0
 
     this.xpBar?.fillStyle(0x1a1a1a).fillRect(barX, barY, barWidth, 8)

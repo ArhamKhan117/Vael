@@ -23,15 +23,22 @@ class TinyEmitter {
 
   on(event: string, handler: Handler, context?: unknown): this {
     const bound = (context ? handler.bind(context) : handler) as Handler
-    // Remember the original so `off` can find it again after binding.
-    boundOriginals.set(bound, handler)
+    // Remember the original and the context so `off` can find this exact subscription again.
+    boundOriginals.set(bound, { handler, context })
     const set = this.listeners.get(event) ?? new Set<Handler>()
     set.add(bound)
     this.listeners.set(event, set)
     return this
   }
 
-  off(event: string, handler?: Handler): this {
+  /**
+   * Remove a subscription.
+   *
+   * The context matters. Two Phaser scenes of the same class register the *same* prototype method,
+   * so matching on the function alone made one scene's teardown unsubscribe the other's, and a
+   * live canvas silently stopped receiving state. Pass the same context that `on` was given.
+   */
+  off(event: string, handler?: Handler, context?: unknown): this {
     const set = this.listeners.get(event)
     if (!set) return this
     if (!handler) {
@@ -39,7 +46,13 @@ class TinyEmitter {
       return this
     }
     for (const registered of set) {
-      if (registered === handler || boundOriginals.get(registered) === handler) set.delete(registered)
+      if (registered === handler) {
+        set.delete(registered)
+        continue
+      }
+      const origin = boundOriginals.get(registered)
+      if (!origin || origin.handler !== handler) continue
+      if (context === undefined || origin.context === context) set.delete(registered)
     }
     return this
   }
@@ -52,7 +65,7 @@ class TinyEmitter {
   }
 }
 
-const boundOriginals = new WeakMap<Handler, Handler>()
+const boundOriginals = new WeakMap<Handler, { handler: Handler; context?: unknown }>()
 
 export const EventBus = new TinyEmitter()
 
@@ -66,7 +79,26 @@ export const GameEvents = {
   /** Phaser to React: the player pressed something that needs a wallet. */
   RequestMintHero: "request-mint-hero",
   RequestClaimLoot: "request-claim-loot",
+  /** React to Phaser: a duel to replay, or null to clear the canvas. */
+  ArenaReplay: "arena-replay",
 } as const
+
+/** One swing, decoded from the three bytes the chain emitted for it. */
+export interface ArenaSwing {
+  /** 0 is the challenger, 1 the opponent. */
+  attacker: 0 | 1
+  crit: boolean
+  damage: number
+}
+
+export interface ArenaReplayPayload {
+  challengeId: number
+  challenger: { address: string; affinity: "warrior" | "rogue" | "mage"; hp: number }
+  opponent: { address: string; affinity: "warrior" | "rogue" | "mage"; hp: number }
+  swings: ArenaSwing[]
+  /** Empty for a draw. */
+  winner: string
+}
 
 export interface HeroStatePayload {
   hasHero: boolean

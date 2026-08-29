@@ -82,10 +82,12 @@ export class RaidScene extends Phaser.Scene {
 
     EventBus.on(GameEvents.RaidState, this.onRaidState, this)
     EventBus.emit(GameEvents.SceneReady, "RaidScene")
-    this.events.once("shutdown", () => EventBus.off(GameEvents.RaidState, this.onRaidState))
+    this.events.once("shutdown", () => EventBus.off(GameEvents.RaidState, this.onRaidState, this))
   }
 
   private onRaidState(state: RaidStatePayload) {
+    // See HeroScene: a scene mid-teardown can still receive one last event.
+    if (!this.sys?.displayList) return
     const previous = this.state
     this.state = state
     this.render()
