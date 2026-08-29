@@ -72,6 +72,14 @@ export class CreditcoinIndexer {
   private readonly iface = new Interface([...INDEXER_ABI])
   private readonly addresses: string[]
 
+  /**
+   * Season context from a LootClaimed waiting for its LootMinted.
+   *
+   * Keyed by transaction and item, cleared as soon as the mint consumes it, so a claim whose mint
+   * is somehow missing cannot leave a stale entry attached to a later drop of the same item.
+   */
+  private readonly pendingRaidContext = new Map<string, { seasonId: number; shareBps: number }>()
+
   constructor(store?: WorkerStore, provider?: JsonRpcProvider) {
     this.provider = provider ?? creditcoinProvider()
     this.store = store ?? createWorkerStore()
@@ -368,34 +376,37 @@ export class CreditcoinIndexer {
 
       // ---------------------------------------------------------------- loot
 
-      case "LootMinted": {
-        const block = await this.provider.getBlock(log.blockNumber)
-        await this.store.addDrop({
-          id: `${log.transactionHash}:${log.index}`,
-          player: String(parsed.args.to).toLowerCase(),
-          itemId: Number(parsed.args.itemId),
-          rarity: Number(parsed.args.rarity),
-          // The reason is a short bytes32 tag, "raid" or "arena", padded with zeros.
-          reason: decodeTag(String(parsed.args.reason)),
-          creditcoinBlock: log.blockNumber,
-          creditcoinTxHash: log.transactionHash,
-          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
-        })
-        outcome.drops += 1
-        break
-      }
       case "LootClaimed": {
         // RaidBoss emits a four-argument LootClaimed for VAEL; only Loot's five-argument one
         // carries an item, and only that one belongs here.
         if (parsed.fragment.inputs.length !== 5) break
-        const id = `${log.transactionHash}:${log.index}`
-        const existing = (await this.store.drops(String(parsed.args.player))).find((d) => d.id === id)
-        if (existing) break
-        // The matching LootMinted in the same transaction carries the drop itself; this event adds
-        // the season and the share that earned it, so the row is patched rather than duplicated.
-        await this.patchDropInTx(log.transactionHash, Number(parsed.args.itemId), {
-          seasonId: Number(parsed.args.seasonId),
-          shareBps: Number(parsed.args.shareBps),
+        // `claimRaidLoot` emits LootClaimed *before* LootMinted, so the drop row does not exist
+        // yet. Hold the season context until the mint in the same transaction arrives; both logs
+        // are always in the same block, so they are always in the same scan.
+        this.pendingRaidContext.set(
+          `${log.transactionHash}:${Number(parsed.args.itemId)}`,
+          { seasonId: Number(parsed.args.seasonId), shareBps: Number(parsed.args.shareBps) }
+        )
+        outcome.drops += 1
+        break
+      }
+      case "LootMinted": {
+        const block = await this.provider.getBlock(log.blockNumber)
+        const itemId = Number(parsed.args.itemId)
+        const key = `${log.transactionHash}:${itemId}`
+        const raid = this.pendingRaidContext.get(key)
+        this.pendingRaidContext.delete(key)
+        await this.store.addDrop({
+          id: `${log.transactionHash}:${log.index}`,
+          player: String(parsed.args.to).toLowerCase(),
+          itemId,
+          rarity: Number(parsed.args.rarity),
+          // The reason is a short bytes32 tag, "raid" or "arena", padded with zeros.
+          reason: decodeTag(String(parsed.args.reason)),
+          ...(raid ?? {}),
+          creditcoinBlock: log.blockNumber,
+          creditcoinTxHash: log.transactionHash,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
         })
         outcome.drops += 1
         break
@@ -502,18 +513,7 @@ export class CreditcoinIndexer {
     await this.store.upsertListing({ ...patch(existing), updatedAt: new Date().toISOString() })
   }
 
-  /** Add the raid context to the drop LootMinted already recorded in the same transaction. */
-  private async patchDropInTx(
-    txHash: string,
-    itemId: number,
-    extra: { seasonId: number; shareBps: number }
-  ): Promise<void> {
-    const drop = (await this.store.drops()).find(
-      (d) => d.creditcoinTxHash === txHash && d.itemId === itemId
-    )
-    if (!drop) return
-    await this.store.addDrop({ ...drop, ...extra })
-  }
+
 
   /** Read the rule and the participant, which together make a quest matchable. */
   private async indexRule(questId: number, sourceChainKey: number): Promise<void> {

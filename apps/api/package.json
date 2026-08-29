@@ -14,7 +14,8 @@
     "worker": "tsx scripts/worker.ts",
     "reindex": "tsx scripts/reindex.ts",
     "pin-badges": "tsx scripts/pin-badges.ts",
-    "pin-items": "tsx scripts/pin-items.ts"
+    "pin-items": "tsx scripts/pin-items.ts",
+    "e2e:modules": "tsx scripts/e2e-modules.ts"
   },
   "keywords": [
     "vael",
