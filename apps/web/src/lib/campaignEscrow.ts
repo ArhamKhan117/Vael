@@ -10,8 +10,14 @@ import { CONTRACT_ADDRESSES } from "./contracts"
 export const CAMPAIGN_ESCROW_ADDRESS = CONTRACT_ADDRESSES.CAMPAIGN_ESCROW
 export const REWARD_TOKEN_ADDRESS = CONTRACT_ADDRESSES.REWARD_STABLE
 
-/** Reward stablecoin decimals. */
-export const REWARD_TOKEN_DECIMALS = 6
+/**
+ * Decimals of the token CampaignEscrow actually takes.
+ *
+ * This said 6. The escrow's `rewardToken()` is VAEL, which is 18, so a partner typing 1000 into
+ * the Studio approved and deposited 1000 x 10^6 base units: a billionth of a VAEL, not a thousand.
+ * Anything that can read the chain should call `decimals()` rather than trust this.
+ */
+export const REWARD_TOKEN_DECIMALS = 18
 
 /**
  * Convert campaign UUID to bytes32 for contract.

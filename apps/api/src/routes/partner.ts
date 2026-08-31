@@ -116,9 +116,17 @@ partnerRouter.get("/campaign/:campaignId", async (req, res, next) => {
     const indexed = await store.allQuests()
     const [submissions, actions] = await Promise.all([store.allSubmissions(), store.actions()])
 
+    // Read every candidate at once. Sequentially this was one round trip per quest in the index,
+    // which is a slow page today and an unusable one later.
+    const details = await Promise.all(
+      indexed.map(async (quest) => ({
+        quest,
+        detail: await readQuest(quest.questId).catch(() => null),
+      }))
+    )
+
     const quests = []
-    for (const quest of indexed) {
-      const detail = await readQuest(quest.questId).catch(() => null)
+    for (const { quest, detail } of details) {
       if (!detail || detail.campaignId !== onChain.toString()) continue
 
       const submission = submissions
