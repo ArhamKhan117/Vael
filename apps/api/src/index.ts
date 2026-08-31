@@ -11,6 +11,7 @@ import { questsRouter } from "./routes/quests"
 import { gameRouter } from "./routes/game"
 import { modulesRouter } from "./routes/modules"
 import { partnerRouter } from "./routes/partner"
+import { personalQuestRouter } from "./routes/personalQuests"
 import { startQuestPolling } from "./polling/questPolling"
 
 // AI quest generation and the Supabase-backed quest cache are optional. Starting their background
@@ -37,6 +38,7 @@ app.get("/health", (_, res) => {
 })
 
 app.use("/academy", academyRouter)
+app.use("/ai", personalQuestRouter)
 app.use("/ai", aiRouter)
 app.use("/campaigns", campaignsRouter)
 app.use("/feedback", feedbackRouter)

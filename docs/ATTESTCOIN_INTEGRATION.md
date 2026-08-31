@@ -274,6 +274,101 @@ gas-burning one and assert the reward lands anyway.
 This is also why a defeated boss is harmless rather than an error. `RaidBoss.onQuestCompleted`
 returns early when the season is over, so a quest completing between seasons still pays.
 
+## 6b. AI quests, generated from verified data only
+
+Vael generates personal quests with a language model. The interesting part is not that it does, but
+what it is allowed to see and what it is allowed to decide.
+
+**The model is given only what the chain has verified.**
+Its input is the verified-action index, every row of which exists because Creditcoin emitted
+`QuestProofApplied` after checking a Merkle proof and a continuity proof, plus the player's hero read
+from `VaelHero`.
+It never sees a raw wallet feed, so it cannot reason about a transaction nobody proved.
+`GET /ai/profile/:address` returns exactly that input and nothing else, so a generated quest can be
+audited against the same facts that produced it.
+
+**The model does not choose a contract address.**
+It picks an action type from a fixed list and a difficulty; the server maps that to the emitter and
+token from its own configuration, which are the same addresses QuestASC's allowlist already holds.
+A model that could name an address could name one it invented, and a hallucinated emitter inside a
+`VerificationRule` is a quest that accepts the wrong log.
+Amounts and rewards are clamped to a band the server sets, so a hallucinated `rewardVael` of a
+million cannot drain the vault.
+
+**The output is validated before it reaches the chain.**
+A Zod schema rejects anything outside the bands, and the quest is created through the ordinary
+`QuestManager.createQuest` path from the ERC-8004 registered agent, so its reputation accrues to
+the generator exactly as it would for a human-authored quest.
+Metadata is pinned to IPFS first and the quest carries the CID.
+
+| | |
+|---|---|
+| Model | `openai/gpt-oss-20b` via Groq |
+| Temperature | 0.2 |
+| Validation | Zod, `draftSchema` in `apps/api/src/services/personalQuest.ts` |
+| Cadence | daily at 09:00 and weekly on Monday at 10:00, plus `POST /ai/personal-quest` |
+| Recipients | every address the index shows has minted a hero |
+
+### The prompt, verbatim
+
+A generated quest is only auditable if the instruction that produced it is written down.
+
+```
+You design one quest for one player of Vael, a game where every reward is released by an on-chain
+proof of a real DeFi action on Ethereum Sepolia.
+
+You are given only what the chain has verified about this player. Nothing here is self-reported.
+
+Player: {address}
+Hero: {heroLine}
+Verified actions so far: {totalProved}
+By type: {byType}
+Most recent: {recent}
+
+Pick ONE action type for their next quest from exactly this list: portal, uniswapSwap,
+erc20Transfer, aaveSupply, aaveBorrow.
+
+Rules you must follow:
+- Choose an action that moves this player forward. A player with nothing proved should be given
+  "portal", the simplest action. A player who has only ever done one type should be nudged towards
+  a different one.
+- "difficulty" is a multiplier on the action's base minimum, from 1 to 50. Keep it near 1 for a new
+  player and raise it for a player with many verified actions.
+- "rewardVael" is between 10 and 500 and should scale with difficulty.
+- "badgeLevel" is 1 to 5 and should scale with difficulty.
+- "reasoning" must cite what the player has actually proved. Do not invent history.
+- Never name a contract address. The server chooses those.
+
+{formatInstructions}
+```
+
+`{formatInstructions}` asks for a bare JSON object with `title`, `summary`, `action`, `difficulty`,
+`rewardVael`, `badgeLevel` and `reasoning`, and the parser strips a code fence if the model adds one
+anyway.
+
+### What it produced, live
+
+Two quests, one for each test wallet, both created on chain with their metadata pinned.
+
+| | Deployer, daily | player2, weekly |
+|---|---|---|
+| Quest | 10 | 11 |
+| Title | First Swap Adventure | First Swap Quest |
+| Action | `uniswapSwap` | `uniswapSwap` |
+| Difficulty | 3 | 2 |
+| Reward | 150 VAEL | 30 VAEL |
+| Metadata | `ipfs://QmQs5yb1zZXt4XwNRYe32x6niQFiQjWXiFbtatoDpmMNSM` | `ipfs://QmULNXZDbTaDVJzwfES4LzSbSvQsQWMJHdrt72CqV7fjPt` |
+
+Both cite real history. For the deployer: "The player has only performed portal actions and has no
+verified uniswapSwap actions yet, so this quest nudges them toward a new action type." For player2,
+which had a single proof at the time: "The player has only one verified action, a portal."
+The difficulty and reward differ between them for that reason, which is the behaviour the profile
+is there to produce.
+
+Quest 10 was then completed through the ordinary path, with no involvement from the generator: a
+real USDC to WETH swap on Sepolia, an Attestcoin proof, and 150 VAEL released by QuestASC. Receipts
+are in `docs/E2E_LOG.md`.
+
 ## 7. Setup
 
 Contracts, tests, and deployment: `contracts/README.md`.

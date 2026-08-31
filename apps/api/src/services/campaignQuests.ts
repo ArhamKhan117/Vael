@@ -87,16 +87,33 @@ export async function createCampaignQuests(
   participant: string,
   templates: QuestTemplate[]
 ): Promise<CreatedQuest[]> {
+  return createQuests(campaignIdToUint(campaignId), participant, templates)
+}
+
+/**
+ * Create quests bound to an explicit on-chain campaign id.
+ *
+ * Zero means "paid from RewardVault, not from a partner's escrow". It has to be passed as a number
+ * rather than derived from a string, because `campaignIdToUint("")` is the hash of the empty
+ * string, which is emphatically not zero: a quest carrying it would try to pay out of an escrow
+ * pool that has never existed and revert at completion, after the player had done the work.
+ */
+export async function createQuests(
+  onChainCampaignId: bigint,
+  participant: string,
+  templates: QuestTemplate[]
+): Promise<CreatedQuest[]> {
   const wallet = workerWallet()
   const manager = new Contract(questManagerAddress(), QUEST_MANAGER_ABI, wallet)
-  const onChainCampaignId = campaignIdToUint(campaignId)
 
   const created: CreatedQuest[] = []
   for (const template of templates) {
     const params = {
       category: template.category,
       protocol: template.emitter,
-      parametersHash: keccak256(toUtf8Bytes(`${campaignId}:${template.actionType}:${template.minAmount}`)),
+      parametersHash: keccak256(
+        toUtf8Bytes(`${onChainCampaignId}:${participant}:${template.actionType}:${template.minAmount}`)
+      ),
       metadataURI: template.metadataURI,
       rewardPerParticipant: BigInt(template.rewardPerParticipant),
       expiry: 0n,

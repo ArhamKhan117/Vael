@@ -1,6 +1,9 @@
 import cron from "node-cron"
 import { processExpiredQuests } from "../services/dailyWeeklyQuestService"
 
+// Registers its own daily and weekly schedules on import.
+import "./personalQuests"
+
 /**
  * Expiry-driven quest regeneration.
  * The trigger is a quest expiring, not a wall-clock hour. Every run looks for quests whose
