@@ -57,8 +57,15 @@ gameRouter.get("/hero/:address", async (req, res, next) => {
   }
 })
 
+/**
+ * Which of the three a hero leans towards, or "novice" when it has yet to lean anywhere.
+ *
+ * Every stat point comes from a verified proof, so a hero with none has done nothing yet. Calling
+ * that a warrior put an armoured knight on screen for a player who had not made a single
+ * transaction, which is a claim the chain does not support.
+ */
 function dominantAffinity(strength: number, agility: number, intellect: number): string {
-  if (strength === 0 && agility === 0 && intellect === 0) return "warrior"
+  if (strength === 0 && agility === 0 && intellect === 0) return "novice"
   if (strength >= agility && strength >= intellect) return "warrior"
   if (agility >= intellect) return "rogue"
   return "mage"

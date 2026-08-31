@@ -14,9 +14,18 @@ const TILE = 16
  * everyone is the kind of bug that survives every test suite.
  */
 const AFFINITY_FRAMES = {
+  novice: 85, // an unarmoured villager, for a hero that has yet to prove anything
   warrior: 96, // full plate, closed helm
   rogue: 112, // green hood and headband
   mage: 84, // purple robe, pointed hat, white beard
+} as const
+
+/** Names as the page says them, so a label never reads "novice" in lower case. */
+const AFFINITY_LABELS = {
+  novice: "Novice",
+  warrior: "Warrior",
+  rogue: "Rogue",
+  mage: "Mage",
 } as const
 
 /** Plain stone floor tile. */
@@ -134,11 +143,14 @@ export class HeroScene extends Phaser.Scene {
     }
 
     // The sprite is chosen by dominant affinity, which is itself a record of what the player did.
+    // A hero with no stats has done nothing yet, so it is a novice rather than a warrior by
+    // default: an armoured knight for somebody who has never made a transaction is a claim the
+    // chain does not support.
     this.sprite = this.add
       .image(width / 2, height / 2 - 10, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
       .setScale(4)
 
-    this.levelText?.setText(`Level ${state.level}  ${state.affinity}`)
+    this.levelText?.setText(`Level ${state.level}  ${AFFINITY_LABELS[state.affinity]}`)
     this.statsText?.setText(
       `STR ${state.strength}   AGI ${state.agility}   INT ${state.intellect}   streak ${state.streak}`
     )

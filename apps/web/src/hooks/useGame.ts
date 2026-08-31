@@ -44,7 +44,7 @@ export interface HeroApi {
   strength?: number
   agility?: number
   intellect?: number
-  affinity?: "warrior" | "rogue" | "mage"
+  affinity?: "novice" | "warrior" | "rogue" | "mage"
   streak?: number
 }
 

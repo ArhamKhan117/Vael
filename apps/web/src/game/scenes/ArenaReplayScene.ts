@@ -9,6 +9,7 @@ const TILE = 16
  * uses. Guessing these is how they were wrong for a whole phase.
  */
 const AFFINITY_FRAMES = {
+  novice: 85, // an unarmoured villager, for a hero that has yet to prove anything
   warrior: 96,
   rogue: 112,
   mage: 84,

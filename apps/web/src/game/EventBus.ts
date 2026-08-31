@@ -93,8 +93,8 @@ export interface ArenaSwing {
 
 export interface ArenaReplayPayload {
   challengeId: number
-  challenger: { address: string; affinity: "warrior" | "rogue" | "mage"; hp: number }
-  opponent: { address: string; affinity: "warrior" | "rogue" | "mage"; hp: number }
+  challenger: { address: string; affinity: "novice" | "warrior" | "rogue" | "mage"; hp: number }
+  opponent: { address: string; affinity: "novice" | "warrior" | "rogue" | "mage"; hp: number }
   swings: ArenaSwing[]
   /** Empty for a draw. */
   winner: string
@@ -109,7 +109,7 @@ export interface HeroStatePayload {
   agility: number
   intellect: number
   streak: number
-  affinity: "warrior" | "rogue" | "mage"
+  affinity: "novice" | "warrior" | "rogue" | "mage"
   /** True when the page is showing somebody else's hero, so the canvas offers no mint button. */
   readOnly: boolean
 }

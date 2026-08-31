@@ -22,7 +22,7 @@ const ArenaCanvas = dynamic(() => import("@/game/ArenaCanvas"), { ssr: false })
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
-type Affinity = "warrior" | "rogue" | "mage"
+type Affinity = "novice" | "warrior" | "rogue" | "mage"
 
 interface HeroSummary {
   hasHero: boolean
@@ -40,10 +40,10 @@ async function heroOf(address: string): Promise<HeroSummary> {
       hasHero: Boolean(body.hasHero),
       level: body.level ?? 1,
       intellect: body.intellect ?? 0,
-      affinity: (body.affinity as Affinity) ?? "warrior",
+      affinity: (body.affinity as Affinity) ?? "novice",
     }
   } catch {
-    return { hasHero: false, level: 1, intellect: 0, affinity: "warrior" }
+    return { hasHero: false, level: 1, intellect: 0, affinity: "novice" }
   }
 }
 

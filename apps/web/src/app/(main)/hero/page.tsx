@@ -10,6 +10,7 @@ import { InventoryPanel } from "@/components/inventory-panel"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import { useHero, useMintHero, xpToNext } from "@/hooks/useGame"
 import { EventBus, GameEvents } from "@/game/EventBus"
+import { affinityLabel } from "@/lib/arena"
 import { CREDITCOIN_EXPLORER_URL } from "@/lib/chains"
 
 // Phaser reaches for `window` at import time, and so does any module importing a scene, so the
@@ -50,7 +51,7 @@ function HeroPageInner() {
       agility: hero?.agility ?? 0,
       intellect: hero?.intellect ?? 0,
       streak: hero?.streak ?? 0,
-      affinity: hero?.affinity ?? ("warrior" as const),
+      affinity: hero?.affinity ?? ("novice" as const),
       readOnly: isPreview,
     }
   }, [hero, isPreview])
@@ -140,7 +141,7 @@ function HeroPageInner() {
                 ["Agility", String(hero.agility)],
                 ["Intellect", String(hero.intellect)],
                 ["Streak", String(hero.streak)],
-                ["Affinity", String(hero.affinity)],
+                ["Affinity", affinityLabel(hero.affinity)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between">
                   <dt className="text-zinc-500">{label}</dt>

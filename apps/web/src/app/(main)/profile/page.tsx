@@ -20,6 +20,7 @@ import {
   RARITY_NAMES,
   useChainProfile,
 } from "@/hooks/useProfileChain"
+import { affinityLabel } from "@/lib/arena"
 import { ACTION_LABELS, ActionType } from "@/lib/attestcoin/types"
 import { CREDITCOIN_EXPLORER_URL } from "@/lib/chains"
 
@@ -137,7 +138,7 @@ export default function ProfilePage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between text-[11px]">
                     <span className="text-zinc-400">
-                      Level {level} · {hero.affinity}
+                      Level {level} · {affinityLabel(hero.affinity)}
                     </span>
                     <span className="text-zinc-500">
                       {xp.toLocaleString()} / {needed.toLocaleString()} XP to level {level + 1}
