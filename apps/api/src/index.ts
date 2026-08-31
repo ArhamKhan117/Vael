@@ -10,6 +10,7 @@ import { questProofsRouter } from "./routes/questProofs"
 import { questsRouter } from "./routes/quests"
 import { gameRouter } from "./routes/game"
 import { modulesRouter } from "./routes/modules"
+import { partnerRouter } from "./routes/partner"
 import { startQuestPolling } from "./polling/questPolling"
 
 // AI quest generation and the Supabase-backed quest cache are optional. Starting their background
@@ -43,6 +44,7 @@ app.use("/quests", questsRouter)
 app.use("/quests", questProofsRouter)
 app.use("/", gameRouter)
 app.use("/", modulesRouter)
+app.use("/partner", partnerRouter)
 
 // There is deliberately no completion endpoint. A quest completes only when QuestASC
 // verifies an Attestcoin proof on Creditcoin. No backend key can stand in for that.
