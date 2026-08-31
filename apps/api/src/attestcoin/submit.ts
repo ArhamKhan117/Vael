@@ -70,7 +70,7 @@ export function describeRevert(error: any): string {
   return error?.shortMessage ?? error?.reason ?? error?.message ?? String(error)
 }
 
-function toSourceTxTuple(proof: SourceTxProof) {
+export function toSourceTxTuple(proof: SourceTxProof) {
   return {
     chainKey: proof.chainKey,
     blockHeight: proof.blockHeight,
