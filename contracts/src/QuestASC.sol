@@ -360,7 +360,13 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         QUEST_MANAGER.recordCompletion(questId, participant, key, sourceTxId);
 
         if (context.campaignId != 0 && address(campaignEscrow) != address(0)) {
-            campaignEscrow.releaseReward(bytes32(context.campaignId), participant, amount);
+            // The quest's reward, not the action's amount. `amount` is whatever the player moved
+            // on the source chain: a 1,000,000 USDC swap would have drained a partner's escrow of
+            // 1,000,000 units, and a 0.001 ETH check-in released a thousandth of a token. Neither
+            // is what the campaign promised.
+            campaignEscrow.releaseReward(
+                bytes32(context.campaignId), participant, context.rewardPerParticipant
+            );
         }
 
         emit QuestProofApplied(questId, player, actionType, key, blockHeight, amount);

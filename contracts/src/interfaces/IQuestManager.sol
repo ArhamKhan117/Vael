@@ -13,6 +13,9 @@ interface IQuestManager {
         uint64 expiry;
         uint64 sourceChainKey;
         uint256 campaignId;
+        /// @dev What this quest promised. Carried so a campaign payout can release the reward
+        /// rather than whatever number the source-chain action happened to carry.
+        uint256 rewardPerParticipant;
     }
 
     function verificationContext(uint256 questId)

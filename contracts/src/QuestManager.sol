@@ -288,6 +288,7 @@ contract QuestManager is Ownable, IQuestManager {
         context.expiry = quest.expiry;
         context.sourceChainKey = quest.sourceChainKey;
         context.campaignId = quest.campaignId;
+        context.rewardPerParticipant = quest.rewardPerParticipant;
     }
 
     /// @inheritdoc IQuestManager

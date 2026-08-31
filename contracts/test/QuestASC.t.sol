@@ -10,6 +10,7 @@ import {ReputationRegistry, IIdentityRegistry} from "../src/erc8004/ReputationRe
 import {ValidationRegistry, IIdentityRegistryMinimal} from "../src/erc8004/ValidationRegistry.sol";
 import {AgentRegistryAdapter, IIdentityRegistryReader} from "../src/erc8004/AgentRegistryAdapter.sol";
 import {QuestManager} from "../src/QuestManager.sol";
+import {CampaignEscrow} from "../src/CampaignEscrow.sol";
 import {QuestASC} from "../src/QuestASC.sol";
 import {RewardVault} from "../src/RewardVault.sol";
 import {BadgeNFT} from "../src/BadgeNFT.sol";
@@ -188,6 +189,79 @@ contract QuestASCTest is Test {
                 SourceTxFixture.portalLog(portal, questId, loggedPlayer, address(0), amount)
             )
         );
+    }
+
+    /// @dev A campaign-funded quest, with the escrow deposited and wired to this QuestASC.
+    function _campaignQuest(uint256 campaignId, uint256 deposit)
+        internal
+        returns (uint256 questId, CampaignEscrow escrow)
+    {
+        escrow = new CampaignEscrow(owner);
+        escrow.setRewardToken(address(vaelToken));
+        escrow.setRewardReleaser(address(questASC));
+        questASC.setCampaignEscrow(address(escrow));
+
+        vaelToken.grantMinterRole(owner);
+        vaelToken.mint(owner, deposit);
+        vaelToken.approve(address(escrow), deposit);
+        escrow.deposit(bytes32(campaignId), deposit);
+
+        QuestManager.CreateQuestParams memory params = QuestManager.CreateQuestParams({
+            category: QuestManager.QuestCategory.Swap,
+            protocol: portal,
+            parametersHash: keccak256("params"),
+            metadataURI: "ipfs://placeholder",
+            rewardPerParticipant: REWARD,
+            expiry: 0,
+            badgeLevel: 1,
+            participant: player,
+            sourceChainKey: SEPOLIA,
+            campaignId: campaignId,
+            rule: _rule(true, MIN_AMOUNT)
+        });
+        vm.prank(agentController);
+        questId = questManager.createQuest(params);
+        vm.prank(player);
+        questManager.acceptQuest(questId);
+    }
+
+    // ---------------------------------------------------------------- campaign payouts
+
+    /// @notice The escrow must pay what the campaign promised, not what the player happened to move.
+    /// @dev This is the test that was missing. The release used the decoded action amount, so a
+    /// player moving far more than the minimum drained the partner's escrow by that instead.
+    function test_CampaignEscrowReleasesTheRewardNotTheActionAmount() public {
+        uint256 deposit = REWARD * 20;
+        (uint256 questId, CampaignEscrow escrow) = _campaignQuest(77, deposit);
+
+        // Deliberately far above the minimum, and nothing like the reward.
+        uint256 hugeAction = MIN_AMOUNT * 500;
+        uint256 poolBefore = escrow.campaignBalance(bytes32(uint256(77)));
+        assertGt(poolBefore, 0, "the campaign has to be funded");
+
+        questASC.submit(_sourceTx(_portalTx(questId, player, hugeAction), SEPOLIA, ACTION_HEIGHT), questId);
+
+        uint256 spent = poolBefore - escrow.campaignBalance(bytes32(uint256(77)));
+        assertEq(spent, REWARD, "the escrow released something other than the reward");
+        assertTrue(spent != hugeAction, "the escrow released the action amount");
+    }
+
+    function test_CampaignEscrowIsUntouchedByAPlainQuest() public {
+        CampaignEscrow escrow = new CampaignEscrow(owner);
+        escrow.setRewardToken(address(vaelToken));
+        escrow.setRewardReleaser(address(questASC));
+        questASC.setCampaignEscrow(address(escrow));
+
+        vaelToken.grantMinterRole(owner);
+        vaelToken.mint(owner, REWARD * 10);
+        vaelToken.approve(address(escrow), REWARD * 10);
+        escrow.deposit(bytes32(uint256(88)), REWARD * 10);
+        uint256 before = escrow.campaignBalance(bytes32(uint256(88)));
+
+        uint256 questId = _acceptedQuest();
+        questASC.submit(_sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId);
+
+        assertEq(escrow.campaignBalance(bytes32(uint256(88))), before, "campaignId 0 must not spend");
     }
 
     // ---------------------------------------------------------------- happy path
