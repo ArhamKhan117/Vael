@@ -3,7 +3,9 @@
 
 -- One row per source-chain transaction as it moves through the proof pipeline.
 CREATE TABLE IF NOT EXISTS proof_submissions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  -- TEXT, not UUID. The id is the natural key `{chainKey}:{sourceTxHash}:{questId}`, which is what
+  -- makes an upsert idempotent and stops a re-observed log becoming a second submission.
+  id TEXT PRIMARY KEY,
   quest_id_on_chain BIGINT NOT NULL,
   participant TEXT NOT NULL,
   -- BIGINT, not SMALLINT: the indexer also stores a Creditcoin chain id (102031) as a key.
@@ -18,7 +20,10 @@ CREATE TABLE IF NOT EXISTS proof_submissions (
   attempts INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(source_chain_key, source_tx_hash)
+  -- Keyed by quest as well as by transaction. One source transaction can carry logs for two
+  -- different quests, which is the whole point of the log-scoped replay key, so a unique
+  -- constraint on the transaction alone would reject the second one.
+  UNIQUE(source_chain_key, source_tx_hash, quest_id_on_chain)
 );
 
 CREATE INDEX IF NOT EXISTS idx_proof_submissions_status ON proof_submissions(status);
