@@ -182,9 +182,15 @@ export class AttestcoinWorker {
       log(`observed ${scan.value.logs.length} log(s) in ${from}..${scan.value.scannedTo}`)
     }
 
+    // The open quests are read once for the whole batch, not once per log. Reading them per log
+    // was a full table read per log against Supabase: a busy 2,000-block Sepolia window carries
+    // nearly ten thousand logs, so a single tick made ten thousand round trips and never finished.
+    // With the file store it was an in-memory lookup and completely invisible.
+    const openQuests = (await this.store.allQuests()).filter((q) => q.accepted && !q.completed)
+
     // Persist before any network work, so a crash here still leaves a record of what was seen.
     for (const entry of scan.value.logs) {
-      const match = await this.questForLog(entry)
+      const match = this.questForLog(entry, openQuests)
       if (!match) continue
       const created = await this.store.upsertSubmission({
         questIdOnChain: match.quest.questId,
@@ -216,15 +222,21 @@ export class AttestcoinWorker {
    * Being wrong here is cheap and safe. The quest id is only a hint, and QuestASC re-checks every
    * rule against the proved log: a mismatched guess is declined on chain, not paid.
    */
-  private async questForLog(entry: {
-    transactionHash: string
-    address: string
-    topics: readonly string[]
-  }): Promise<{ quest: IndexedQuest; reason: string } | undefined> {
+  /**
+   * Which quest a Sepolia log could satisfy.
+   *
+   * Pure, and given the open quests rather than fetching them. It runs once per observed log, and
+   * a busy window carries thousands, so anything it touches is touched thousands of times.
+   */
+  private questForLog(
+    entry: {
+      transactionHash: string
+      address: string
+      topics: readonly string[]
+    },
+    open: IndexedQuest[]
+  ): { quest: IndexedQuest; reason: string } | undefined {
     const emitter = entry.address.toLowerCase()
-    const quests = await this.store.allQuests()
-
-    const open = quests.filter((q) => q.accepted && !q.completed)
     if (open.length === 0) return undefined
 
     // Vael's own portal event names the quest in topics[1], so there is nothing to guess. This
