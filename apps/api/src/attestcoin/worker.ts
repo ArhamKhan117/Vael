@@ -30,6 +30,8 @@ const PORTAL_TOPIC = "0x3ffa602a6835802daaea4f4c4102da0a312d481769471dd020a1512a
 
 const MAX_ATTEMPTS = 5
 const POLL_INTERVAL_MS = 30_000
+/** VaelTypes.ActionType.Erc20Transfer. */
+const ERC20_TRANSFER = 2
 /** Sepolia confirmations before a log is considered stable enough to prove. */
 const CONFIRMATIONS = 2
 
@@ -248,14 +250,27 @@ export class AttestcoinWorker {
       if (quest) return { quest, reason: "named by the portal event" }
     }
 
+    // Every action Vael decodes binds the player from an indexed topic: the portal names them,
+    // a Uniswap Swap uses the recipient, an Aave Supply or Borrow uses onBehalfOf, and an ERC-20
+    // Transfer uses the sender. So a log that mentions the participant in none of its topics
+    // cannot possibly satisfy that participant's quest, whatever else matches.
+    const mentions = (quest: IndexedQuest) => {
+      const padded = `0x${quest.participant.toLowerCase().replace(/^0x/, "").padStart(64, "0")}`
+      return entry.topics.some((topic) => topic.toLowerCase() === padded)
+    }
+
     const byEmitter = open
-      .filter((q) => q.emitter === emitter)
+      .filter((q) => q.emitter === emitter && mentions(q))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     if (byEmitter[0]) return { quest: byEmitter[0], reason: "emitter match" }
 
-    // An ERC-20 transfer is emitted by the token itself, so the rule's token is the emitter.
+    // An ERC-20 transfer is emitted by the token itself, so for that action the rule's token is the
+    // emitter. Only for that action: a swap quest names a token too, and without this the worker
+    // matched every USDC transfer on Sepolia to it and queued thousands of strangers' transactions
+    // for proving. QuestASC would have refused every one of them, but the worker would have spent
+    // an attestation wait and a proof fetch finding that out.
     const byToken = open
-      .filter((q) => q.token === emitter)
+      .filter((q) => q.actionType === ERC20_TRANSFER && q.token === emitter && mentions(q))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     if (byToken[0]) return { quest: byToken[0], reason: "token match" }
 
