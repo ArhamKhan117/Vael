@@ -369,6 +369,49 @@ Quest 10 was then completed through the ordinary path, with no involvement from 
 real USDC to WETH swap on Sepolia, an Attestcoin proof, and 150 VAEL released by QuestASC. Receipts
 are in `docs/E2E_LOG.md`.
 
+## 6c. Writability: what changes, and what does not
+
+Attestcoin today proves one direction. A transaction on Ethereum becomes a fact Creditcoin can
+verify, and Vael is built entirely on that. Writability is the return leg, letting Creditcoin state
+become a fact Ethereum can verify. It is **not live**, and Vael implements nothing for it.
+
+`contracts/src/interfaces/IVaelOutbound.sol` declares what Vael would publish, with exact arguments
+and zero implementation. Writing it now is not speculation for its own sake: it pins down what Vael
+would say, so the shape of the game does not quietly drift into something that cannot be published.
+
+### The two publications
+
+| | What it says | What it is not |
+|---|---|---|
+| `publishRewardClaim` | This player completed this quest and earned this much, and here is the replay key of the proof that settled it | Not an instruction to pay. The redeeming side verifies the publication; it does not trust a message |
+| `publishBadgeAttestation` | This address holds this badge, at this level and rarity | Not a transferable token. Badges are soul-bound here, and the attestation says only that somebody holds one |
+
+Every argument is derived from state the chain already holds: the reward comes from QuestManager,
+the replay key from the inbound proof QuestASC burned, the badge fields from BadgeNFT. There is no
+argument a caller supplies that the chain has not already agreed to. That is the same rule that
+governs the inbound direction, and for the same reason: a caller-supplied field sitting outside the
+proof is exactly how a valid proof gets aimed at the wrong interpretation.
+
+### What does not change
+
+- **Quest completion stays inbound-only.** Nothing outbound can complete a quest, and nothing
+  outbound is a second way to be paid. The only path to a reward remains a verified proof through
+  `QuestASC`.
+- **The replay ledger stays log-scoped.** An outbound publication carries the same `replayKey` the
+  inbound proof burned, so the two directions reconcile against one identifier rather than two.
+- **Nothing becomes transferable.** A soul-bound badge published elsewhere is still soul-bound; the
+  publication is a statement, not a copy.
+
+### What would change
+
+- A new contract implementing `IVaelOutbound` would be deployed and given the right to read
+  QuestManager and BadgeNFT. It would hold no privilege over either.
+- The Studio and the profile page would gain a "redeem on Ethereum" affordance, which is a UI
+  change on top of an unchanged completion path.
+- `docs/ADDRESSES.md` would gain one address. No existing contract needs replacing, because the
+  outbound contract reads state rather than mutating it, which is why it is declared as a separate
+  interface rather than as methods bolted onto QuestASC.
+
 ## 7. Setup
 
 Contracts, tests, and deployment: `contracts/README.md`.
