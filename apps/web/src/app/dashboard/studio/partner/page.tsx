@@ -388,6 +388,12 @@ function PartnerCampaignPageInner() {
               From the index for what the chain verified, and from the worker&apos;s queue for what
               is still in flight.
             </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-amber-300/80">
+              Cancelling a campaign and taking the unspent budget back is not available on the live
+              deployment. <code>CampaignEscrow.refundToPartner</code> accepts only QuestASC, and the
+              QuestASC in service has no function that calls it, so the pool has no path out yet.
+              The fix is written and tested and ships with the consolidated redeploy in SPEC §17.1.
+            </p>
           </header>
           {!view || view.quests.length === 0 ? (
             <p className="px-5 py-6 text-xs text-zinc-500">

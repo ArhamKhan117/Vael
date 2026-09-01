@@ -264,6 +264,35 @@ contract QuestASCTest is Test {
         assertEq(escrow.campaignBalance(bytes32(uint256(88))), before, "campaignId 0 must not spend");
     }
 
+    function test_OwnerCanRefundAnUnspentCampaign() public {
+        uint256 deposit = REWARD * 4;
+        (, CampaignEscrow escrow) = _campaignQuest(1234, deposit);
+
+        uint256 pool = escrow.campaignBalance(bytes32(uint256(1234)));
+        assertGt(pool, 0);
+        uint256 ownerBefore = vaelToken.balanceOf(owner);
+
+        questASC.refundCampaign(bytes32(uint256(1234)), owner, pool);
+
+        assertEq(escrow.campaignBalance(bytes32(uint256(1234))), 0, "the pool was not emptied");
+        assertEq(vaelToken.balanceOf(owner) - ownerBefore, pool, "the partner was not repaid");
+    }
+
+    function test_OnlyTheOwnerRefunds() public {
+        (, CampaignEscrow escrow) = _campaignQuest(4321, REWARD * 2);
+        uint256 pool = escrow.campaignBalance(bytes32(uint256(4321)));
+
+        vm.prank(player);
+        vm.expectRevert();
+        questASC.refundCampaign(bytes32(uint256(4321)), player, pool);
+    }
+
+    function test_RefundRefusesWhenNoEscrowIsSet() public {
+        QuestASC fresh = new QuestASC(owner, IQuestManager(address(questManager)));
+        vm.expectRevert(QuestASC.CampaignEscrowNotSet.selector);
+        fresh.refundCampaign(bytes32(uint256(1)), owner, 1);
+    }
+
     // ---------------------------------------------------------------- happy path
 
     function test_Portal_HappyPath_ReleasesRewardAndMintsBadge() public {

@@ -13,6 +13,7 @@ import {VaelTypes} from "./interfaces/IVaelTypes.sol";
 
 interface ICampaignEscrow {
     function releaseReward(bytes32 campaignId, address recipient, uint256 amount) external;
+    function refundToPartner(bytes32 campaignId, address recipient, uint256 amount) external;
 }
 
 /// @title QuestASC
@@ -99,6 +100,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     event SupportedChainUpdated(uint64 indexed chainKey, bool supported);
     event EmitterAllowed(uint64 indexed chainKey, VaelTypes.ActionType indexed actionType, address indexed emitter, bool allowed);
     event CampaignEscrowUpdated(address indexed escrow);
+    event CampaignRefunded(bytes32 indexed campaignId, address indexed recipient, uint256 amount);
     event HookAdded(address indexed hook, uint256 index);
     event HookRemoved(address indexed hook, uint256 index);
     /// @notice A hook failed. The completion still stands and the reward was already paid.
@@ -118,6 +120,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
     error SourceBlockTooLate(uint64 provided, uint64 maximum);
     error NoAdapterForTopic(bytes32 topic0);
     error EmitterNotAllowed(uint64 chainKey, uint8 actionType, address emitter);
+    error CampaignEscrowNotSet();
     error QuestHintRequired(uint8 actionType);
     error InvalidAddress();
     error HookAlreadyRegistered(address hook);
@@ -199,6 +202,30 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
 
     function hookCount() external view returns (uint256) {
         return hooks.length;
+    }
+
+    /**
+     * @notice Return a campaign's unspent budget to its partner.
+     *
+     * @dev `CampaignEscrow.refundToPartner` is `onlyRewardReleaser`, and the reward releaser is this
+     * contract, so without this function nothing in the system can call it: a partner's unspent
+     * budget was stuck in the escrow with no path out at all. That is what "cancel and refund"
+     * requires and it did not exist.
+     *
+     * Owner-only, and deliberately not something a partner can call directly. A refund moves money
+     * out of a pool that quests may still be paying from, so it is an operator decision about a
+     * campaign that has been cancelled, not a self-service withdrawal a player could race.
+     *
+     * This cannot pay a player. It moves a campaign's own balance back to an address the owner
+     * names, and the escrow still checks the balance covers it.
+     */
+    function refundCampaign(bytes32 campaignId, address recipient, uint256 amount)
+        external
+        onlyOwner
+    {
+        if (address(campaignEscrow) == address(0)) revert CampaignEscrowNotSet();
+        campaignEscrow.refundToPartner(campaignId, recipient, amount);
+        emit CampaignRefunded(campaignId, recipient, amount);
     }
 
     function setCampaignEscrow(address escrow) external onlyOwner {
