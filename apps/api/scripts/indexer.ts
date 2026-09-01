@@ -49,6 +49,7 @@ async function main() {
         ["drop", outcome.drops],
         ["equipment", outcome.equipment],
         ["listing", outcome.listings],
+        ["campaign", outcome.campaigns],
       ].filter(([, count]) => (count as number) > 0)
 
       if (outcome.toBlock >= outcome.fromBlock) {

@@ -58,6 +58,7 @@ async function main() {
       ["drops", outcome.drops],
       ["equipment", outcome.equipment],
       ["listings", outcome.listings],
+      ["campaigns", outcome.campaigns],
     ] as const
     const summary = counts
       .filter(([, n]) => n > 0)

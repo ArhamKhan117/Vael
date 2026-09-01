@@ -122,6 +122,7 @@ export class AttestcoinWorker {
       ["drop", indexed.drops],
       ["equipment", indexed.equipment],
       ["listing", indexed.listings],
+      ["campaign", indexed.campaigns],
     ].filter(([, count]) => (count as number) > 0)
 
     if (moved.length > 0) {

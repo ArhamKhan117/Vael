@@ -5,6 +5,8 @@ import { creditcoinProvider } from "../attestcoin/config"
 import {
   IndexedChallenge,
   IndexedListing,
+  QuestCadence,
+  QuestCatalogFields,
   WorkerStore,
   createWorkerStore,
 } from "../attestcoin/store"
@@ -14,6 +16,7 @@ import {
   QUEST_MANAGER_READ_ABI,
   VAEL_HERO_READ_ABI,
 } from "./abi"
+import { fetchQuestMetadata } from "./metadata"
 
 /**
  * Reads Creditcoin's own events into the store.
@@ -47,6 +50,7 @@ export interface IndexOutcome {
   drops: number
   equipment: number
   listings: number
+  campaigns: number
 }
 
 /** Decode a short ASCII tag packed into a bytes32, such as "raid" or "arena". */
@@ -94,6 +98,7 @@ export class CreditcoinIndexer {
       process.env.LOOT_ADDRESS,
       process.env.EQUIPMENT_ADDRESS,
       process.env.MARKETPLACE_ADDRESS,
+      process.env.CAMPAIGN_ESCROW_ADDRESS,
     ].filter((a): a is string => !!a && /^0x[0-9a-fA-F]{40}$/.test(a))
   }
 
@@ -161,6 +166,7 @@ export class CreditcoinIndexer {
       drops: 0,
       equipment: 0,
       listings: 0,
+      campaigns: 0,
     }
     if (from > head || this.addresses.length === 0) return outcome
 
@@ -213,6 +219,14 @@ export class CreditcoinIndexer {
         outcome.questsTouched += 1
         break
       }
+      case "QuestCreated": {
+        // The event carries the category and the protocol; everything a card shows lives in the
+        // struct, so the quest is read back rather than reconstructed from five arguments.
+        const questId = Number(parsed.args.questId)
+        await this.indexQuestCatalog(questId, Number(log.blockNumber ?? 0))
+        outcome.questsTouched += 1
+        break
+      }
       case "QuestAccepted": {
         const questId = Number(parsed.args.questId)
         const existing = await this.store.getQuest(questId)
@@ -229,6 +243,8 @@ export class CreditcoinIndexer {
           completed: existing?.completed ?? false,
           updatedAt: new Date().toISOString(),
         })
+        // Acceptance moves acceptedCount and can move status, both of which a card shows.
+        await this.indexQuestCatalog(questId, Number(log.blockNumber ?? 0))
         outcome.questsTouched += 1
         break
       }
@@ -237,8 +253,26 @@ export class CreditcoinIndexer {
         const existing = await this.store.getQuest(questId)
         if (existing) {
           await this.store.upsertQuest({ ...existing, completed: true, updatedAt: new Date().toISOString() })
-          outcome.questsTouched += 1
         }
+        await this.indexQuestCatalog(questId, Number(log.blockNumber ?? 0))
+        outcome.questsTouched += 1
+        break
+      }
+      case "Deposited": {
+        await this.creditCampaign(parsed.args.campaignId as string, "deposited", parsed.args.amount as bigint, log, {
+          partner: String(parsed.args.depositor),
+        })
+        outcome.campaigns += 1
+        break
+      }
+      case "Released": {
+        await this.creditCampaign(parsed.args.campaignId as string, "released", parsed.args.amount as bigint, log)
+        outcome.campaigns += 1
+        break
+      }
+      case "Refunded": {
+        await this.creditCampaign(parsed.args.campaignId as string, "refunded", parsed.args.amount as bigint, log)
+        outcome.campaigns += 1
         break
       }
       case "HeroMinted":
@@ -514,6 +548,92 @@ export class CreditcoinIndexer {
   }
 
 
+
+  /**
+   * Read a quest back off QuestManager and store the half a page renders.
+   *
+   * A failure here is not fatal. The worker's half of the row is what makes a quest completable,
+   * and it is written by RuleRegistered; leaving the display half behind costs a card, not a
+   * payout.
+   */
+  private async indexQuestCatalog(questId: number, creditcoinBlock: number): Promise<void> {
+    try {
+      const manager = new Contract(env.QUEST_MANAGER_ADDRESS, QUEST_MANAGER_READ_ABI, this.provider)
+      const quest = await manager.getFunction("getQuest").staticCall(questId)
+
+      const campaignId = quest[16].toString()
+      const metadataURI = String(quest[5])
+      const metadata = await fetchQuestMetadata(metadataURI)
+
+      // Campaign membership is a fact the chain states, so it outranks anything the metadata
+      // claims. Everything else falls back to an open quest.
+      const cadence: QuestCadence =
+        campaignId !== "0" ? "campaign" : (metadata?.cadence ?? "open")
+
+      const fields: QuestCatalogFields = {
+        category: Number(quest[2]),
+        protocol: String(quest[3]),
+        metadataURI,
+        rewardToken: String(quest[6]),
+        rewardAmount: quest[7].toString(),
+        badgeLevel: Number(quest[8]),
+        status: Number(quest[13]),
+        expiry: Number(quest[12]),
+        createdAtChain: Number(quest[14]),
+        campaignId,
+        acceptedCount: Number(quest[10]),
+        completedCount: Number(quest[11]),
+        title: metadata?.title ?? "",
+        description: metadata?.description ?? "",
+        cadence,
+        creditcoinBlock,
+      }
+      await this.store.upsertQuestCatalog(questId, fields)
+    } catch (error) {
+      console.warn(`[indexer] could not catalogue quest ${questId}: ${error}`)
+    }
+  }
+
+  /**
+   * Add one escrow movement to a campaign's running totals.
+   *
+   * Read, add, write: the events are rare and the alternative is a database-side increment the
+   * file store cannot express. The row remembers the position of the last log it counted, so a
+   * rescan over blocks already folded in changes nothing.
+   */
+  private async creditCampaign(
+    campaignKey: string,
+    field: "deposited" | "released" | "refunded",
+    amount: bigint,
+    log: Log,
+    context?: { partner?: string }
+  ): Promise<void> {
+    const key = campaignKey.toLowerCase()
+    const block = Number(log.blockNumber ?? 0)
+    const logIndex = Number(log.index ?? 0)
+    const existing = await this.store.getCampaign(key)
+
+    // A replay must not double the totals. Logs arrive in ascending order, so anything at or
+    // before the last position already counted is a repeat of work this row has done.
+    if (
+      existing &&
+      (block < existing.lastBlock ||
+        (block === existing.lastBlock && logIndex <= existing.lastLogIndex))
+    ) {
+      return
+    }
+
+    const total = BigInt(existing?.[field] ?? "0") + amount
+    const patch: Parameters<WorkerStore["upsertCampaign"]>[0] = {
+      campaignKey: key,
+      [field]: total.toString(),
+      lastBlock: block,
+      lastLogIndex: logIndex,
+    }
+    if (context?.partner && !existing?.partner) patch.partner = context.partner
+    if (!existing) patch.firstSeenBlock = block
+    await this.store.upsertCampaign(patch)
+  }
 
   /** Read the rule and the participant, which together make a quest matchable. */
   private async indexRule(questId: number, sourceChainKey: number): Promise<void> {

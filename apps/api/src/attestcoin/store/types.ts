@@ -231,6 +231,68 @@ export interface WorkerCursor {
  * Two implementations: a JSON file for a single operator with no infrastructure, and Supabase for
  * a deployed worker. The interface is deliberately small so a third one stays cheap.
  */
+/** How a quest reaches a player. Campaign comes from the chain, daily and weekly from metadata. */
+export type QuestCadence = "daily" | "weekly" | "campaign" | "open"
+
+/**
+ * The display half of an indexed quest.
+ *
+ * `IndexedQuest` above carries what the worker needs to match a source log to a quest. This
+ * carries what a page needs to render one, and every field is read back off QuestManager after a
+ * `QuestCreated`, so nothing here is a claim the chain would not make itself. `title` and
+ * `description` come from the metadata document the quest points at, which is the one part a
+ * pinning service rather than Creditcoin holds.
+ */
+export interface QuestCatalogFields {
+  category: number
+  protocol: string
+  metadataURI: string
+  rewardToken: string
+  rewardAmount: string
+  badgeLevel: number
+  status: number
+  expiry: number
+  createdAtChain: number
+  /** uint256 as a decimal string. "0" means RewardVault pays; anything else names an escrow pool. */
+  campaignId: string
+  acceptedCount: number
+  completedCount: number
+  title: string
+  description: string
+  cadence: QuestCadence
+  creditcoinBlock: number
+}
+
+/**
+ * An indexed quest with its catalog half attached.
+ *
+ * `catalogued` is false for a row the worker wrote from a rule alone: it is matchable but has
+ * never been read back off QuestManager, so it must not be shown as if it had.
+ */
+export type CataloguedQuest = IndexedQuest & Partial<QuestCatalogFields> & { catalogued: boolean }
+
+/**
+ * One campaign pool, as CampaignEscrow describes it.
+ *
+ * The escrow keys pools by bytes32 and holds no name, so the totals come from its events and the
+ * label comes from the partner publish that created the campaign's quests. A pool funded any other
+ * way still appears; it shows its key.
+ */
+export interface IndexedCampaign {
+  campaignKey: string
+  campaignId?: string
+  title?: string
+  partner: string
+  deposited: string
+  released: string
+  refunded: string
+  firstSeenBlock: number
+  /** Position of the last escrow log folded into the totals, so a rescan cannot double-count. */
+  lastBlock: number
+  lastLogIndex: number
+  updatedAt: string
+}
+
 export interface WorkerStore {
   readonly kind: "file" | "supabase"
 
@@ -270,6 +332,25 @@ export interface WorkerStore {
   openQuestsFor(participant: string): Promise<IndexedQuest[]>
 
   allQuests(): Promise<IndexedQuest[]>
+
+  /** Attach the display half of a quest, read back off QuestManager after a QuestCreated. */
+  upsertQuestCatalog(questId: number, fields: QuestCatalogFields): Promise<void>
+
+  /** Quests that have been read back off the chain, newest first. */
+  questCatalog(filter?: {
+    participant?: string
+    cadence?: QuestCadence
+    campaignId?: string
+  }): Promise<CataloguedQuest[]>
+
+  /** Merge what one escrow event says about a pool into its row. */
+  upsertCampaign(
+    campaign: Pick<IndexedCampaign, "campaignKey"> & Partial<Omit<IndexedCampaign, "campaignKey">>
+  ): Promise<void>
+
+  campaigns(): Promise<IndexedCampaign[]>
+
+  getCampaign(campaignKey: string): Promise<IndexedCampaign | undefined>
 
   upsertHero(hero: IndexedHero): Promise<void>
 

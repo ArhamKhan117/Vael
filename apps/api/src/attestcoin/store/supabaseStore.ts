@@ -2,8 +2,10 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 import {
   AcademyProgress,
+  CataloguedQuest,
   IndexedAction,
   IndexedBadge,
+  IndexedCampaign,
   IndexedChallenge,
   IndexedDrop,
   IndexedEquipmentEvent,
@@ -13,6 +15,8 @@ import {
   IndexedRaidHit,
   IndexedReward,
   PENDING_STATUSES,
+  QuestCadence,
+  QuestCatalogFields,
   ProofSubmission,
   WorkerCursor,
   WorkerStore,
@@ -238,6 +242,92 @@ export class SupabaseWorkerStore implements WorkerStore {
     const { data, error } = await this.client.from("indexed_quests").select("*")
     if (error) throw new Error(`failed to read quests: ${error.message}`)
     return (data ?? []).map(questFromRow)
+  }
+
+  async upsertQuestCatalog(questId: number, fields: QuestCatalogFields): Promise<void> {
+    // Only the catalog half is written. PostgREST updates exactly the columns it is given, so the
+    // worker's matching half of the same row survives untouched.
+    const { error } = await this.client.from("indexed_quests").upsert(
+      {
+        quest_id: questId,
+        category: fields.category,
+        protocol: fields.protocol.toLowerCase(),
+        metadata_uri: fields.metadataURI,
+        reward_token: fields.rewardToken.toLowerCase(),
+        reward_amount: fields.rewardAmount,
+        badge_level: fields.badgeLevel,
+        status: fields.status,
+        expiry: fields.expiry,
+        created_at_chain: fields.createdAtChain,
+        campaign_id: fields.campaignId,
+        accepted_count: fields.acceptedCount,
+        completed_count: fields.completedCount,
+        title: fields.title,
+        description: fields.description,
+        cadence: fields.cadence,
+        creditcoin_block: fields.creditcoinBlock,
+        catalogued: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "quest_id" }
+    )
+    if (error) throw new Error(`failed to catalogue quest ${questId}: ${error.message}`)
+  }
+
+  async questCatalog(filter?: {
+    participant?: string
+    cadence?: QuestCadence
+    campaignId?: string
+  }): Promise<CataloguedQuest[]> {
+    let query = this.client
+      .from("indexed_quests")
+      .select("*")
+      .eq("catalogued", true)
+      .order("quest_id", { ascending: false })
+    if (filter?.participant) query = query.eq("participant", filter.participant.toLowerCase())
+    if (filter?.cadence) query = query.eq("cadence", filter.cadence)
+    if (filter?.campaignId) query = query.eq("campaign_id", filter.campaignId)
+    const { data, error } = await query
+    if (error) throw new Error(`failed to read the quest catalog: ${error.message}`)
+    return (data ?? []).map(catalogFromRow)
+  }
+
+  async upsertCampaign(
+    campaign: Pick<IndexedCampaign, "campaignKey"> & Partial<Omit<IndexedCampaign, "campaignKey">>
+  ): Promise<void> {
+    const key = campaign.campaignKey.toLowerCase()
+    const row: Record<string, unknown> = { campaign_key: key, updated_at: new Date().toISOString() }
+    if (campaign.campaignId !== undefined) row.campaign_id = campaign.campaignId
+    if (campaign.title !== undefined) row.title = campaign.title
+    if (campaign.partner !== undefined) row.partner = campaign.partner.toLowerCase()
+    if (campaign.deposited !== undefined) row.deposited = campaign.deposited
+    if (campaign.released !== undefined) row.released = campaign.released
+    if (campaign.refunded !== undefined) row.refunded = campaign.refunded
+    if (campaign.firstSeenBlock !== undefined) row.first_seen_block = campaign.firstSeenBlock
+    if (campaign.lastBlock !== undefined) row.last_block = campaign.lastBlock
+    if (campaign.lastLogIndex !== undefined) row.last_log_index = campaign.lastLogIndex
+    const { error } = await this.client
+      .from("indexed_campaigns")
+      .upsert(row, { onConflict: "campaign_key" })
+    if (error) throw new Error(`failed to index campaign ${key}: ${error.message}`)
+  }
+
+  async campaigns(): Promise<IndexedCampaign[]> {
+    const { data, error } = await this.client
+      .from("indexed_campaigns")
+      .select("*")
+      .order("first_seen_block", { ascending: false })
+    if (error) throw new Error(`failed to read campaigns: ${error.message}`)
+    return (data ?? []).map(campaignFromRow)
+  }
+
+  async getCampaign(campaignKey: string): Promise<IndexedCampaign | undefined> {
+    const { data } = await this.client
+      .from("indexed_campaigns")
+      .select("*")
+      .eq("campaign_key", campaignKey.toLowerCase())
+      .maybeSingle()
+    return data ? campaignFromRow(data) : undefined
   }
 
   async upsertHero(hero: IndexedHero): Promise<void> {
@@ -614,6 +704,46 @@ function questFromRow(row: any): IndexedQuest {
     quest.acceptedAtSourceHeight = Number(row.accepted_at_source_height)
   }
   return quest
+}
+
+function catalogFromRow(row: any): CataloguedQuest {
+  const quest = questFromRow(row) as CataloguedQuest
+  quest.catalogued = Boolean(row.catalogued)
+  if (!quest.catalogued) return quest
+  quest.category = Number(row.category ?? 0)
+  quest.protocol = row.protocol ?? ""
+  quest.metadataURI = row.metadata_uri ?? ""
+  quest.rewardToken = row.reward_token ?? ""
+  quest.rewardAmount = String(row.reward_amount ?? "0")
+  quest.badgeLevel = Number(row.badge_level ?? 1)
+  quest.status = Number(row.status ?? 1)
+  quest.expiry = Number(row.expiry ?? 0)
+  quest.createdAtChain = Number(row.created_at_chain ?? 0)
+  quest.campaignId = String(row.campaign_id ?? "0")
+  quest.acceptedCount = Number(row.accepted_count ?? 0)
+  quest.completedCount = Number(row.completed_count ?? 0)
+  quest.title = row.title ?? ""
+  quest.description = row.description ?? ""
+  quest.cadence = (row.cadence ?? "open") as QuestCadence
+  quest.creditcoinBlock = Number(row.creditcoin_block ?? 0)
+  return quest
+}
+
+function campaignFromRow(row: any): IndexedCampaign {
+  const campaign: IndexedCampaign = {
+    campaignKey: row.campaign_key,
+    partner: row.partner ?? "",
+    deposited: String(row.deposited ?? "0"),
+    released: String(row.released ?? "0"),
+    refunded: String(row.refunded ?? "0"),
+    firstSeenBlock: Number(row.first_seen_block ?? 0),
+    lastBlock: Number(row.last_block ?? -1),
+    lastLogIndex: Number(row.last_log_index ?? -1),
+    updatedAt: row.updated_at,
+  }
+  if (row.campaign_id) campaign.campaignId = row.campaign_id
+  if (row.title) campaign.title = row.title
+  return campaign
 }
 
 function heroFromRow(row: any): IndexedHero {

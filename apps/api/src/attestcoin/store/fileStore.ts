@@ -3,8 +3,10 @@ import { dirname, join } from "node:path"
 
 import {
   AcademyProgress,
+  CataloguedQuest,
   IndexedAction,
   IndexedBadge,
+  IndexedCampaign,
   IndexedChallenge,
   IndexedDrop,
   IndexedEquipmentEvent,
@@ -14,6 +16,8 @@ import {
   IndexedRaidHit,
   IndexedReward,
   PENDING_STATUSES,
+  QuestCadence,
+  QuestCatalogFields,
   ProofSubmission,
   WorkerCursor,
   WorkerStore,
@@ -23,7 +27,8 @@ import {
 interface FileShape {
   submissions: Record<string, ProofSubmission>
   cursors: Record<string, WorkerCursor>
-  quests: Record<string, IndexedQuest>
+  quests: Record<string, CataloguedQuest>
+  campaigns: Record<string, IndexedCampaign>
   heroes: Record<string, IndexedHero>
   raidHits: IndexedRaidHit[]
   actions: Record<string, IndexedAction>
@@ -42,6 +47,7 @@ function emptyShape(): FileShape {
     submissions: {},
     cursors: {},
     quests: {},
+    campaigns: {},
     heroes: {},
     raidHits: [],
     actions: {},
@@ -91,6 +97,7 @@ export class FileWorkerStore implements WorkerStore {
       if (!this.data.drops) this.data.drops = {}
       if (!this.data.equipmentEvents) this.data.equipmentEvents = {}
       if (!this.data.listings) this.data.listings = {}
+      if (!this.data.campaigns) this.data.campaigns = {}
     } catch {
       // No file yet, or an unreadable one. Starting from empty is correct: chain state is the
       // source of truth and the cursors will simply rescan.
@@ -172,7 +179,11 @@ export class FileWorkerStore implements WorkerStore {
     const existing = this.data.quests[key]
     // Merge rather than replace: QuestCreated carries the rule, QuestAccepted the anchor, and
     // QuestCompleted only the flag. Each arrives as its own event.
-    this.data.quests[key] = { ...(existing ?? {}), ...quest } as IndexedQuest
+    this.data.quests[key] = {
+      catalogued: false,
+      ...(existing ?? {}),
+      ...quest,
+    } as CataloguedQuest
     this.flush()
   }
 
@@ -189,6 +200,63 @@ export class FileWorkerStore implements WorkerStore {
 
   async allQuests(): Promise<IndexedQuest[]> {
     return Object.values(this.data.quests)
+  }
+
+  async upsertQuestCatalog(questId: number, fields: QuestCatalogFields): Promise<void> {
+    const key = String(questId)
+    const existing = this.data.quests[key]
+    this.data.quests[key] = {
+      ...(existing ?? { questId, participant: "", sourceChainKey: 0, actionType: 0, emitter: "", token: "", minAmount: "0", accepted: false, completed: false, updatedAt: new Date().toISOString() }),
+      ...fields,
+      catalogued: true,
+    } as CataloguedQuest
+    this.flush()
+  }
+
+  async questCatalog(filter?: {
+    participant?: string
+    cadence?: QuestCadence
+    campaignId?: string
+  }): Promise<CataloguedQuest[]> {
+    const who = filter?.participant?.toLowerCase()
+    return Object.values(this.data.quests)
+      .filter((q) => q.catalogued)
+      .filter((q) => !who || q.participant.toLowerCase() === who)
+      .filter((q) => !filter?.cadence || q.cadence === filter.cadence)
+      .filter((q) => !filter?.campaignId || q.campaignId === filter.campaignId)
+      .sort((a, b) => b.questId - a.questId)
+  }
+
+  async upsertCampaign(
+    campaign: Pick<IndexedCampaign, "campaignKey"> & Partial<Omit<IndexedCampaign, "campaignKey">>
+  ): Promise<void> {
+    const key = campaign.campaignKey.toLowerCase()
+    const existing = this.data.campaigns[key] ?? {
+      campaignKey: key,
+      partner: "",
+      deposited: "0",
+      released: "0",
+      refunded: "0",
+      firstSeenBlock: 0,
+      lastBlock: -1,
+      lastLogIndex: -1,
+      updatedAt: new Date().toISOString(),
+    }
+    this.data.campaigns[key] = {
+      ...existing,
+      ...campaign,
+      campaignKey: key,
+      updatedAt: new Date().toISOString(),
+    }
+    this.flush()
+  }
+
+  async campaigns(): Promise<IndexedCampaign[]> {
+    return Object.values(this.data.campaigns).sort((a, b) => b.firstSeenBlock - a.firstSeenBlock)
+  }
+
+  async getCampaign(campaignKey: string): Promise<IndexedCampaign | undefined> {
+    return this.data.campaigns[campaignKey.toLowerCase()]
   }
 
   async upsertHero(hero: IndexedHero): Promise<void> {

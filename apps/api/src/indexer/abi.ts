@@ -46,6 +46,12 @@ export const INDEXER_ABI = [
   // RewardVault
   "event RewardReleased(uint256 indexed questId, address indexed recipient, uint256 amount)",
 
+  // CampaignEscrow. The pool is the only thing that makes a campaign real, so the campaign list is
+  // built from these three and nothing else.
+  "event Deposited(bytes32 indexed campaignId, address indexed depositor, uint256 amount, uint256 feeAmount)",
+  "event Released(bytes32 indexed campaignId, address indexed recipient, uint256 amount)",
+  "event Refunded(bytes32 indexed campaignId, address indexed recipient, uint256 amount)",
+
   "event LootClaimed(uint64 indexed seasonId, address indexed player, uint256 amount, bool lastHitBonus)",
 ] as const
 
@@ -58,6 +64,9 @@ export const QUEST_ASC_READ_ABI = [
 export const QUEST_MANAGER_READ_ABI = [
   "function BADGE_NFT() view returns (address)",
   "function REWARD_VAULT() view returns (address)",
+  // Field order matters: acceptedCount and completedCount sit before expiry. Reading it wrong
+  // reports a timestamp as a chain key and answers nonsense without failing.
+  "function getQuest(uint256 questId) view returns ((uint256 agentId,address agentController,uint8 category,address protocol,bytes32 parametersHash,string metadataURI,address rewardToken,uint256 rewardPerParticipant,uint256 badgeLevel,address assignedParticipant,uint32 acceptedCount,uint32 completedCount,uint64 expiry,uint8 status,uint64 createdAt,uint64 sourceChainKey,uint256 campaignId))",
   "function verificationContext(uint256 questId) view returns (bool exists, bool active, address assignedParticipant, uint64 expiry, uint64 sourceChainKey, uint256 campaignId)",
 ] as const
 
