@@ -113,6 +113,37 @@ mints after verifying a proof like any other.
 Every figure on the site is counted from a Creditcoin event or read from a contract.
 An empty network shows zeros rather than a placeholder.
 
+## Running the worker and the indexer
+
+Two long-lived processes, deliberately separable.
+
+```bash
+pnpm --filter @vael/api worker     # watches Sepolia, proves, submits; also indexes each tick
+pnpm --filter @vael/api indexer    # indexes Creditcoin only, signs nothing
+```
+
+| | Worker | Indexer |
+|---|---|---|
+| What it does | Watches allowlisted Sepolia emitters, waits for attestation, fetches a proof, submits it to QuestASC | Reads Creditcoin's own events into the store |
+| Signs transactions | yes | **no** |
+| Needs `WORKER_PRIVATE_KEY` | yes | no |
+| Needs `CREDITCOIN_RPC_URL` | yes | yes |
+| Needs `SEPOLIA_RPC_URL` and fallbacks | yes | no |
+| Needs `WORKER_STORE` and its credentials | yes | yes |
+| Needs the contract addresses | `QUEST_ASC_ADDRESS`, `QUEST_MANAGER_ADDRESS`, `QUEST_PORTAL_ADDRESS`, the adapters | `QUEST_MANAGER_ADDRESS`, `QUEST_ASC_ADDRESS`, `VAEL_HERO_ADDRESS`, `RAID_BOSS_ADDRESS`, `REWARD_VAULT_ADDRESS`, `BADGE_NFT_ADDRESS`, `ARENA_ADDRESS`, `LOOT_ADDRESS`, `EQUIPMENT_ADDRESS`, `MARKETPLACE_ADDRESS` |
+
+The worker indexes as part of each tick, so running both is only needed when you want the read
+paths current at a faster cadence than the worker's 30 second poll, or when you want an indexer on a
+host that holds no key. Running both is safe: the cursor advances only on a successful scan and
+every indexed table is keyed so a replay is idempotent.
+
+`pnpm --filter @vael/api reindex [fromBlock] [--scan]` rewinds the cursor when a new event handler
+is added, because the cursor has already passed those blocks and nothing goes back for them
+otherwise.
+
+Neither process can complete a quest by itself. The worker submits proofs; `QuestASC` decides
+whether they verify.
+
 ## Repository
 
 | Path | What it is |

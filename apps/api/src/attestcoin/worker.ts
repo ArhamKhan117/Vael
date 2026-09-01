@@ -106,11 +106,26 @@ export class AttestcoinWorker {
     // Indexing first, so a quest accepted moments ago is already resolvable when the Sepolia log
     // for it turns up in the same pass.
     const indexed = await this.indexer.scanOnce()
-    if (indexed.questsTouched > 0 || indexed.heroesTouched > 0 || indexed.raidHits > 0) {
+    // Every counter, not just the first three. The arena, loot, market and proof counters were
+    // added later and a scan that only moved those looked, in the log, like a scan that did
+    // nothing at all.
+    const moved = [
+      ["quest", indexed.questsTouched],
+      ["hero", indexed.heroesTouched],
+      ["raid hit", indexed.raidHits],
+      ["action", indexed.actions],
+      ["reward", indexed.rewards],
+      ["badge", indexed.badges],
+      ["arena", indexed.arena],
+      ["drop", indexed.drops],
+      ["equipment", indexed.equipment],
+      ["listing", indexed.listings],
+    ].filter(([, count]) => (count as number) > 0)
+
+    if (moved.length > 0) {
       log(
         `indexed ${indexed.fromBlock}..${indexed.toBlock}: ` +
-          `${indexed.questsTouched} quest(s), ${indexed.heroesTouched} hero update(s), ` +
-          `${indexed.raidHits} raid hit(s)`
+          moved.map(([label, count]) => `${count} ${label}`).join(", ")
       )
     }
 
