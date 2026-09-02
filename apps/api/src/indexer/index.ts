@@ -277,7 +277,8 @@ export class CreditcoinIndexer {
       }
       case "HeroMinted":
       case "HeroXPGranted":
-      case "HeroLeveled": {
+      case "HeroLeveled":
+      case "HeroImported": {
         await this.refreshHero(String(parsed.args.player))
         outcome.heroesTouched += 1
         break
