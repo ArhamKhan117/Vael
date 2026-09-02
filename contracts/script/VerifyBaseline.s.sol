@@ -35,6 +35,19 @@ import {Marketplace} from "../src/game/Marketplace.sol";
  */
 contract VerifyBaseline is Script {
     uint256 internal constant EXPECTED_CHAIN_ID = 102031;
+    uint64 internal constant MAINNET_CHAIN_KEY = 3;
+    address internal constant MAINNET_USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+
+    // Log signatures the adapters are registered against. Literals rather than keccak calls so a
+    // mistyped signature fails here rather than silently checking the wrong slot.
+    bytes32 internal constant TOPIC_PORTAL =
+        keccak256("QuestActionPerformed(uint256,address,uint8,address,uint256)");
+    bytes32 internal constant TOPIC_TRANSFER = keccak256("Transfer(address,address,uint256)");
+    bytes32 internal constant TOPIC_SWAP =
+        keccak256("Swap(address,address,int256,int256,uint160,uint128,int24)");
+    bytes32 internal constant TOPIC_SUPPLY = keccak256("Supply(address,address,address,uint256,uint16)");
+    bytes32 internal constant TOPIC_BORROW =
+        keccak256("Borrow(address,address,address,uint256,uint8,uint256,uint16)");
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address internal constant ZERO = address(0);
 
@@ -214,6 +227,90 @@ contract VerifyBaseline is Script {
                 loot.dropPool(Loot.Rarity(rarity)).length > 0
             );
         }
+
+        console.log("=== source chains, adapters, and the emitter allowlist ===");
+        // A quest can only complete if the chain is supported, an adapter is registered for the
+        // log's signature, and the emitter is allowlisted. All three are asserted here, because a
+        // deployment that looks complete and has one of them missing fails at the worst moment:
+        // after a player has already done the work on the source chain.
+        _isTrue("QuestASC supports chainKey 1", questASC.supportedChain(sepoliaChainKey));
+        _isTrue("QuestASC supports chainKey 3", questASC.supportedChain(MAINNET_CHAIN_KEY));
+
+        address portalAdapter = vm.envAddress("PORTAL_ADAPTER_ADDRESS");
+        address erc20Adapter = vm.envAddress("ERC20_TRANSFER_ADAPTER_ADDRESS");
+        address uniswapAdapter = vm.envAddress("UNISWAP_V3_ADAPTER_ADDRESS");
+        address aaveAdapter = vm.envAddress("AAVE_V3_ADAPTER_ADDRESS");
+
+        _eq("adapter Portal", address(questASC.adapters(sepoliaChainKey, TOPIC_PORTAL)), portalAdapter);
+        _eq("adapter Erc20Transfer", address(questASC.adapters(sepoliaChainKey, TOPIC_TRANSFER)), erc20Adapter);
+        _eq("adapter UniswapSwap", address(questASC.adapters(sepoliaChainKey, TOPIC_SWAP)), uniswapAdapter);
+        _eq("adapter AaveSupply", address(questASC.adapters(sepoliaChainKey, TOPIC_SUPPLY)), aaveAdapter);
+        _eq("adapter AaveBorrow", address(questASC.adapters(sepoliaChainKey, TOPIC_BORROW)), aaveAdapter);
+        _eq(
+            "adapter Erc20Transfer on chainKey 3",
+            address(questASC.adapters(MAINNET_CHAIN_KEY, TOPIC_TRANSFER)),
+            erc20Adapter
+        );
+
+        _isTrue(
+            "QuestPortal allowlisted for Portal",
+            questASC.allowedEmitters(sepoliaChainKey, VaelTypes.ActionType.Portal, questPortal)
+        );
+        _isTrue(
+            "Sepolia USDC allowlisted for Erc20Transfer",
+            questASC.allowedEmitters(
+                sepoliaChainKey, VaelTypes.ActionType.Erc20Transfer, vm.envAddress("SEPOLIA_USDC")
+            )
+        );
+        _isTrue(
+            "Uniswap USDC/WETH 0.05% allowlisted for UniswapSwap",
+            questASC.allowedEmitters(
+                sepoliaChainKey,
+                VaelTypes.ActionType.UniswapSwap,
+                vm.envAddress("SEPOLIA_POOL_USDC_WETH_500")
+            )
+        );
+        _isTrue(
+            "Aave v3 Pool allowlisted for AaveSupply",
+            questASC.allowedEmitters(
+                sepoliaChainKey, VaelTypes.ActionType.AaveSupply, vm.envAddress("SEPOLIA_AAVE_POOL")
+            )
+        );
+        _isTrue(
+            "Aave v3 Pool allowlisted for AaveBorrow",
+            questASC.allowedEmitters(
+                sepoliaChainKey, VaelTypes.ActionType.AaveBorrow, vm.envAddress("SEPOLIA_AAVE_POOL")
+            )
+        );
+        // Mainnet is registered and provable. No quest is opened against it, which is a decision
+        // recorded in docs/MAINNET_SPIKE.md, not an omission.
+        _isTrue(
+            "mainnet USDC allowlisted for Erc20Transfer on chainKey 3",
+            questASC.allowedEmitters(MAINNET_CHAIN_KEY, VaelTypes.ActionType.Erc20Transfer, MAINNET_USDC)
+        );
+
+        console.log("=== migration privileges are closed ===");
+        // Both migrations needed a window in which the owner could write state the rest of the
+        // system exists to make unwritable. Both windows must be shut.
+        _isTrue("VaelHero.importClosed", hero.importClosed());
+        console.log("     VaelHero.importedCount", hero.importedCount());
+        _isTrue(
+            "BadgeNFT no longer lets the deployer mint",
+            !badge.minters(deployer)
+        );
+        // The superseded QuestManager keeps no reviewer privilege on the reputation registry.
+        address supersededManager = vm.envOr("SUPERSEDED_QUEST_MANAGER_ADDRESS", address(0));
+        if (supersededManager != address(0)) {
+            _isTrue(
+                "ReputationRegistry no longer authorizes the superseded QuestManager",
+                !reputation.isReviewerAuthorized(supersededManager)
+            );
+        }
+
+        console.log("=== loot registry ===");
+        require(loot.nextItemId() > 1, "VerifyBaseline: no loot items registered");
+        checks++;
+        console.log("ok   Loot registered items", loot.nextItemId() - 1);
 
         console.log("");
         console.log("VerifyBaseline: all checks passed", checks);

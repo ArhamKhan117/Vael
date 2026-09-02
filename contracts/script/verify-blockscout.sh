@@ -36,6 +36,11 @@ ARENA="$(lookup ARENA_ADDRESS)"
 LOOT="$(lookup LOOT_ADDRESS)"
 EQUIPMENT="$(lookup EQUIPMENT_ADDRESS)"
 MARKET="$(lookup MARKETPLACE_ADDRESS)"
+ASC="$(lookup QUEST_ASC_ADDRESS)"
+A_PORTAL="$(lookup PORTAL_ADAPTER_ADDRESS)"
+A_ERC20="$(lookup ERC20_TRANSFER_ADAPTER_ADDRESS)"
+A_UNI="$(lookup UNISWAP_V3_ADAPTER_ADDRESS)"
+A_AAVE="$(lookup AAVE_V3_ADAPTER_ADDRESS)"
 
 # submit ADDRESS PATH:NAME ENCODED_CONSTRUCTOR_ARGS
 submit() {
@@ -65,10 +70,10 @@ submit "$TOKEN"      src/tokens/VaelToken.sol:VaelToken \
 submit "$VAULT"      src/RewardVault.sol:RewardVault \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
-# BadgeNFT and VaelHero in this tree are v3 and v2, which are written but not deployed. Submitting
-# them against the live v2 and v1 addresses fails on a bytecode mismatch; the explorer already
-# holds the source those were verified with. See docs/SPEC.md §17.1.
 submit "$BADGE"      src/BadgeNFT.sol:BadgeNFT \
+  "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
+
+[ -n "$HERO" ] && submit "$HERO" src/game/VaelHero.sol:VaelHero \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
 submit "$MANAGER"    src/QuestManager.sol:QuestManager \
@@ -77,6 +82,20 @@ submit "$MANAGER"    src/QuestManager.sol:QuestManager \
 
 submit "$ESCROW"     src/CampaignEscrow.sol:CampaignEscrow \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
+
+[ -n "$ASC" ] && submit "$ASC" src/QuestASC.sol:QuestASC \
+  "$(cast abi-encode 'constructor(address,address)' "$DEPLOYER_ADDRESS" "$MANAGER")"
+
+[ -n "$RAID" ] && submit "$RAID" src/game/RaidBoss.sol:RaidBoss \
+  "$(cast abi-encode 'constructor(address,address,address,address)' \
+     "$DEPLOYER_ADDRESS" "$TOKEN" "$HERO" "$BADGE")"
+
+# The adapters carry no constructor argument except the Uniswap one, which takes an owner.
+[ -n "$A_PORTAL" ] && submit "$A_PORTAL" src/adapters/PortalAdapter.sol:PortalAdapter ""
+[ -n "$A_ERC20" ] && submit "$A_ERC20" src/adapters/Erc20TransferAdapter.sol:Erc20TransferAdapter ""
+[ -n "$A_UNI" ] && submit "$A_UNI" src/adapters/UniswapV3SwapAdapter.sol:UniswapV3SwapAdapter \
+  "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
+[ -n "$A_AAVE" ] && submit "$A_AAVE" src/adapters/AaveV3Adapter.sol:AaveV3Adapter ""
 
 # milestone 6 modules. Each is standalone, so each constructor names only what it reads.
 [ -n "$ARENA" ] && submit "$ARENA" src/game/Arena.sol:Arena \
