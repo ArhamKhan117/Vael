@@ -14,6 +14,7 @@
     "worker": "tsx scripts/worker.ts",
     "indexer": "tsx scripts/indexer.ts",
     "reindex": "tsx scripts/reindex.ts",
+    "export-state": "tsx scripts/export-state.ts",
     "pin-badges": "tsx scripts/pin-badges.ts",
     "pin-items": "tsx scripts/pin-items.ts",
     "e2e:modules": "tsx scripts/e2e-modules.ts",

@@ -246,6 +246,25 @@ contract QuestASCTest is Test {
         assertTrue(spent != hugeAction, "the escrow released the action amount");
     }
 
+    /// @notice A campaign quest is paid once, by the escrow, and the vault is never funded for it.
+    /// @dev Before this, `createQuest` minted the reward into RewardVault and `recordCompletion`
+    /// released it, on top of the escrow release: the player was paid twice and the protocol minted
+    /// VAEL to cover a reward a partner had already deposited.
+    function test_CampaignQuestIsPaidOnlyByTheEscrow() public {
+        uint256 deposit = REWARD * 20;
+        (uint256 questId, CampaignEscrow escrow) = _campaignQuest(4242, deposit);
+
+        uint256 playerBefore = vaelToken.balanceOf(player);
+        uint256 vaultBefore = vaelToken.balanceOf(address(rewardVault));
+        uint256 poolBefore = escrow.campaignBalance(bytes32(uint256(4242)));
+
+        questASC.submit(_sourceTx(_portalTx(questId, player, MIN_AMOUNT), SEPOLIA, ACTION_HEIGHT), questId);
+
+        assertEq(vaelToken.balanceOf(player) - playerBefore, REWARD, "the player was paid twice");
+        assertEq(poolBefore - escrow.campaignBalance(bytes32(uint256(4242))), REWARD, "the escrow did not pay");
+        assertEq(vaelToken.balanceOf(address(rewardVault)), vaultBefore, "the vault moved for a campaign quest");
+    }
+
     function test_CampaignEscrowIsUntouchedByAPlainQuest() public {
         CampaignEscrow escrow = new CampaignEscrow(owner);
         escrow.setRewardToken(address(vaelToken));

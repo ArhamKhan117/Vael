@@ -187,8 +187,13 @@ contract QuestManager is Ownable, IQuestManager {
         quest.sourceChainKey = params.sourceChainKey;
         quest.campaignId = params.campaignId;
 
-        uint256 totalReward = params.rewardPerParticipant;
-        REWARD_VAULT.fundQuest(questId, totalReward);
+        // A campaign quest is paid by the partner's escrow and an ordinary quest by the protocol's
+        // vault. Never both. Funding the vault for a campaign quest would mint VAEL that nothing
+        // could ever release, and releasing it at completion paid the player twice: once out of
+        // the vault and once out of the pool the partner deposited.
+        if (params.campaignId == 0) {
+            REWARD_VAULT.fundQuest(questId, params.rewardPerParticipant);
+        }
 
         // The rule lives in QuestASC, which is the only contract that reads it. Registering it
         // here, at creation, means a quest can never exist without the rule that governs it.
@@ -257,7 +262,11 @@ contract QuestManager is Ownable, IQuestManager {
         progress.completed = true;
         quest.completedCount += 1;
 
-        REWARD_VAULT.releaseReward(questId, participant, quest.rewardPerParticipant);
+        // The other half of the same rule: the escrow pays a campaign quest, through QuestASC,
+        // immediately after this call returns.
+        if (quest.campaignId == 0) {
+            REWARD_VAULT.releaseReward(questId, participant, quest.rewardPerParticipant);
+        }
         // Mint badge NFT with metadata URI
         BADGE_NFT.mintBadge(participant, questId, quest.badgeLevel);
 
