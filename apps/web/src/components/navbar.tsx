@@ -12,6 +12,7 @@ import ConnectWalletButton from "./connect-wallet-button";
 
 type CenterItemKey =
   | "quests"
+  | "campaigns"
   | "academy"
   | "hero"
   | "raid"
@@ -32,6 +33,12 @@ const CENTER_ITEMS: {
       label: "Quests",
       title: "Quests",
       description: "Browse proof-verified quests and earn VAEL, badges, and hero XP.",
+    },
+    {
+      key: "campaigns",
+      label: "Campaigns",
+      title: "Campaigns",
+      description: "Partner pools on Creditcoin, paid out only against a verified proof.",
     },
     {
       key: "academy",

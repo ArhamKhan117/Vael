@@ -56,8 +56,18 @@ class APIClient {
     }>("/ai/protocols")
   }
 
+  /** One quest, as the index read it back off QuestManager. */
   async getQuest(questId: number) {
-    return this.request<{ quest: Record<string, unknown> }>(`/quests/${questId}`)
+    return this.request<{ quest: ChainQuest }>(`/quests/${questId}`)
+  }
+
+  /** The quest board. Every entry exists because QuestManager emitted QuestCreated. */
+  async listQuests(params?: { participant?: string | null; cadence?: QuestCadence }) {
+    const search = new URLSearchParams()
+    if (params?.participant) search.set("participant", params.participant)
+    if (params?.cadence) search.set("cadence", params.cadence)
+    const query = search.toString()
+    return this.request<{ quests: ChainQuest[] }>(`/quests${query ? `?${query}` : ""}`)
   }
 
   async getQuestProgress(questId: number, participant: string) {
@@ -137,12 +147,15 @@ class APIClient {
   async getCompletedQuests(walletAddress: string) {
     return this.request<{
       quests: Array<{
-        quest_id_on_chain: number
-        title?: string
-        description?: string
-        quest_type?: string
-        category?: string
-        completionTxHash?: string
+        questId: number
+        title: string
+        description: string
+        cadence: QuestCadence
+        rewardVael: string
+        badgeLevel: number
+        replayKey?: string
+        sourceBlock?: number
+        creditcoinBlock?: number
         completedAt?: string
       }>
     }>(`/quests/users/${walletAddress}/completed`)
@@ -166,11 +179,7 @@ class APIClient {
 
   async getUserQuests(walletAddress: string) {
     return this.request<{
-      quests: {
-        daily: Record<string, unknown> | null
-        weekly: Record<string, unknown> | null
-        all: Record<string, unknown>[]
-      }
+      quests: { daily: ChainQuest | null; weekly: ChainQuest | null; all: ChainQuest[] }
     }>(`/quests/users/${walletAddress}/quests`)
   }
 
@@ -226,170 +235,111 @@ class APIClient {
     return this.request<{
       success: boolean
       message: string
-      quests: { daily?: { questId: number } | null; weekly?: { questId: number } | null }
+      quests: { daily?: { questId: number }; weekly?: { questId: number } }
       errors?: { daily?: string; weekly?: string }
     }>(`/quests/users/${walletAddress}/generate-quests`, { method: "POST" })
   }
 
-  async getAllQuests(participant?: string | null) {
-    const url = participant
-      ? `/quests?participant=${encodeURIComponent(participant)}`
-      : "/quests"
-    return this.request<{ quests: Record<string, unknown>[] }>(url)
-  }
-
-  async listCampaigns(params?: {
-    status?: string
-    partner?: string
-    participant?: string
-    joinedOnly?: boolean
-    limit?: number
-  }) {
+  /** Every pool CampaignEscrow has held money for, with the balance read from the contract. */
+  async listCampaigns(params?: { partner?: string; status?: CampaignStatus }) {
     const search = new URLSearchParams()
-    if (params?.status) search.set("status", params.status)
     if (params?.partner) search.set("partner", params.partner)
-    if (params?.participant != null) search.set("participant", params.participant)
-    if (params?.joinedOnly) search.set("joinedOnly", "true")
-    if (params?.limit) search.set("limit", String(params.limit))
-    const q = search.toString()
-    return this.request<{ campaigns: Campaign[] }>(
-      `/campaigns${q ? `?${q}` : ""}`
+    if (params?.status) search.set("status", params.status)
+    const query = search.toString()
+    return this.request<{ campaigns: ChainCampaign[] }>(`/campaigns${query ? `?${query}` : ""}`)
+  }
+
+  /** One pool and the quests that draw on it, by its bytes32 escrow key. */
+  async getCampaign(campaignKey: string) {
+    return this.request<{ campaign: ChainCampaign; quests: ChainQuest[] }>(
+      `/campaigns/${campaignKey}`
     )
-  }
-
-  async createCampaignDraft(data: {
-    partner_wallet: string
-    partner_name?: string
-    title: string
-    template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
-    template_params?: Record<string, unknown>
-    pool_amount?: number
-    max_participants?: number
-    pool_token?: string
-    description?: string
-    thumbnail?: string
-    period_start?: string
-    period_end?: string
-  }) {
-    return this.request<Campaign>(`/campaigns/draft`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  async createCampaign(data: {
-    partner_wallet: string
-    partner_name?: string
-    title: string
-    template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
-    description?: string
-    thumbnail?: string
-    template_params: Record<string, unknown>
-    pool_amount: number
-    max_participants: number
-    period_start?: string
-    period_end?: string
-  }) {
-    return this.request<Campaign>(`/campaigns`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  async getCampaign(id: string) {
-    return this.request<Campaign>(`/campaigns/${id}`)
-  }
-
-  async joinCampaign(id: string, participant: string) {
-    return this.request<{
-      message: string
-      questIdOnChain: number
-      deploymentTxHash: string
-    }>(`/campaigns/${id}/join`, {
-      method: "POST",
-      body: JSON.stringify({ participant }),
-    })
-  }
-
-  async activateCampaign(id: string, escrowTxHash?: string) {
-    return this.request<{ message: string }>(`/campaigns/${id}/activate`, {
-      method: "POST",
-      body: JSON.stringify({ escrow_tx_hash: escrowTxHash }),
-    })
-  }
-
-  async requestRefund(campaignId: string, partnerWallet: string) {
-    return this.request<{
-      message: string
-      transactionHash: string
-      amountUsdc: number
-    }>(`/campaigns/${campaignId}/refund`, {
-      method: "POST",
-      body: JSON.stringify({ partner_wallet: partnerWallet }),
-    })
-  }
-
-  async deleteCampaign(id: string) {
-    return fetch(`${this.baseURL}/campaigns/${id}`, {
-      method: "DELETE",
-    }).then(async (res) => {
-      if (res.status === 204) return
-      const err = (await res.json().catch(() => ({}))) as APIError
-      throw new Error(err.message || `HTTP ${res.status}`)
-    })
-  }
-
-  async updateCampaignStatus(id: string, status: string) {
-    return this.request<Campaign>(`/campaigns/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    })
-  }
-
-  async updateCampaign(
-    id: string,
-    data: {
-      title?: string
-      description?: string
-      partner_name?: string | null
-      start_at?: string
-      end_at?: string
-      pool_amount?: number
-      max_participants?: number
-      pool_token?: string
-      thumbnail?: string | null
-      template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
-      template_params?: Record<string, unknown>
-    }
-  ) {
-    return this.request<Campaign>(`/campaigns/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    })
   }
 }
 
-export interface Campaign {
-  id: string
-  partner_wallet: string
-  partner_name?: string | null
+export type QuestCadence = "daily" | "weekly" | "campaign" | "open"
+
+export type ProofStage =
+  | "waiting"
+  | "detected"
+  | "attesting"
+  | "proving"
+  | "submitted"
+  | "verified"
+  | "failed"
+
+export interface QuestProof {
+  state: ProofStage
+  replayKey?: string
+  sourceBlock?: number
+  creditcoinBlock?: number
+  sourceTxHash?: string
+  attempts?: number
+  error?: string | null
+  at?: string
+}
+
+/**
+ * A quest as Creditcoin describes it.
+ *
+ * Everything here was read back off QuestManager after a QuestCreated, except the title and the
+ * description, which come from the metadata document the quest points at.
+ */
+export interface ChainQuest {
+  questId: number
   title: string
-  status: "draft" | "pending" | "active" | "completed" | "cancelled"
-  template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
-  template_params: Record<string, unknown>
-  pool_token: string
-  pool_amount: string | number
-  max_participants: number
-  reward_per_quest_usdc: string | number
-  vael_per_quest?: number | null
-  participant_count: number
-  claimed_count: number
-  thumbnail?: string | null
-  description?: string | null
-  start_at?: string | null
-  end_at?: string | null
-  created_at: string
-  updated_at: string
+  description: string
+  cadence: QuestCadence
+  category: string
+  status: string
+  statusValue: number
+  participant: string
+  protocol: string
+  metadataURI: string
+  rewardToken: string
+  rewardAmount: string
+  rewardVael: string
+  badgeLevel: number
+  expiry: number
+  createdAt: number
+  sourceChainKey: number
+  campaignId: string
+  campaignKey: string | null
+  /** A campaign quest is paid by the partner's escrow, an ordinary one by RewardVault. */
+  fundedBy: "escrow" | "vault"
+  accepted: boolean
+  completed: boolean
+  acceptedCount: number
+  completedCount: number
+  action: {
+    actionType: number
+    actionName: string
+    emitter: string
+    token: string
+    tokenSymbol: string | null
+    minAmount: string
+    /** The minimum in the token's own units, or "any amount" when the rule sets none. */
+    minAmountLabel: string
+  }
+  proof: QuestProof
+}
+
+export type CampaignStatus = "funded" | "drained" | "refunded"
+
+export interface ChainCampaign {
+  campaignKey: string
+  campaignId?: string
+  title?: string
+  partner: string
+  deposited: string
+  released: string
+  refunded: string
+  firstSeenBlock: number
+  balance: string
+  balanceVael: string
+  questCount: number
+  completedCount: number
+  status: CampaignStatus
 }
 
 export const api = new APIClient()

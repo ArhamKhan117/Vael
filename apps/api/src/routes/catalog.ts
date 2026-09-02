@@ -3,6 +3,7 @@ import { Contract, formatUnits } from "ethers"
 
 import { creditcoinProvider } from "../attestcoin/config"
 import { createWorkerStore } from "../attestcoin/store"
+import { tokenInfo } from "../lib/protocols"
 import type {
   CataloguedQuest,
   IndexedAction,
@@ -26,6 +27,24 @@ const CATEGORY_LABELS = ["Swap", "Liquidity", "Stake", "Lend", "Other"] as const
 const STATUS_LABELS = ["Inactive", "Active", "Completed", "Cancelled"] as const
 /** Mirrors VaelTypes.ActionType. */
 const ACTION_LABELS = ["Portal", "Uniswap swap", "ERC-20 transfer", "Aave supply", "Aave borrow"] as const
+const ACTION_PORTAL = 0
+
+/**
+ * The rule's minimum, in units a player recognises.
+ *
+ * A minimum of zero is not "0 USDC", it is no minimum at all, and saying so is the difference
+ * between a quest that looks impossible and one that looks free. Where the units come from
+ * depends on the rule: a named token sets them, and a portal quest has none to name because the
+ * amount it checks is the ether the player sent. Anything else is shown as the integer the rule
+ * actually holds rather than guessed at a scale.
+ */
+function minAmountLabel(minAmount: string, token: string, actionType: number): string {
+  if (BigInt(minAmount || "0") === 0n) return "any amount"
+  const info = tokenInfo(token)
+  if (info) return `${formatUnits(minAmount, info.decimals)} ${info.symbol}`
+  if (actionType === ACTION_PORTAL) return `${formatUnits(minAmount, 18)} ETH`
+  return `${minAmount} units`
+}
 
 const ESCROW_ABI = ["function campaignBalance(bytes32 campaignId) view returns (uint256)"]
 
@@ -117,7 +136,9 @@ function serialize(quest: CataloguedQuest, proof: ProofState) {
       actionName: ACTION_LABELS[quest.actionType] ?? `Action ${quest.actionType}`,
       emitter: quest.emitter,
       token: quest.token,
+      tokenSymbol: tokenInfo(quest.token)?.symbol ?? null,
       minAmount: quest.minAmount,
+      minAmountLabel: minAmountLabel(quest.minAmount, quest.token, quest.actionType),
     },
     proof,
   }

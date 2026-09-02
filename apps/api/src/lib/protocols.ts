@@ -54,6 +54,26 @@ export const SEPOLIA_TOKENS = {
  * QuestPortal on Sepolia. Filled in when milestone 3 deploys it; until then no portal quest
  * can be created, which is intentional.
  */
+/**
+ * Symbol and decimals for the tokens a quest rule can name.
+ *
+ * A rule's minimum is stored in the token's own units, so "200000" is 0.2 USDC and 0.000000000002
+ * of anything with eighteen decimals. Showing the raw number tells a player nothing.
+ */
+export const TOKEN_INFO: Record<string, { symbol: string; decimals: number }> = {
+  [SEPOLIA_TOKENS.WETH9.toLowerCase()]: { symbol: "WETH", decimals: 18 },
+  [SEPOLIA_TOKENS.USDC.toLowerCase()]: { symbol: "USDC", decimals: 6 },
+  [SEPOLIA_TOKENS.AAVE_USDC.toLowerCase()]: { symbol: "aUSDC", decimals: 6 },
+  [SEPOLIA_TOKENS.AAVE_DAI.toLowerCase()]: { symbol: "aDAI", decimals: 18 },
+  [SEPOLIA_TOKENS.AAVE_WETH.toLowerCase()]: { symbol: "aWETH", decimals: 18 },
+  [SEPOLIA_TOKENS.AAVE_LINK.toLowerCase()]: { symbol: "aLINK", decimals: 18 },
+}
+
+/** What a token is called and how it is scaled, or nothing when the address is unknown. */
+export function tokenInfo(address: string): { symbol: string; decimals: number } | undefined {
+  return TOKEN_INFO[address.toLowerCase()]
+}
+
 export const QUEST_PORTAL_PLACEHOLDER = "0x0000000000000000000000000000000000000000"
 
 export const PROTOCOLS: Record<string, Protocol> = {

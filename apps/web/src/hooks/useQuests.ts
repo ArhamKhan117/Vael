@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { api } from "@/lib/api"
+import { api, type ChainQuest, type QuestCadence } from "@/lib/api"
 
 export interface QuestProgress {
   accepted: boolean
@@ -9,7 +9,7 @@ export interface QuestProgress {
 }
 
 export function useQuest(questId: number | null) {
-  const [quest, setQuest] = useState<Record<string, unknown> | null>(null)
+  const [quest, setQuest] = useState<ChainQuest | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,7 +19,7 @@ export function useQuest(questId: number | null) {
     setError(null)
     try {
       const res = await api.getQuest(questId)
-      setQuest(res.quest as Record<string, unknown>)
+      setQuest(res.quest)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch quest")
     } finally {
@@ -88,23 +88,30 @@ export function useSubmitProof() {
   return { submitProof, loading, error }
 }
 
-export function useAllQuests(participant?: string | null) {
-  const [quests, setQuests] = useState<Record<string, unknown>[]>([])
-  const [loading, setLoading] = useState(false)
+/** The quest board, optionally narrowed to one player or one kind of quest. */
+export function useAllQuests(params?: { participant?: string | null; cadence?: QuestCadence }) {
+  const [quests, setQuests] = useState<ChainQuest[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const participant = params?.participant
+  const cadence = params?.cadence
 
   const fetchQuests = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.getAllQuests(participant)
+      const query: { participant?: string | null; cadence?: QuestCadence } = {}
+      if (participant) query.participant = participant
+      if (cadence) query.cadence = cadence
+      const res = await api.listQuests(query)
       setQuests(res.quests || [])
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch quests")
     } finally {
       setLoading(false)
     }
-  }, [participant])
+  }, [participant, cadence])
 
   useEffect(() => {
     fetchQuests()
@@ -115,9 +122,9 @@ export function useAllQuests(participant?: string | null) {
 
 export function useUserQuests(walletAddress: string | null) {
   const [quests, setQuests] = useState<{
-    daily: Record<string, unknown> | null
-    weekly: Record<string, unknown> | null
-    all: Record<string, unknown>[]
+    daily: ChainQuest | null
+    weekly: ChainQuest | null
+    all: ChainQuest[]
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

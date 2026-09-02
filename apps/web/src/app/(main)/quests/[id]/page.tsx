@@ -28,7 +28,6 @@ import {
   type QuestMetadata,
 } from "@/lib/ipfs"
 import PartnershipCarousel from "@/components/partnership-carousel"
-import { formatUnits } from "viem"
 import { ClaimPanel } from "@/components/quest/claim-panel"
 import { ActionType, ProofStatus, VerificationRule } from "@/lib/attestcoin/types"
 import { useProofStatus, useVerificationRule } from "@/hooks/useProofStatus"
@@ -82,7 +81,7 @@ export default function QuestDetailPage() {
   } | null>(null)
 
   useEffect(() => {
-    const uri = quest?.metadataURI as string | undefined
+    const uri = quest?.metadataURI
     if (!uri?.startsWith("ipfs://")) {
       setMetadata(null)
       return
@@ -92,7 +91,7 @@ export default function QuestDetailPage() {
       .then(setMetadata)
       .catch(() => setMetadata(null))
       .finally(() => setMetadataLoading(false))
-  }, [(quest as { metadataURI?: string })?.metadataURI])
+  }, [quest?.metadataURI])
 
   const handleConnectWallet = () => open({ view: "Connect" })
   const handleSwitchNetwork = () => open({ view: "Networks" })
@@ -160,36 +159,27 @@ export default function QuestDetailPage() {
   }
 
   const questType = detectQuestType(metadata)
-  const title = metadata?.title ?? `Quest #${quest.id}`
+  const title = metadata?.title ?? quest.title ?? `Quest #${quest.questId}`
   const summary = metadata?.summary ?? metadata?.metadataSnippet ?? ""
   const goal = metadata?.goal ?? ""
-  const category = (
-    metadata?.category ??
-    (quest.category as string) ??
-    "swap"
-  ).toLowerCase()
+  const category = (metadata?.category ?? quest.category ?? "swap").toLowerCase()
   const difficulty = metadata?.difficulty ?? "medium"
   const style = CATEGORY_STYLE[category] ?? CATEGORY_STYLE.swap
 
-  const rewardAmount = metadata?.reward?.amount
-    ? metadata.reward.amount
-    : quest.rewardPerParticipant
-      ? formatUnits(BigInt(quest.rewardPerParticipant as string), 18)
-      : "0"
+  const rewardAmount = metadata?.reward?.amount ?? quest.rewardVael ?? "0"
   const rewardToken = metadata?.reward?.token ?? "VAEL"
   const badgeLevel =
     metadata?.reward?.badgeLevel ?? Number(quest.badgeLevel ?? 1)
 
-  const campaignThumbnail = (quest as { campaignThumbnail?: string })?.campaignThumbnail
-  const bannerUri = (campaignThumbnail || metadata?.banner) ?? ""
+  const bannerUri = metadata?.banner ?? ""
   const bannerUrl = bannerUri.startsWith("ipfs://")
     ? ipfsToHttp(bannerUri)
     : bannerUri || ""
   const hasBanner = !!bannerUrl
   const isIpfsBanner = bannerUrl.includes("ipfs.io") || bannerUrl.includes("ipfs/")
 
-  const acceptedCount = parseInt(String(quest.acceptedCount ?? "0"), 10)
-  const completedCount = parseInt(String(quest.completedCount ?? "0"), 10)
+  const acceptedCount = quest.acceptedCount ?? 0
+  const completedCount = quest.completedCount ?? 0
 
   const requirements = metadata?.requirements ?? []
   const steps = metadata?.steps ?? []
@@ -476,7 +466,7 @@ export default function QuestDetailPage() {
                   <div className="flex items-center justify-between text-zinc-500">
                     <span>Status</span>
                     <span className="text-xs font-semibold text-zinc-300">
-                      {String(quest.status ?? "Active")}
+                      {quest.status ?? "Active"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-zinc-500">
