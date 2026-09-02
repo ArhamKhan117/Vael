@@ -244,6 +244,13 @@ export type QuestCadence = "daily" | "weekly" | "campaign" | "open"
  * pinning service rather than Creditcoin holds.
  */
 export interface QuestCatalogFields {
+  /**
+   * The address the quest is assigned to, straight off the struct.
+   *
+   * QuestManager emits RuleRegistered before QuestCreated, so the worker's half of the row is
+   * written first with nothing to name the participant. The chain has known it since creation.
+   */
+  assignedParticipant: string
   category: number
   protocol: string
   metadataURI: string

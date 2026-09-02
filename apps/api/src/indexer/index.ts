@@ -571,6 +571,7 @@ export class CreditcoinIndexer {
         campaignId !== "0" ? "campaign" : (metadata?.cadence ?? "open")
 
       const fields: QuestCatalogFields = {
+        assignedParticipant: String(quest[9]),
         category: Number(quest[2]),
         protocol: String(quest[3]),
         metadataURI,

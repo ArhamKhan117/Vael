@@ -250,6 +250,7 @@ export class SupabaseWorkerStore implements WorkerStore {
     const { error } = await this.client.from("indexed_quests").upsert(
       {
         quest_id: questId,
+        participant: fields.assignedParticipant.toLowerCase(),
         category: fields.category,
         protocol: fields.protocol.toLowerCase(),
         metadata_uri: fields.metadataURI,

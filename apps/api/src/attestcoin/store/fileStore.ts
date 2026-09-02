@@ -208,6 +208,7 @@ export class FileWorkerStore implements WorkerStore {
     this.data.quests[key] = {
       ...(existing ?? { questId, participant: "", sourceChainKey: 0, actionType: 0, emitter: "", token: "", minAmount: "0", accepted: false, completed: false, updatedAt: new Date().toISOString() }),
       ...fields,
+      participant: fields.assignedParticipant.toLowerCase(),
       catalogued: true,
     } as CataloguedQuest
     this.flush()

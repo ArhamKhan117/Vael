@@ -9,6 +9,13 @@
 -- Neither of the shapes below is authoritative. Every column is filled from an event the chain
 -- emitted plus a read of the contract that emitted it, so a wiped index is rebuilt by rescanning.
 
+-- PostgREST validates NOT NULL against the insert path of an upsert even when the row already
+-- exists, so a write that carries only the catalog half of a row is rejected unless the matching
+-- half can default. These three are the columns the worker fills from RuleRegistered.
+ALTER TABLE indexed_quests ALTER COLUMN participant SET DEFAULT '';
+ALTER TABLE indexed_quests ALTER COLUMN action_type SET DEFAULT 0;
+ALTER TABLE indexed_quests ALTER COLUMN emitter SET DEFAULT '';
+
 -- The catalog rides on indexed_quests rather than beside it: the worker already keys that table by
 -- quest id, and a second table would let the two disagree about which quests exist.
 ALTER TABLE indexed_quests
