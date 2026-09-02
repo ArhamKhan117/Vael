@@ -2,11 +2,6 @@ import { Router } from "express"
 import { z } from "zod"
 
 import { getQuestById, getParticipantProgress } from "../services/questService"
-import {
-  getQuestByOnChainId,
-  isTransactionHashSubmitted,
-  saveQuestSubmission,
-} from "../services/dbService"
 import { SEPOLIA_CHAIN_KEY, creditcoinProvider } from "../attestcoin/config"
 import { getAttestedFrontier } from "../attestcoin/chainInfo"
 import { createWorkerStore } from "../attestcoin/store"
@@ -72,20 +67,31 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
       return res.status(400).json({ message: "Quest already marked as completed" })
     }
 
-    const alreadySubmitted = await isTransactionHashSubmitted(questId, parsed.transactionHash)
-    if (alreadySubmitted) {
+    // The worker's own queue, not a second table beside it. A submission registered anywhere the
+    // worker does not read is a button that appears to work and never does.
+    const store = createWorkerStore()
+    await store.init()
+
+    const indexed = await store.getQuest(questId)
+    const existing = (await store.allSubmissions()).find(
+      (row) =>
+        row.questIdOnChain === questId &&
+        row.sourceTxHash.toLowerCase() === parsed.transactionHash.toLowerCase()
+    )
+    if (existing) {
       return res.status(409).json({
         message: "This transaction hash has already been submitted for this quest",
       })
     }
 
-    const dbQuest = await getQuestByOnChainId(questId)
-    await saveQuestSubmission({
-      quest_id_on_chain: questId,
-      participant_address: participant,
-      transaction_hash: parsed.transactionHash,
-      source_chain_key: dbQuest?.source_chain_key ?? 1,
-      verification_status: "detected",
+    await store.upsertSubmission({
+      questIdOnChain: questId,
+      participant: participant.toLowerCase(),
+      sourceChainKey: indexed?.sourceChainKey ?? SEPOLIA_CHAIN_KEY,
+      sourceTxHash: parsed.transactionHash,
+      sourceBlock: 0,
+      actionType: indexed?.actionType ?? 0,
+      status: "detected",
     })
 
     return res.status(202).json({

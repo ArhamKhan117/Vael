@@ -4,7 +4,7 @@ import express from "express"
 import { env, hasServiceEnv } from "./config/env"
 import { academyRouter } from "./routes/academy"
 import { aiRouter } from "./routes/ai"
-import { campaignsRouter } from "./routes/campaigns"
+import { catalogRouter } from "./routes/catalog"
 import { feedbackRouter } from "./routes/feedback"
 import { questProofsRouter } from "./routes/questProofs"
 import { questsRouter } from "./routes/quests"
@@ -12,7 +12,6 @@ import { gameRouter } from "./routes/game"
 import { modulesRouter } from "./routes/modules"
 import { partnerRouter } from "./routes/partner"
 import { personalQuestRouter } from "./routes/personalQuests"
-import { startQuestPolling } from "./polling/questPolling"
 
 // AI quest generation and the Supabase-backed quest cache are optional. Starting their background
 // jobs without credentials would fail on every tick and bury the logs, so they are started only
@@ -20,7 +19,6 @@ import { startQuestPolling } from "./polling/questPolling"
 if (hasServiceEnv()) {
   // The cron scheduler starts itself on import.
   void import("./cron/scheduler.js")
-  startQuestPolling()
 } else {
   console.log(
     "[startup] AI generation, IPFS pinning, and the Supabase cache are not configured. " +
@@ -40,10 +38,11 @@ app.get("/health", (_, res) => {
 app.use("/academy", academyRouter)
 app.use("/ai", personalQuestRouter)
 app.use("/ai", aiRouter)
-app.use("/campaigns", campaignsRouter)
 app.use("/feedback", feedbackRouter)
 app.use("/quests", questsRouter)
 app.use("/quests", questProofsRouter)
+// Last of the three, so the specific /quests routes above win over its /quests/:id.
+app.use("/", catalogRouter)
 app.use("/", gameRouter)
 app.use("/", modulesRouter)
 app.use("/partner", partnerRouter)
