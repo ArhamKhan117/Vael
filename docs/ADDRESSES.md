@@ -16,30 +16,34 @@ forge script script/VerifyBaseline.s.sol:VerifyBaseline --rpc-url creditcoin
 Deployer, worker, and ERC-8004 agent controller are currently one testnet key.
 Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://creditcoin-testnet.blockscout.com/address/0x017DFB929979AC1b7e1a080c88Db56Bee45846d2), recorded as `DEPLOYER_ADDRESS` in the local `.env` files.
 
-## Creditcoin testnet (102031)
+## Current deployment, Creditcoin testnet (102031)
 
-| Contract | Address | Deploy tx | Block | Source |
+Nine of these were deployed together on 2026-09-10 in the one consolidated redeploy described in
+`docs/SPEC.md` §17.1. The rest have been live since milestone 2 or 3 and were re-pointed rather than
+replaced.
+
+| Contract | Address | Deploy tx | Block | What it is |
 |---|---|---|---|---|
-| `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | verified |
-| `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455574 | verified |
-| `BadgeNFT` | [`0xC3FF8f522408fF5FB2192519E70b875a9754aa94`](https://creditcoin-testnet.blockscout.com/address/0xC3FF8f522408fF5FB2192519E70b875a9754aa94) | [`0x0d043ac4…d1fa85`](https://creditcoin-testnet.blockscout.com/tx/0x0d043ac4248c7d17fd393ed3c67f9beacab83dd557cf9b534f7e248b96d1fa85) | 5459459 | verified |
-| `QuestManager` | [`0xD701A48cc22224Ca4679178db7a749dC68725EFD`](https://creditcoin-testnet.blockscout.com/address/0xD701A48cc22224Ca4679178db7a749dC68725EFD) | [`0x7a1251b5…2f6720`](https://creditcoin-testnet.blockscout.com/tx/0x7a1251b5c9a70bd6140192510aa7fd27a0120eaf13badb5e5858267c9f2f6720) | 5459463 | verified |
-| `QuestASC` | [`0x929eabBe43d498e7BA47BB69e8C9432703e969Aa`](https://creditcoin-testnet.blockscout.com/address/0x929eabBe43d498e7BA47BB69e8C9432703e969Aa) | [`0x4c7317c9…2c39ad`](https://creditcoin-testnet.blockscout.com/tx/0x4c7317c91235fd131e300b3e542e34d46cd2e55e9df44587a81a15ab012c39ad) | 5459464 | verified |
-| `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) | [`0xf9596fbd…8fe7c94`](https://creditcoin-testnet.blockscout.com/tx/0xf9596fbdf6e1aa693d251cbe6bc5f24294683992c4d5cef596a78ee828fe7c94) | 5458012 | verified |
-| `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) | [`0xef8b6a28…b0df12`](https://creditcoin-testnet.blockscout.com/tx/0xef8b6a28941cd98ca273add4a12180558bdaca6d60e63a645d99235aabb0df12) | 5458014 | verified |
-| `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) | [`0xcf9eb35e…c05952`](https://creditcoin-testnet.blockscout.com/tx/0xcf9eb35e244a609eabe19340ced2d592c926a83160b5c27ec5c67810dbc05952) | 5458010 | verified |
-| `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) | [`0xe5a85953…49d5a9`](https://creditcoin-testnet.blockscout.com/tx/0xe5a859535f8771140b58fc7c4b2f43f42d1c1d95823dfd7db1334c030e49d5a9) | 5458016 | verified |
-| `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | verified |
-| `VaelHero` | [`0x8bE97BeBB253d7F660529e23e093F18645Fc974b`](https://creditcoin-testnet.blockscout.com/address/0x8bE97BeBB253d7F660529e23e093F18645Fc974b) | [`0xcc5bc0cd…515987`](https://creditcoin-testnet.blockscout.com/tx/0xcc5bc0cdf2bb45bf482f724e3f6bead4711d29afdc632bff8548637790515987) | 5459460 | verified |
-| `RaidBoss` | [`0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6`](https://creditcoin-testnet.blockscout.com/address/0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6) | [`0x9ad78bf5…bc989d`](https://creditcoin-testnet.blockscout.com/tx/0x9ad78bf5d060aefa85c963c91c47a74bf184ce6689ea5d09910aa8223cbc989d) | 5459462 | verified |
-| `Arena` | [`0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be`](https://creditcoin-testnet.blockscout.com/address/0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be) | [`0x721329e7…aa48ee`](https://creditcoin-testnet.blockscout.com/tx/0x721329e797bfb819edc3c356f5f4fe2d8348fd15f9d5177c26e1729839aa48ee) | 5460598 | verified |
-| `Loot` | [`0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86`](https://creditcoin-testnet.blockscout.com/address/0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86) | [`0xd91caa06…7744dd`](https://creditcoin-testnet.blockscout.com/tx/0xd91caa06e7942daeab53579547c388a25560b8a44f52afc8d042fb3ff17744dd) | 5460599 | verified |
-| `Equipment` | [`0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517`](https://creditcoin-testnet.blockscout.com/address/0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517) | [`0xe03fe4c2…315dfe`](https://creditcoin-testnet.blockscout.com/tx/0xe03fe4c24587badbaa94245e94127d988939046d721584a31dcca07492315dfe) | 5460600 | verified |
-| `Marketplace` | [`0x5d816890b23593E997f66292b7B446E5a8379D56`](https://creditcoin-testnet.blockscout.com/address/0x5d816890b23593E997f66292b7B446E5a8379D56) | [`0x1d24568f…beb575`](https://creditcoin-testnet.blockscout.com/tx/0x1d24568fa6df7bd0868c96bacfe31f9d854ad8ea3b6179f2604435b8d5beb575) | 5460601 | verified |
-| `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | verified |
-| `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | verified |
-| `ValidationRegistry` | [`0x9BE39f19b55792285D495302D872160dB2285a65`](https://creditcoin-testnet.blockscout.com/address/0x9BE39f19b55792285D495302D872160dB2285a65) | [`0x0e56c603…6bd9ca`](https://creditcoin-testnet.blockscout.com/tx/0x0e56c603808ddc5724251ecbf0fd29dbc31fa156b2f8e89617e25ac1326bd9ca) | 5455357 | verified |
-| `AgentRegistryAdapter` | [`0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d`](https://creditcoin-testnet.blockscout.com/address/0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d) | [`0x8f77ab8f…11d4f4`](https://creditcoin-testnet.blockscout.com/tx/0x8f77ab8f6ffa44bfdd2a5e06456ee84b046da6f19a9b2ec100a07bcc5711d4f4) | 5455358 | verified |
+| `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | ERC-20 reward token, VAEL, 18 decimals |
+| `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455360 | Mints and releases VAEL for non-campaign quests. Callable only by QuestManager |
+| `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | Partner-funded campaign pools. Releases and refunds only through QuestASC |
+| `BadgeNFT` | [`0x6b57F8a913FBC175ff46B53542F23D362e46d8f2`](https://creditcoin-testnet.blockscout.com/address/0x6b57F8a913FBC175ff46B53542F23D362e46d8f2) | [`0x3c8142f3…8b99d2`](https://creditcoin-testnet.blockscout.com/tx/0x3c8142f338968e7d28568a6586aca97c4de44df777be85f9100b4bb4f08b99d2) | 5463522 | Soul-bound ERC-721 quest badges with a rarity and on-chain metadata. Mintable only by QuestManager and RaidBoss |
+| `VaelHero` | [`0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96`](https://creditcoin-testnet.blockscout.com/address/0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96) | [`0xe3eec775…3876f8`](https://creditcoin-testnet.blockscout.com/tx/0xe3eec7759a0ad92a7cbc37f99c8a23a8c3ece5eab4ca2e817170c9c54b3876f8) | 5463523 | Soul-bound hero, one per wallet. `grantXP` is `onlyQuestASC`; the import window is closed |
+| `QuestManager` | [`0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e`](https://creditcoin-testnet.blockscout.com/address/0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e) | [`0xec01d729…a12281`](https://creditcoin-testnet.blockscout.com/tx/0xec01d72916512f1839543e64d8e0d5cd67ffce13c7327458539940f924a12281) | 5463524 | Quest lifecycle. `recordCompletion` is `onlyQuestASC`. Pays from the vault only when a quest has no campaign |
+| `QuestASC` | [`0x6e457d910285b5a927Da42742bb58218c5CD1885`](https://creditcoin-testnet.blockscout.com/address/0x6e457d910285b5a927Da42742bb58218c5CD1885) | [`0x705a77df…16a5cb`](https://creditcoin-testnet.blockscout.com/tx/0x705a77dfd05df01502197de370d2ead88e9e083fe709b5b34761053e0016a5cb) | 5463525 | Verifies Attestcoin proofs and applies them. The only contract that can complete a quest |
+| `RaidBoss` | [`0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7`](https://creditcoin-testnet.blockscout.com/address/0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7) | [`0x9f4e1268…fd1b9f`](https://creditcoin-testnet.blockscout.com/tx/0x9f4e1268ac09730ac2291a7947d9cef541ba9c7580ea1f1cbe7594a3dafd1b9f) | 5463526 | Season boss. `dealDamage` is `onlyQuestASC` |
+| `Arena` | [`0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B`](https://creditcoin-testnet.blockscout.com/address/0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B) | [`0x25b9d26a…15a999`](https://creditcoin-testnet.blockscout.com/tx/0x25b9d26a5a4b3c4f3fd0555fe6e7da0a8c171ac58333d7ca2d54646c1115a999) | 5463527 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
+| `Loot` | [`0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601`](https://creditcoin-testnet.blockscout.com/address/0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601) | [`0x3988dc4a…7b85de`](https://creditcoin-testnet.blockscout.com/tx/0x3988dc4a025f3c74442eea4fe59a24efcbf526b4f2610cece4a0773e8a7b85de) | 5463528 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
+| `Equipment` | [`0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45`](https://creditcoin-testnet.blockscout.com/address/0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45) | [`0x8f6b833c…383a76`](https://creditcoin-testnet.blockscout.com/tx/0x8f6b833c0e44a096211e43a46f1d41a72415b4da3b79124c8254093d21383a76) | 5463529 | Four slots per hero, items escrowed while equipped |
+| `Marketplace` | [`0x33dba17e54b030B3C9A751332513e9a610e76A46`](https://creditcoin-testnet.blockscout.com/address/0x33dba17e54b030B3C9A751332513e9a610e76A46) | [`0x26b48659…1ecfad`](https://creditcoin-testnet.blockscout.com/tx/0x26b48659df71983269d6367625dbcd608e35d11b13a626a248d4c6a43b1ecfad) | 5463530 | Fixed-price loot sales for VAEL, 2% to the treasury |
+| `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) | [`0xf9596fbd…fe7c94`](https://creditcoin-testnet.blockscout.com/tx/0xf9596fbdf6e1aa693d251cbe6bc5f24294683992c4d5cef596a78ee828fe7c94) | — | Decodes `QuestActionPerformed` |
+| `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) | [`0xef8b6a28…b0df12`](https://creditcoin-testnet.blockscout.com/tx/0xef8b6a28941cd98ca273add4a12180558bdaca6d60e63a645d99235aabb0df12) | — | Decodes `Transfer` |
+| `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) | [`0xcf9eb35e…c05952`](https://creditcoin-testnet.blockscout.com/tx/0xcf9eb35e244a609eabe19340ced2d592c926a83160b5c27ec5c67810dbc05952) | — | Decodes `Swap`, holds the pool token pairs |
+| `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) | [`0xe5a85953…49d5a9`](https://creditcoin-testnet.blockscout.com/tx/0xe5a859535f8771140b58fc7c4b2f43f42d1c1d95823dfd7db1334c030e49d5a9) | — | Decodes `Supply` and `Borrow` |
+| `IdentityRegistry` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://creditcoin-testnet.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x6f86014b…dfb2b1`](https://creditcoin-testnet.blockscout.com/tx/0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1) | 5455348 | ERC-8004 agent identity |
+| `ReputationRegistry` | [`0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a`](https://creditcoin-testnet.blockscout.com/address/0x87BC59dC9d6967Aec15A415ce5E1Ffd4CdFDaA2a) | [`0xa8ba9347…fadc03`](https://creditcoin-testnet.blockscout.com/tx/0xa8ba9347d0031a1de20c80000afdbafe8d67a035ab59b1afe6b29f8d10fadc03) | 5455356 | ERC-8004 agent reputation |
+| `ValidationRegistry` | [`0x9BE39f19b55792285D495302D872160dB2285a65`](https://creditcoin-testnet.blockscout.com/address/0x9BE39f19b55792285D495302D872160dB2285a65) | [`0x0e56c603…6bd9ca`](https://creditcoin-testnet.blockscout.com/tx/0x0e56c603808ddc5724251ecbf0fd29dbc31fa156b2f8e89617e25ac1326bd9ca) | 5455357 | ERC-8004 validation records. QuestManager holds it as an immutable and calls nothing on it |
+| `AgentRegistryAdapter` | [`0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d`](https://creditcoin-testnet.blockscout.com/address/0xfac6a1D56F8C24687973cd505A4cb7c7ffB0cc8d) | [`0x8f77ab8f…11d4f4`](https://creditcoin-testnet.blockscout.com/tx/0x8f77ab8f6ffa44bfdd2a5e06456ee84b046da6f19a9b2ec100a07bcc5711d4f4) | 5455358 | Resolves a controller to a live agent id |
 
 Every contract is source-verified on Blockscout. Re-check with
 `contracts/script/check-verification.sh`, which asks the explorer what it actually holds rather
@@ -47,128 +51,204 @@ than trusting the `OK` that `forge verify-contract` prints on submission. That d
 QuestASC v3 was submitted successfully and stayed unverified for a day, and the submit output gave
 no hint. `verify-blockscout.sh` now ends by running the checker.
 
-### Adapters
+## Ethereum Sepolia (11155111)
+
+| Contract | Address | Deploy tx | Source |
+|---|---|---|---|
+| `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x0f26d55b…ba61dd`](https://sepolia.etherscan.io/tx/0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd) | verified on Etherscan and Blockscout |
+
+`QuestPortal` was not touched by the redeploy. It is on the source chain and holds no Creditcoin
+address.
+
+## Adapters
 
 Decoding lives outside the core so that adding a protocol costs one `setAdapter` transaction rather
 than a redeploy of QuestASC, QuestManager, and the escrow together. An adapter is a pure decoder
-over an already-proved log: it holds no privilege and cannot widen what is accepted.
+over an already-proved log: it holds no privilege and cannot widen what is accepted. None of the
+four was redeployed; all six registrations were made again on QuestASC v5.
 
-| Adapter | Event | Registered for |
-|---|---|---|
-| `PortalAdapter` | `QuestActionPerformed` | chainKey 1 |
-| `Erc20TransferAdapter` | `Transfer` | chainKey 1 |
-| `UniswapV3SwapAdapter` | `Swap` | chainKey 1, holds the pool token pairs |
-| `AaveV3Adapter` | `Supply` and `Borrow` | chainKey 1 |
+| Registration | Tx |
+|---|---|
+| `PortalAdapter` on chainKey 1 | [`0xb9152140…65d10f`](https://creditcoin-testnet.blockscout.com/tx/0xb9152140e156d9c52d81c3cee6c280084547b27a7fcdf9e26989e4224465d10f) |
+| `Erc20TransferAdapter` on chainKey 1 | [`0x02ecd6a0…371d12`](https://creditcoin-testnet.blockscout.com/tx/0x02ecd6a0cfbc8c31ae5213ddbdf1da6dffd86dfa111ce8438e637a388d371d12) |
+| `UniswapV3SwapAdapter` on chainKey 1 | [`0xbe91fdb8…412b9b`](https://creditcoin-testnet.blockscout.com/tx/0xbe91fdb8a3128050aa2adc61b9f3d6ed2659cceaf4c18fcdd6a1e2c2db412b9b) |
+| `AaveV3Adapter` for `Supply` on chainKey 1 | [`0xb71f9542…41f8d7`](https://creditcoin-testnet.blockscout.com/tx/0xb71f95427cb15e59245c5314d8fd58a1eaee8656788a5202332715cebf41f8d7) |
+| `AaveV3Adapter` for `Borrow` on chainKey 1 | [`0xd4d2575e…606dd7`](https://creditcoin-testnet.blockscout.com/tx/0xd4d2575e9b3156ee56c4043c84b09031e71497a66b7425f57a3fa701cb606dd7) |
+| `Erc20TransferAdapter` on chainKey 3 | [`0x11018dfe…48b070`](https://creditcoin-testnet.blockscout.com/tx/0x11018dfeb69e8db704b775f18af105fe73decec612b6f21e16a201597c48b070) |
 
-### Sepolia emitters allowlisted
+Chain key 3 is Ethereum mainnet. It is registered and provable, with one allowlisted emitter, and
+**no quest is open against it**. `docs/MAINNET_SPIKE.md` makes a mainnet quest conditional on a
+keyed mainnet endpoint that the submission does not assume.
+
+## Sepolia emitters allowlisted
 
 | Action | Emitters |
 |---|---|
-| Portal | `QuestPortal` |
+| Portal | `QuestPortal`, set by `setQuestPortal` itself |
 | Erc20Transfer | WETH9, Circle USDC, Aave test USDC, DAI, WETH, LINK |
 | UniswapSwap | USDC/WETH 0.05% `0x3289680d…AEfF1`, USDC/WETH 0.3% `0x6Ce0896e…9b50` |
 | AaveSupply, AaveBorrow | Aave v3 Pool `0x6Ae43d32…8951` |
 
-### What each one is
+## Ethereum mainnet emitters allowlisted
 
-- **`VaelToken`** — ERC-20 reward token, VAEL, 18 decimals
-- **`RewardVault`** — Mints and releases VAEL per quest. Callable only by QuestManager
-- **`BadgeNFT`** — ERC-721 quest badges. Mintable only by QuestManager and RaidBoss. The **deployed v2 is transferable and carries no rarity**; the soul-bound v3 with a `Rarity` enum is written and tested but not deployed, see SPEC §17.1
-- **`QuestManager`** — Quest lifecycle. `recordCompletion` is `onlyQuestASC`
-- **`CampaignEscrow`** — Partner-funded campaign pools
-- **`VaelHero`** — Soul-bound hero. `grantXP` is `onlyQuestASC`
-- **`RaidBoss`** — Season boss. `dealDamage` is `onlyQuestASC`
-- **`Arena`** — Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it
-- **`Loot`** — ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists
-- **`Equipment`** — Four slots per hero, items escrowed while equipped
-- **`Marketplace`** — Fixed-price loot sales for VAEL, 2% to the treasury
-- **`IdentityRegistry`** — ERC-8004 agent identity
-- **`ReputationRegistry`** — ERC-8004 agent reputation
-- **`ValidationRegistry`** — ERC-8004 validation records. QuestManager's authorization here was granted then revoked: it holds the registry as an immutable but calls nothing on it, so the privilege was unused
-- **`AgentRegistryAdapter`** — Resolves a controller to a live agent id
+| Action | Emitter |
+|---|---|
+| Erc20Transfer | USDC `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 
-## Wiring transactions
+## Wiring transactions, milestone 8
 
 One transaction per call, each slot read back at the block it landed in.
 
 | Call | Tx |
 |---|---|
-| `RewardVault.setVaelToken(VaelToken)` | [`0xe6fdb24b…2b16c2`](https://creditcoin-testnet.blockscout.com/tx/0xe6fdb24b0de342454eb6135e712b3235352016cd84e1619d8630b3e3c82b16c2) |
-| `RewardVault.setQuestManager(QuestManager)` | [`0x3b62bee1…570bc4`](https://creditcoin-testnet.blockscout.com/tx/0x3b62bee1c53b70f0280f2db1b467b7abad3f2b09cb3880973c0bd8fa72570bc4) |
-| `BadgeNFT.setQuestManager(QuestManager)` | [`0x3a101f64…cb8349`](https://creditcoin-testnet.blockscout.com/tx/0x3a101f64c4865dde5918023216dbc162535909d0ebca9e97fef4cd6356cb8349) |
-| `VaelToken.grantMinterRole(RewardVault)` | [`0x601f3424…d025f7`](https://creditcoin-testnet.blockscout.com/tx/0x601f3424293d87fc3d492c313c1d81cb31daed5b021839919fadf799b2d025f7) |
-| `ReputationRegistry.setReviewerAuthorization(QuestManager)` | [`0x40f5f0fa…93d0b4`](https://creditcoin-testnet.blockscout.com/tx/0x40f5f0fa5e00c6b6fa36233ef12b7660a7baeac37da057d3c7f2b474ee93d0b4) |
-| `ValidationRegistry.setValidatorAuthorization(QuestManager)` | [`0x68929e50…88295f`](https://creditcoin-testnet.blockscout.com/tx/0x68929e5051bd15629a6a044da0bf23cb7bf8d66b616bd433bb4237952d88295f) |
-| `CampaignEscrow.setRewardToken(VaelToken)` | [`0x9fdf11b1…8c18aa`](https://creditcoin-testnet.blockscout.com/tx/0x9fdf11b1a40649857a02ab4bee2d6521f16b4590088965e89a104d2f208c18aa) |
-| `VaelToken.mint(deployer, 1,000,000 VAEL)` | [`0x0021b591…f9e796`](https://creditcoin-testnet.blockscout.com/tx/0x0021b591d391916b0face99ef023d190947fea7003d6f24f8df4265370f9e796) |
-| `VaelToken.transfer(RewardVault, 100,000 VAEL)` | [`0xbdb9d581…c98789`](https://creditcoin-testnet.blockscout.com/tx/0xbdb9d581c6c6bf598c2002e60dd62d657977e2ac251204900b14d99c4cc98789) |
-| `ValidationRegistry.setValidatorAuthorization(QuestManager, false)` | [`0x204728a3…ad5975`](https://creditcoin-testnet.blockscout.com/tx/0x204728a3dc8ac135a682c610f75b3fbd03cadf5f095a9ad5df946a060dad5975) |
-| `IdentityRegistry.registerAgent(deployer)` | [`0x54ddff5b…e21528`](https://creditcoin-testnet.blockscout.com/tx/0x54ddff5bd848f0050efaea29c2a779cc6bc9098b0ed54758e23e6606cce21528) |
+| `VaelHero.importHero(token 1)` | [`0xf3480440…194a73`](https://creditcoin-testnet.blockscout.com/tx/0xf34804404ac46d506b00421e0901dc7ec77587b87012d71e99d9abc4f6194a73) |
+| `VaelHero.importHero(token 2)` | [`0x255fdf18…620e2c`](https://creditcoin-testnet.blockscout.com/tx/0x255fdf1889282ace5273779d574d8e854d8d903e9af5fc86d777c14218620e2c) |
+| `VaelHero.closeImport()` | [`0x9de7a507…3b6270`](https://creditcoin-testnet.blockscout.com/tx/0x9de7a507807d04daebd88b4813b353a4dc0f2d88eaecd0dc9ea4cd3af13b6270) |
+| `BadgeNFT.setMinter(deployer, true)` | [`0xa02ad49d…6846ce`](https://creditcoin-testnet.blockscout.com/tx/0xa02ad49d6af630ca87b47ec836578fc496433a5107b7162ef0cb3acace6846ce) |
+| `BadgeNFT.setMinter(deployer, false)` | [`0x0ed3bc98…67649d`](https://creditcoin-testnet.blockscout.com/tx/0x0ed3bc98963a53dd389c2a0fe8ea675a466f427a69e2b47c0b010aec2e67649d) |
+| `RewardVault.setQuestManager(QuestManager)` | [`0x6174eed7…caddb6`](https://creditcoin-testnet.blockscout.com/tx/0x6174eed78f2055b7717cae37c18e95e58708de9b433fe2ff47fa9df1c1caddb6) |
+| `BadgeNFT.setQuestManager(QuestManager)` | [`0x3da9d8fb…00f604`](https://creditcoin-testnet.blockscout.com/tx/0x3da9d8fbe6d71433166ff7a1683802202293d3e593c43a574d4af6430900f604) |
+| `ReputationRegistry.setReviewerAuthorization(QuestManager, true)` | [`0x12b8e06a…6b3108`](https://creditcoin-testnet.blockscout.com/tx/0x12b8e06a46fc1ee7ce8d44504f4d561bf7a17cc7bb6005b1154d7faae06b3108) |
+| `ReputationRegistry.setReviewerAuthorization(superseded QuestManager, false)` | [`0x38f46e1e…dbee09`](https://creditcoin-testnet.blockscout.com/tx/0x38f46e1e0beece4c33aa2aceaca6243a074e4049a405965bbc6bc27934dbee09) |
+| `CampaignEscrow.setRewardReleaser(QuestASC)` | [`0xf0be6332…432163`](https://creditcoin-testnet.blockscout.com/tx/0xf0be6332a786911022ce6b1c5a68598cf6bb45eee7b5ac0a8ae6139b2e432163) |
+| `QuestManager.setQuestASC(QuestASC)` | [`0xc4f92432…f3a094`](https://creditcoin-testnet.blockscout.com/tx/0xc4f924322f70f572afadf277aeba44f1453582499a84f352a84924bbf7f3a094) |
+| `VaelHero.setQuestASC(QuestASC)` | [`0x109f31f9…9bb8a0`](https://creditcoin-testnet.blockscout.com/tx/0x109f31f958bfd21fc0a9c8e571e45256e7dc2e29a694eb56597ee862a59bb8a0) |
+| `RaidBoss.setQuestASC(QuestASC)` | [`0x47858e8b…66565a`](https://creditcoin-testnet.blockscout.com/tx/0x47858e8b83f0775117eb73d096dc36d58cbdeaab4a758f32bf39ad7c7366565a) |
+| `QuestASC.setCampaignEscrow(CampaignEscrow)` | [`0x1cdeea2e…410d99`](https://creditcoin-testnet.blockscout.com/tx/0x1cdeea2e520440171093ada28474d523cf9ee11e048193407b7fd9ad26410d99) |
+| `QuestASC.setSupportedChain(1, true)` | [`0xf6095f7f…c213a6`](https://creditcoin-testnet.blockscout.com/tx/0xf6095f7fc287bf858812bb7ea71846f6606c5e130639fe355f894df00ec213a6) |
+| `QuestASC.setSupportedChain(3, true)` | [`0x53f2aba3…922f72`](https://creditcoin-testnet.blockscout.com/tx/0x53f2aba3315eed1d2cc6c64eef454c69020462d0305fd1894cca914cd4922f72) |
+| `QuestASC.setQuestPortal(1, QuestPortal)` | [`0xc8289eb4…1df407`](https://creditcoin-testnet.blockscout.com/tx/0xc8289eb47764c62cf3655a60cbf636570e23bdf3944ae2be06719439d61df407) |
+| `QuestASC.addHook(VaelHero)` | [`0x778f8ffa…bc53da`](https://creditcoin-testnet.blockscout.com/tx/0x778f8ffaf33f4a3ef102a960860a65e93ff9d71d8171ecd33aa827c4ecbc53da) |
+| `QuestASC.addHook(RaidBoss)` | [`0xc797fabc…aed814`](https://creditcoin-testnet.blockscout.com/tx/0xc797fabcba1acaf5bd2a849723844db75b164d794b58f54ae881e51ac6aed814) |
+| `BadgeNFT.setMinter(RaidBoss, true)` | [`0x21afce02…5ec868`](https://creditcoin-testnet.blockscout.com/tx/0x21afce02aaab1cd127fc4338804e44208915f83f586d1aa509d4aaf5465ec868) |
+| `Loot.setArena(Arena)` | [`0x67a5cc69…540cf5`](https://creditcoin-testnet.blockscout.com/tx/0x67a5cc69f6df81af8e51d3ef3bc204941a44fcd4131aec15a6e8f8a33a540cf5) |
+| `Arena.setRewards(Loot)` | [`0x1296e73e…d0c123`](https://creditcoin-testnet.blockscout.com/tx/0x1296e73ef23ecb1549a3cd19ba5b378fc90ff560c13987632d44f10687d0c123) |
+| `Arena.setEquipment(Equipment)` | [`0x55a4c1b9…167164`](https://creditcoin-testnet.blockscout.com/tx/0x55a4c1b9fbabefd90bdd04cc2532d3d1d5bf24d0b13826b33af6172343167164) |
 
-ERC-8004 agent id for the deployer: **1**.
+Ten emitter allowlist entries and two Uniswap pool registrations were sent the same way; their
+hashes are in the machine-readable block at the end of this file under `V8_ALLOW_*` and `V8_POOL*`.
+Eleven `Loot.registerItem` calls are there under `V8_ITEM_*`.
 
-Badge URIs for levels 1 to 10 are set to the literal placeholder `ipfs://placeholder` until Pinata is wired up in a later phase.
+### Badges re-minted onto BadgeNFT v3
 
-| Badge level | Tx |
+A new ERC-721 holds no tokens, so the ten badges the old contract had minted were minted again in
+ascending token-id order, which is why an old explorer link to badge 4 still resolves to badge 4.
+`BadgeNFT.mintBadge` is `onlyMinter`, so the deployer was made a minter for the length of the
+migration and unmade immediately afterwards. Both transactions are in the table above, and
+`VerifyBaseline` asserts the privilege is gone.
+
+| Badge token id | Mint tx |
 |---|---|
-| 1 | [`0xa985d5ef…46530c`](https://creditcoin-testnet.blockscout.com/tx/0xa985d5efd234fb3a128ef70b8ca47307b7508c57d15601d75b33d8373c46530c) |
-| 2 | [`0xc8f29ac9…03014e`](https://creditcoin-testnet.blockscout.com/tx/0xc8f29ac9e353483ff216e2dca34873fe33fcb88469d25b581a105acb3103014e) |
-| 3 | [`0xa0559fa0…5e12e6`](https://creditcoin-testnet.blockscout.com/tx/0xa0559fa06a43d82affb147cf2bbc65ccae0165c0860ca75c6de6a289f75e12e6) |
-| 4 | [`0x8d65130a…4691cc`](https://creditcoin-testnet.blockscout.com/tx/0x8d65130abe57675384dc176ce7829f0194bb64debebf4df72a9982c70b4691cc) |
-| 5 | [`0x19cc9663…6c290d`](https://creditcoin-testnet.blockscout.com/tx/0x19cc966302f0943f16a44a4ccfc04f2551fa47c9106f61623ed19461006c290d) |
-| 6 | [`0x11fd6f83…6f80b4`](https://creditcoin-testnet.blockscout.com/tx/0x11fd6f83ef7bfbe4374e71110fa72caacbca4e5ae2e02345f6f7869ebd6f80b4) |
-| 7 | [`0xe09290bf…2dab65`](https://creditcoin-testnet.blockscout.com/tx/0xe09290bf32f76a491cee2930351263eb6705f2a02d518085343ba16eea2dab65) |
-| 8 | [`0x897065b9…1026e2`](https://creditcoin-testnet.blockscout.com/tx/0x897065b93f0885184fde92c97666909e3f0e8bda2922bfb1070e05ed691026e2) |
-| 9 | [`0xd16fb457…835135`](https://creditcoin-testnet.blockscout.com/tx/0xd16fb45762d0001fcc3da9a04ed38adef63f69bb06bf13adfd69d54069835135) |
-| 10 | [`0x79720886…45fc49`](https://creditcoin-testnet.blockscout.com/tx/0x79720886970584d390d009f0095b69cba3ec754bc352de6834b9973f3045fc49) |
+| 1 | [`0x2a10d4de…17df97`](https://creditcoin-testnet.blockscout.com/tx/0x2a10d4de5f25c41e9de404c6a600bf97c6131d283179a59f59d7b7ccb117df97) |
+| 2 | [`0x16806ce1…ca1b44`](https://creditcoin-testnet.blockscout.com/tx/0x16806ce158146a27f9e6d3f9e6f72e75802c44007e40ec36196d45f335ca1b44) |
+| 3 | [`0x290c1014…ee097d`](https://creditcoin-testnet.blockscout.com/tx/0x290c101484ea34469dc236339ea6b449786aaad9764ff91f6fd27f24bfee097d) |
+| 4 | [`0xef028215…9a317d`](https://creditcoin-testnet.blockscout.com/tx/0xef028215a16b6dabeaf6334959f54a90d164a01dade58f3114422c4d8e9a317d) |
+| 5 | [`0x11217b8d…6a77e5`](https://creditcoin-testnet.blockscout.com/tx/0x11217b8d688278f8061fffe0ecdc4b96906f9a0d59ed42a1f558d14fc26a77e5) |
+| 6 | [`0xfac4cbcf…b1887e`](https://creditcoin-testnet.blockscout.com/tx/0xfac4cbcfb2a6c800d7db69c738cf437ca24cde74a17ec64d127c7e8a63b1887e) |
+| 7 | [`0xf96cfa78…8610b1`](https://creditcoin-testnet.blockscout.com/tx/0xf96cfa787314fd9b1356ad6c6e8c1b58751140734952f7fd0b6cdcae058610b1) |
+| 8 | [`0xc15a20df…7a48c7`](https://creditcoin-testnet.blockscout.com/tx/0xc15a20df0d7b8d76204e904d4ad809fac3601aea465b43a93efa0293c57a48c7) |
+| 9 | [`0xdc1a8ef5…90bfb8`](https://creditcoin-testnet.blockscout.com/tx/0xdc1a8ef52ba4abeffcd3473c3f1d7cc0e6938b7b48f22da071df07aca990bfb8) |
+| 10 | [`0x8bf3e5ff…1103b2`](https://creditcoin-testnet.blockscout.com/tx/0x8bf3e5ffad606ee89e6af42217ec450fff6bb5a0d119b806335e2df8311103b2) |
+
+### Campaign pools refunded
+
+`CampaignEscrow.refundToPartner` is `onlyRewardReleaser` and the releaser is QuestASC, which until
+milestone 8 had no function that called it. Three funded pools had therefore been stranded since Phase
+7 with no path out at all. `QuestASC.refundCampaign` closed that, and all three were returned to
+the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
+
+| Campaign | Tx |
+|---|---|
+
 
 ## Superseded deployments
 
-Redeployment during milestone 3 left three contracts behind. They are recorded so an explorer link from
-an old transaction still resolves, and so nobody wires against them by accident. None of them holds
-a privilege: the reviewer grant on each superseded QuestManager was explicitly revoked.
+Recorded so an explorer link from an old transaction still resolves, and so nobody wires against
+one by accident. None of them holds a privilege that matters: the reviewer grant on each superseded
+QuestManager was explicitly revoked, and the escrow, the vault, and the token were re-pointed at the
+new core rather than replaced.
+
+### Superseded in the milestone 8 consolidated redeploy, 2026-09-10
+
+The cascade is the immutable map in `docs/SPEC.md` §17.1: BadgeNFT v3 and VaelHero v2 were the two
+changed contracts, and seven more hold one of them, or something that holds one of them, in an
+`immutable`.
 
 | Contract | Address | Why superseded |
 |---|---|---|
+| `BadgeNFT` v2 | `0xC3FF8f522408fF5FB2192519E70b875a9754aa94` | Transferable, no rarity, off-chain metadata. v3 is soul-bound with a rarity and on-chain base64 metadata |
+| `VaelHero` v1 | `0x8bE97BeBB253d7F660529e23e093F18645Fc974b` | No streak multiplier on XP and no import path. Both heroes were imported to v2 by token id |
+| `QuestManager` v6 | `0xD701A48cc22224Ca4679178db7a749dC68725EFD` | Holds `BADGE_NFT` immutably. v7 also stops funding the vault for a campaign quest, which was paying the player twice |
+| `QuestASC` v5 | `0x929eabBe43d498e7BA47BB69e8C9432703e969Aa` | Holds `QUEST_MANAGER` immutably. v6 releases the quest's reward rather than the decoded action amount, and adds `refundCampaign` |
+| `RaidBoss` v1 | `0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6` | Holds both `HERO` and `BADGE` immutably. Season 1, defeated, stays readable on it |
+| `Arena` v1 | `0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be` | Holds `HERO` immutably |
+| `Loot` v1 | `0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86` | Holds `RAID` immutably. A Loot pointing at the old boss could not see the new boss's damage |
+| `Equipment` v1 | `0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517` | Holds both `HERO` and `LOOT` immutably |
+| `Marketplace` v1 | `0x5d816890b23593E997f66292b7B446E5a8379D56` | Holds `LOOT` immutably |
+
+**What did not carry across, stated plainly.** Heroes, badges, and the loot item registry were
+migrated. ERC-1155 loot balances already dropped to players were not: Loot has no owner mint, by
+design, and adding one to migrate a testnet balance would have put a privileged mint next to a
+system whose whole claim is that drops are earned. Quest ids restart at 1, and the raid season
+counter restarts at 1, so the first season on RaidBoss v2 is the second season Vael has run. Every
+completed quest, burnt replay key, and old drop stays readable on the superseded contracts above.
+
+### Superseded earlier
+
+Reconstructed from the git history of this file, which is the only complete record of what was
+canonical when. Earlier prose in this repository numbered the QuestASC deployments from two rather
+than one, so a document written before milestone 8 may call `0x929eabBe…` "v4"; it is the fifth
+QuestASC, and the one deployed in milestone 8 is the sixth.
+
+| Contract | Address | Why superseded |
+|---|---|---|
+| `BadgeNFT` v1 | `0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3` | milestone 2 baseline, replaced when the badge metadata and minter set changed |
 | `QuestManager` v1 | `0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F` | milestone 2 baseline, before verification rules and the source-height anchor |
-| `QuestManager` v2 | `0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA` | Constructed against the v1 RewardVault, whose ledger already held quest ids 1 and 2 |
+| `QuestManager` v2 | `0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA` | Constructed against the v1 RewardVault, whose ledger already held quest ids 1 and 2, which bricked it on its first create |
 | `QuestManager` v3 | `0x8E42A111295F72c93d3A23181C4C3E13eCbeF220` | Predates adapter-based decoding |
-| `QuestManager` v4 | `0x68B609a29cC6B0635d6A3A6A1eDa5a1bBCCEdE24` | Predates declining handlers; see below |
-| `QuestASC` v2 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
-| `QuestASC` v3 | `0xB7D7Bf8e3BEBB1321620C3F5D81E2854B1df9776` | Reverted on a recognised log belonging to another quest |
-| `RewardVault` v1 | `0x4cDa11850a3697940329975EA3943f166Ba6FFf8` | Ledger keyed by questId alone; see below |
+| `QuestManager` v4 | `0x68B609a29cC6B0635d6A3A6A1eDa5a1bBCCEdE24` | Predates declining handlers |
+| `QuestManager` v5 | `0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377` | Replaced when the milestone 4 hero and raid hooks needed a QuestASC that knew about them |
+| `QuestASC` v1 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
+| `QuestASC` v2 | `0x983cFa52747708Fe86d125DdFB1Bf67E052793cb` | Bound immutably to QuestManager v3, before adapter-based decoding |
+| `QuestASC` v3 | `0xB7D7Bf8e3BEBB1321620C3F5D81E2854B1df9776` | Reverted on a recognised log belonging to another quest, so a Uniswap swap could never complete |
+| `QuestASC` v4 | `0x467bF17dcf7A5988dC96b2F8e3Af571169176780` | Bound immutably to QuestManager v5 |
+| `RewardVault` v1 | `0x4cDa11850a3697940329975EA3943f166Ba6FFf8` | Ledger keyed by questId alone, so a manager redeploy bricked it |
 
-
-### Why the core was redeployed twice more in milestone 3b
+#### Why the core was redeployed twice in milestone 3b
 
 `QuestManager.setQuestASC` is one-shot, so every QuestASC replacement forces a QuestManager
 replacement. That happened twice: once to move decoding into adapters, and once to let a handler
 decline a log rather than revert on it. The second was found by the live network, not by review: a
 Uniswap swap emits ERC-20 `Transfer` logs beside its `Swap`, and the first recognised log killed
 the whole submission. The adapter split is precisely what stops the *next* protocol from costing a
-redeploy.
+redeploy, which is why all four adapters survived milestone 8 untouched.
 
 `CampaignEscrow.setRewardReleaser` is plain `onlyOwner`, not one-shot, so the escrow has never
-needed redeploying; it is re-pointed with a single transaction.
+needed redeploying; it is re-pointed with a single transaction. That is the only reason the three
+stranded pools could be refunded at all rather than being lost with a replaced escrow.
 
-### Why the vault was redeployed
+#### Why the vault was redeployed
 
 `RewardVault` keyed its funding ledger by `questId` alone. Quest ids are a per-manager counter that
 restarts at 1, so the first `createQuest` on QuestManager v2 reverted
-`RewardVault__QuestAlreadyFunded(1)` against ids the v1 manager had already funded — and because the
+`RewardVault__QuestAlreadyFunded(1)` against ids the v1 manager had already funded, and because the
 id counter only advances on a successful create, the manager was permanently stuck.
 
 This was found by the live E2E run, not in review. The ledger is now keyed by
 `keccak256(questManager, questId)`, so a manager redeploy is safe without touching the vault again.
-`test/RewardVault.t.sol` covers it. `QuestManager.REWARD_VAULT` and `QuestASC.QUEST_MANAGER` are
-both immutable, which is why fixing the vault required redeploying all three.
+`test/RewardVault.t.sol` covers it, and milestone 8 proved it: QuestManager v7 funds quest id 1 on a
+vault that already holds six managers' worth of history.
 
 ## One-shot bindings, now closed
 
 - `QuestManager.setQuestASC` → `QuestASC`. Irreversible. Only that contract can complete a quest.
-- `CampaignEscrow.setRewardReleaser` → `QuestASC`. Campaign payouts are proof-gated.
+- `VaelHero.setQuestASC` → `QuestASC`. Only a verified proof can grant XP.
+- `RaidBoss.setQuestASC` → `QuestASC`. Only a verified proof can deal damage.
+- `VaelHero.closeImport()`. Irreversible. The owner can no longer write hero state.
 
-`VerifyBaseline` asserts both, so a future rewiring away from QuestASC fails the check.
+`CampaignEscrow.setRewardReleaser` is deliberately not one-shot, and `BadgeNFT.setMinter` is
+revocable. `VerifyBaseline` asserts every one of these, including that the deployer is no longer a
+badge minter, so a rewiring away from QuestASC fails the check.
 
 ## EvmV1Decoder
 
@@ -184,86 +264,20 @@ the address to link against if a future package version reintroduces a public fu
 
 ## Smoke test
 
-`contracts/script/smoke-baseline.sh` runs against this deployment with `cast` alone, no API
-and no web app. It creates a quest as the registered agent, checks the RewardVault actually
-minted the reward, accepts it as the assigned participant, finds `QuestAccepted` in the
-receipt, and then asserts that `recordCompletion` from the deployer reverts with
-`QuestManager__OnlyQuestASC` (`0xe2a34f59`).
+`contracts/script/smoke-baseline.sh` runs against this deployment with `cast` alone, no API and no
+web app. It creates a quest as the registered agent, checks the RewardVault actually minted the
+reward, accepts it as the assigned participant, finds `QuestAccepted` in the receipt, and then
+asserts that `recordCompletion` from the deployer reverts with `QuestManager__OnlyQuestASC`
+(`0xe2a34f59`).
 
-That last assertion is the security claim of the whole project. If it ever stops reverting,
-a backend key can pay itself.
+That last assertion is the security claim of the whole project. If it ever stops reverting, a
+backend key can pay itself.
 
-| Step | Gas used / limit |
-|---|---|
-| `createQuest` | 323,527 / 347,417 (93%) |
-| `acceptQuest` | 105,476 / 108,705 (97%) |
-| `recordCompletion` | reverts, `eth_call`, no gas spent |
+---
 
-Quest ids 1 and 2 on this deployment were created by smoke runs.
+<!-- Machine-readable address book. Read by the deployment, wiring, and verification scripts, and
+     by VerifyBaseline through the eval at the top of this file. One line per key. -->
 
-## Ethereum Sepolia (11155111)
-
-| Contract | Address | Deploy tx | Source |
-|---|---|---|---|
-| `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) | [`0x0f26d55b…ba61dd`](https://sepolia.etherscan.io/tx/0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd) | verified on Etherscan and Blockscout |
-
-Verified on both [Etherscan](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1#code)
-and [eth-sepolia.blockscout.com](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1).
-Constructor arguments are `(owner, treasury)`, both the deployer address, read back off the live contract before submitting.
-Confirmed through the Etherscan API rather than the submit output: `getsourcecode` returns `QuestPortal`, solc `v0.8.28+commit.7893614a`, optimizer on at 200 runs, and 29,488 bytes of source.
-
-Note that this address is identical to `IdentityRegistry` on Creditcoin. Same deployer, same nonce,
-different chain. It is a live illustration of why `QuestASC` scopes every emitter check by
-`chainKey` rather than by address alone.
-
-## milestone 6 modules
-
-Arena, Loot, Equipment, and Marketplace are standalone.
-None is a completion hook, a badge minter, or anything QuestASC calls, and `VerifyBaseline` asserts that QuestASC still has exactly two hooks and that neither new contract can mint a badge.
-That is what let them ship without redeploying anything.
-
-| Wiring | Transaction |
-|---|---|
-| `Loot.setArena(Arena)` | [`0x1dd39c7e…c0006`](https://creditcoin-testnet.blockscout.com/tx/0x1dd39c7e6d26096602167b33705209df4a62e827b58bcb7d169d6db1c66c0006) |
-| `Arena.setRewards(Loot)` | [`0x5966a7b2…ce9bf`](https://creditcoin-testnet.blockscout.com/tx/0x5966a7b2932b50a6eb29bbd908e6a9e3f793107754b626d82432a64d46dce9bf) |
-| `Arena.setEquipment(Equipment)` | [`0x66e1ecd6…20c74`](https://creditcoin-testnet.blockscout.com/tx/0x66e1ecd6837958fbc7b8a8f46c68607f6bf9f8ec4814133b30d2014ff0d20c74) |
-
-Eleven item kinds are registered, one transaction each, with every rarity populated.
-An empty pool would make Loot fall back down the ladder and quietly pay a raid's biggest contributor in a lower tier than they earned, so `VerifyBaseline` checks all five pools.
-Item stats and metadata come from `apps/web/src/content/items.json` through `apps/api/scripts/item-cids.json`; the registration transactions are recorded as `W6_ITEM_*` in the machine-readable block.
-
-## Badge metadata
-
-Every badge level points at a metadata document pinned to IPFS.
-Before this, all ten levels held `ipfs://placeholder`, so a badge a player earned resolved to nothing.
-Regenerate the art with `node apps/web/scripts/make-badges.mjs`, re-pin with `pnpm --filter @vael/api pin-badges`, and re-wire with `contracts/script/set-badge-uris.sh`.
-The manifest lives at `apps/api/scripts/badge-cids.json`.
-
-| Level | Name | Rarity | Metadata CID | Image CID |
-|---|---|---|---|---|
-| 1 | Initiate | Common | `QmfDNGL7khGCv8yd1zzNN93oVmp9YcSbPcndrY8obY82qb` | `QmZh3ix5CHposdiJfDt8FD2WXCYsvZQQL35nTfNZTL5pAn` |
-| 2 | Apprentice | Uncommon | `QmPrqxiuEbAPPAdcrAP9r5hg2Wkmqz26S5HNREFcZKkxjC` | `QmPU7Gcuk3ZKZxrkLv6vzHm6vybXEUeVJjRNYoAW9tx5z5` |
-| 3 | Adept | Rare | `QmcGif83wh4x99fwK248uk94DE9S8diCtzxzpi1iZiFTot` | `QmbTKV6WyYFfbJkvy98EPrSLWohpbRD8yRtPYcgKNCeCeY` |
-| 4 | Veteran | Epic | `QmVG8QcCB2Vtqdnj1PJ98b5E5JdfS5ofP6kNtVUndRQoGc` | `Qmba8MNBQAsjoLQEtHU6TcUW8B7pSQrpkWPYXbrUY43msB` |
-| 5 | Champion | Legendary | `QmVMRvs9Bf1v9sHupLwkRRmSSf784LFy2WhoQWexBc6LgQ` | `QmbX4heuZSBqVsGoMaacjyssB6uqk4fEjM3EKEstCLPBfm` |
-| 6 | Warden | Legendary | `QmXqTH6edmgFoyGqJTZAsar4b4W1tc5wHPqXpgEyLbcEjF` | `QmWXVpK4DUdANUjTLqWeXDxo9yYo3XPsvx8x8FUdQc1vDT` |
-| 7 | Sentinel | Legendary | `QmSRjPS8utVrz348MxjG1Cub6kSHxdpgnjPcEJ7oWnA38h` | `QmXYcq1Nh3uakpMAT8VHAErTbtpbzEMTnaRWtYEv23gSoq` |
-| 8 | Archon | Legendary | `QmUtNCx3MhLk33VvMTos9FCzXuFxmutXVaEFW556UrViT6` | `QmbcXLZtgAQErDoZsf4VxRXKktGUTemrcgU9JEZmeXfGN5` |
-| 9 | Paragon | Legendary | `QmNm79zvrR4TjfWT379kB7NP3ZRgP81t1qeNpbJfYBBAnk` | `QmTnnce2P9JMmGCkazEFMgowCqvSSKbb6vxG6PYig4jpUU` |
-| 10 | Ascendant | Legendary | `QmWuvFHfFCK6M1nbLYQWK2z6xbxjrTGHQTaRWStWmDKgzu` | `QmSX7Pd5m8rJNzwkVcrVbrAefoU5nwmDpNm9F2fL1Td5Ne` |
-
-Rarity follows BadgeNFT v3's rule, 1 Common through 5 and above Legendary, so the metadata already reads the way the deployed contract will once v3 ships.
-
-**The seven badges minted before this wiring still resolve to `ipfs://placeholder`.**
-BadgeNFT v2 stores a token's URI at mint through `ERC721URIStorage` and offers no way to change it afterwards, so `setBadgeURI` only affects future mints.
-BadgeNFT v3 builds `tokenURI` on demand from the level's URI, which removes the problem by construction; see SPEC §17.1.
-
-## Machine-readable
-
-Consumed by `deploy-baseline.sh` for idempotency and by `VerifyBaseline.s.sol` via the environment.
-Do not reformat.
-
-```
 IDENTITY_REGISTRY_ADDRESS=0x62d937DC3410C9C79078A521dA254E6fD53936F1
 IDENTITY_REGISTRY_ADDRESS_TX=0x6f86014bc5cc229dd6fff10e995351ae976836753f4853c5e646c9ac53dfb2b1
 IDENTITY_REGISTRY_ADDRESS_BLOCK=5455348
@@ -282,12 +296,12 @@ VAEL_TOKEN_ADDRESS_BLOCK=5455359
 REWARD_VAULT_ADDRESS=0x89aE45f3B75E20af549715294754292eFf25b89C
 REWARD_VAULT_ADDRESS_TX=0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268
 REWARD_VAULT_ADDRESS_BLOCK=5455360
-BADGE_NFT_ADDRESS=0xC3FF8f522408fF5FB2192519E70b875a9754aa94
-BADGE_NFT_ADDRESS_TX=0x0d043ac4248c7d17fd393ed3c67f9beacab83dd557cf9b534f7e248b96d1fa85
-BADGE_NFT_ADDRESS_BLOCK=5459459
-QUEST_MANAGER_ADDRESS=0xD701A48cc22224Ca4679178db7a749dC68725EFD
-QUEST_MANAGER_ADDRESS_TX=0x7a1251b5c9a70bd6140192510aa7fd27a0120eaf13badb5e5858267c9f2f6720
-QUEST_MANAGER_ADDRESS_BLOCK=5459463
+BADGE_NFT_ADDRESS=0x6b57F8a913FBC175ff46B53542F23D362e46d8f2
+BADGE_NFT_ADDRESS_TX=0x3c8142f338968e7d28568a6586aca97c4de44df777be85f9100b4bb4f08b99d2
+BADGE_NFT_ADDRESS_BLOCK=5463522
+QUEST_MANAGER_ADDRESS=0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e
+QUEST_MANAGER_ADDRESS_TX=0xec01d72916512f1839543e64d8e0d5cd67ffce13c7327458539940f924a12281
+QUEST_MANAGER_ADDRESS_BLOCK=5463524
 CAMPAIGN_ESCROW_ADDRESS=0xcF675302d19967788009592423E4E66bd69EA32b
 CAMPAIGN_ESCROW_ADDRESS_TX=0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6
 CAMPAIGN_ESCROW_ADDRESS_BLOCK=5455363
@@ -313,7 +327,6 @@ FUND_VAULT_TX=0xbdb9d581c6c6bf598c2002e60dd62d657977e2ac251204900b14d99c4cc98789
 REVOKE_VALIDATION_AUTH_TX=0x204728a3dc8ac135a682c610f75b3fbd03cadf5f095a9ad5df946a060dad5975
 REGISTER_AGENT_TX=0x54ddff5bd848f0050efaea29c2a779cc6bc9098b0ed54758e23e6606cce21528
 AGENT_ID=1
-```
 EVM_V1_DECODER_LIBRARY_ADDRESS=0xf46cFB693202B56b7C9D9242FE12acdf29c8A344
 EVM_V1_DECODER_LIBRARY_ADDRESS_TX=0xbbf7c45a491b8e0ca60fcc7e1421e5dda99e27f709c8fdcbe0796a703036d187
 EVM_V1_DECODER_LIBRARY_ADDRESS_BLOCK=5455497
@@ -321,8 +334,8 @@ QUEST_MANAGER_V1_ADDRESS=0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F
 QUEST_MANAGER_V1_ADDRESS_TX=0xe76b6cf78e828e5945fd36083f21c7658c56309ee45aa02ce2a7d2bbb2944e90
 QUEST_MANAGER_V2_ADDRESS=0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA
 QUEST_MANAGER_V2_ADDRESS_TX=0xcbb1c3f0bc3104c0e417cd33317c99372b7ca546e9a9f6b06f1a679adc5d3b3a
-QUEST_ASC_ADDRESS=0x929eabBe43d498e7BA47BB69e8C9432703e969Aa
-QUEST_ASC_ADDRESS_TX=0x4c7317c91235fd131e300b3e542e34d46cd2e55e9df44587a81a15ab012c39ad
+QUEST_ASC_ADDRESS=0x6e457d910285b5a927Da42742bb58218c5CD1885
+QUEST_ASC_ADDRESS_TX=0x705a77dfd05df01502197de370d2ead88e9e083fe709b5b34761053e0016a5cb
 QUEST_PORTAL_ADDRESS=0x62d937DC3410C9C79078A521dA254E6fD53936F1
 QUEST_PORTAL_ADDRESS_TX=0x0f26d55bfdb197c3f7f4ea88f8fdbb27470992b5be42d2e70e2f1c67c9ba61dd
 WIRE_V2_VAULT_MANAGER_TX=0x9f08f9363f4cdd315dd3f43132b42633f93ba3163b3528084a9173beebbb4cd3
@@ -426,10 +439,10 @@ BADGE_NFT_V1_ADDRESS=0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3
 BADGE_NFT_V2_ADDRESS=0xC3FF8f522408fF5FB2192519E70b875a9754aa94
 QUEST_MANAGER_V6_ADDRESS=0xD701A48cc22224Ca4679178db7a749dC68725EFD
 QUEST_ASC_V5_ADDRESS=0x929eabBe43d498e7BA47BB69e8C9432703e969Aa
-VAEL_HERO_ADDRESS=0x8bE97BeBB253d7F660529e23e093F18645Fc974b
-VAEL_HERO_ADDRESS_TX=0xcc5bc0cdf2bb45bf482f724e3f6bead4711d29afdc632bff8548637790515987
-RAID_BOSS_ADDRESS=0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6
-RAID_BOSS_ADDRESS_TX=0x9ad78bf5d060aefa85c963c91c47a74bf184ce6689ea5d09910aa8223cbc989d
+VAEL_HERO_ADDRESS=0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96
+VAEL_HERO_ADDRESS_TX=0xe3eec7759a0ad92a7cbc37f99c8a23a8c3ece5eab4ca2e817170c9c54b3876f8
+RAID_BOSS_ADDRESS=0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7
+RAID_BOSS_ADDRESS_TX=0x9f4e1268ac09730ac2291a7947d9cef541ba9c7580ea1f1cbe7594a3dafd1b9f
 W4_VAULT_MANAGER_TX=0xda7c32155d6d9d3d88895a13be1275b72c2f0830a18218cd15828742cbe4ddc5
 W4_BADGE_MANAGER_TX=0xbe0eca253ba0850d4e49d072016eed003e4c2812ce9b7bb9776c5c1572242ac7
 W4_REPUTATION_AUTH_TX=0xd0e18023ab4f3a6c240b7575d6f3d93845c88793ba154ec8a72442518744fc9c
@@ -470,18 +483,18 @@ W4_RAID_ASC_TX=0x40ae6bf426b0a53ce05d8d0e9e1b8fad41000ca57ee6c290408bf559c99e6b9
 W4_HOOK_HERO_TX=0x7ff2bc1f5ec0c1f6d0e8299ae35e159e6de8e8ca9bc919c6345f59c959e4cd79
 W4_HOOK_RAID_TX=0x3e7c1229e8dedb8ea60812462d741ac6598f1ccbbddcacdf86efb76b18100965
 W4_BADGE_MINTER_TX=0xea1a7cfdf01fd836a65a02039b74e5724813ffa8c722ad96bebc0f660964ebad
-ARENA_ADDRESS=0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be
-ARENA_ADDRESS_TX=0x721329e797bfb819edc3c356f5f4fe2d8348fd15f9d5177c26e1729839aa48ee
-ARENA_ADDRESS_BLOCK=5460598
-LOOT_ADDRESS=0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86
-LOOT_ADDRESS_TX=0xd91caa06e7942daeab53579547c388a25560b8a44f52afc8d042fb3ff17744dd
-LOOT_ADDRESS_BLOCK=5460599
-EQUIPMENT_ADDRESS=0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517
-EQUIPMENT_ADDRESS_TX=0xe03fe4c24587badbaa94245e94127d988939046d721584a31dcca07492315dfe
-EQUIPMENT_ADDRESS_BLOCK=5460600
-MARKETPLACE_ADDRESS=0x5d816890b23593E997f66292b7B446E5a8379D56
-MARKETPLACE_ADDRESS_TX=0x1d24568fa6df7bd0868c96bacfe31f9d854ad8ea3b6179f2604435b8d5beb575
-MARKETPLACE_ADDRESS_BLOCK=5460601
+ARENA_ADDRESS=0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B
+ARENA_ADDRESS_TX=0x25b9d26a5a4b3c4f3fd0555fe6e7da0a8c171ac58333d7ca2d54646c1115a999
+ARENA_ADDRESS_BLOCK=5463527
+LOOT_ADDRESS=0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601
+LOOT_ADDRESS_TX=0x3988dc4a025f3c74442eea4fe59a24efcbf526b4f2610cece4a0773e8a7b85de
+LOOT_ADDRESS_BLOCK=5463528
+EQUIPMENT_ADDRESS=0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45
+EQUIPMENT_ADDRESS_TX=0x8f6b833c0e44a096211e43a46f1d41a72415b4da3b79124c8254093d21383a76
+EQUIPMENT_ADDRESS_BLOCK=5463529
+MARKETPLACE_ADDRESS=0x33dba17e54b030B3C9A751332513e9a610e76A46
+MARKETPLACE_ADDRESS_TX=0x26b48659df71983269d6367625dbcd608e35d11b13a626a248d4c6a43b1ecfad
+MARKETPLACE_ADDRESS_BLOCK=5463530
 W6_LOOT_ARENA_TX=0x1dd39c7e6d26096602167b33705209df4a62e827b58bcb7d169d6db1c66c0006
 W6_ARENA_REWARDS_TX=0x5966a7b2932b50a6eb29bbd908e6a9e3f793107754b626d82432a64d46dce9bf
 W6_ARENA_EQUIPMENT_TX=0x66e1ecd6837958fbc7b8a8f46c68607f6bf9f8ec4814133b30d2014ff0d20c74
@@ -496,3 +509,111 @@ W6_ITEM_WARHAMMER_TX=0x4068e699c6066665cf792a583886563b4f04971bd2e30cd1d0c2be722
 W6_ITEM_GILDED_AEGIS_TX=0xa01a6e1113d078467716f64a9ef3f0bb1d6274b76152158a599cc3923fa65ebf
 W6_ITEM_BLESSED_BLADE_TX=0xdfda03b741776c82f7d6386664639b4f9d19d1a355619af1f1029542c6124698
 W6_ITEM_SEERS_CRYSTAL_TX=0x8547ddac5d835e4ff595b2be1870051525dca6d76fab84f387d3ddfa8724ebb5
+V8_BADGE_NFT_ADDRESS=0x6b57F8a913FBC175ff46B53542F23D362e46d8f2
+V8_BADGE_NFT_ADDRESS_TX=0x3c8142f338968e7d28568a6586aca97c4de44df777be85f9100b4bb4f08b99d2
+V8_BADGE_NFT_ADDRESS_BLOCK=5463522
+V8_VAEL_HERO_ADDRESS=0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96
+V8_VAEL_HERO_ADDRESS_TX=0xe3eec7759a0ad92a7cbc37f99c8a23a8c3ece5eab4ca2e817170c9c54b3876f8
+V8_VAEL_HERO_ADDRESS_BLOCK=5463523
+V8_QUEST_MANAGER_ADDRESS=0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e
+V8_QUEST_MANAGER_ADDRESS_TX=0xec01d72916512f1839543e64d8e0d5cd67ffce13c7327458539940f924a12281
+V8_QUEST_MANAGER_ADDRESS_BLOCK=5463524
+V8_QUEST_ASC_ADDRESS=0x6e457d910285b5a927Da42742bb58218c5CD1885
+V8_QUEST_ASC_ADDRESS_TX=0x705a77dfd05df01502197de370d2ead88e9e083fe709b5b34761053e0016a5cb
+V8_QUEST_ASC_ADDRESS_BLOCK=5463525
+V8_RAID_BOSS_ADDRESS=0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7
+V8_RAID_BOSS_ADDRESS_TX=0x9f4e1268ac09730ac2291a7947d9cef541ba9c7580ea1f1cbe7594a3dafd1b9f
+V8_RAID_BOSS_ADDRESS_BLOCK=5463526
+V8_ARENA_ADDRESS=0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B
+V8_ARENA_ADDRESS_TX=0x25b9d26a5a4b3c4f3fd0555fe6e7da0a8c171ac58333d7ca2d54646c1115a999
+V8_ARENA_ADDRESS_BLOCK=5463527
+V8_LOOT_ADDRESS=0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601
+V8_LOOT_ADDRESS_TX=0x3988dc4a025f3c74442eea4fe59a24efcbf526b4f2610cece4a0773e8a7b85de
+V8_LOOT_ADDRESS_BLOCK=5463528
+V8_EQUIPMENT_ADDRESS=0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45
+V8_EQUIPMENT_ADDRESS_TX=0x8f6b833c0e44a096211e43a46f1d41a72415b4da3b79124c8254093d21383a76
+V8_EQUIPMENT_ADDRESS_BLOCK=5463529
+V8_MARKETPLACE_ADDRESS=0x33dba17e54b030B3C9A751332513e9a610e76A46
+V8_MARKETPLACE_ADDRESS_TX=0x26b48659df71983269d6367625dbcd608e35d11b13a626a248d4c6a43b1ecfad
+V8_MARKETPLACE_ADDRESS_BLOCK=5463530
+V8_IMPORT_HERO_1_TX=0xf34804404ac46d506b00421e0901dc7ec77587b87012d71e99d9abc4f6194a73
+V8_IMPORT_HERO_2_TX=0x255fdf1889282ace5273779d574d8e854d8d903e9af5fc86d777c14218620e2c
+V8_HERO_CLOSE_IMPORT_TX=0x9de7a507807d04daebd88b4813b353a4dc0f2d88eaecd0dc9ea4cd3af13b6270
+V8_BADGE_MINTER_SELF_TX=0xa02ad49d6af630ca87b47ec836578fc496433a5107b7162ef0cb3acace6846ce
+V8_BADGE_1_TX=0x2a10d4de5f25c41e9de404c6a600bf97c6131d283179a59f59d7b7ccb117df97
+V8_BADGE_2_TX=0x16806ce158146a27f9e6d3f9e6f72e75802c44007e40ec36196d45f335ca1b44
+V8_BADGE_3_TX=0x290c101484ea34469dc236339ea6b449786aaad9764ff91f6fd27f24bfee097d
+V8_BADGE_4_TX=0xef028215a16b6dabeaf6334959f54a90d164a01dade58f3114422c4d8e9a317d
+V8_BADGE_5_TX=0x11217b8d688278f8061fffe0ecdc4b96906f9a0d59ed42a1f558d14fc26a77e5
+V8_BADGE_6_TX=0xfac4cbcfb2a6c800d7db69c738cf437ca24cde74a17ec64d127c7e8a63b1887e
+V8_BADGE_7_TX=0xf96cfa787314fd9b1356ad6c6e8c1b58751140734952f7fd0b6cdcae058610b1
+V8_BADGE_8_TX=0xc15a20df0d7b8d76204e904d4ad809fac3601aea465b43a93efa0293c57a48c7
+V8_BADGE_9_TX=0xdc1a8ef52ba4abeffcd3473c3f1d7cc0e6938b7b48f22da071df07aca990bfb8
+V8_BADGE_10_TX=0x8bf3e5ffad606ee89e6af42217ec450fff6bb5a0d119b806335e2df8311103b2
+V8_BADGE_MINTER_REVOKE_TX=0x0ed3bc98963a53dd389c2a0fe8ea675a466f427a69e2b47c0b010aec2e67649d
+V8_ITEM_RUSTED_BLADE_TX=0x4a653f411ca478f7f82f027c23e9ac73946504b6f41b5918e0f8163cffbfc008
+V8_ITEM_PADDED_VEST_TX=0x76407dcb15a245281b6c99901bba2114248ca9aa6fcf735dfa4226a3a3c2e1e1
+V8_ITEM_IRON_SWORD_TX=0x4fe0ecb6350d44f7d500651323e339927d79a32d3638f8287b86e1725d945e30
+V8_ITEM_SWIFT_CHARM_TX=0x5f9184f38daac3318175659ba5d622d1ff05a56f3e67a709bfa05426eddab5a1
+V8_ITEM_PLATE_HARNESS_TX=0x3948f52eba5d5b6925433de3f632889d02b1d557f472f899a86ee5689b227c1c
+V8_ITEM_SCHOLARS_SCROLL_TX=0x90d4c73884ed3b8bdc37eff301bd836a1054761819a5a2502f78a9d2f5082018
+V8_ITEM_ARCANE_CODEX_TX=0x992b057a87e533fc156ed2122802f8d04c8f0b17686a2a8553b693b09cfc7e9f
+V8_ITEM_WARHAMMER_TX=0x555f3405263768a9883994db0d349d9526f39b0c5da41ae8e8c1f7782cdae4f9
+V8_ITEM_GILDED_AEGIS_TX=0x62a20b13ac8491156063138d6c1e0e47349203f7b2d8bcc3c4456741ef9121d6
+V8_ITEM_BLESSED_BLADE_TX=0xe1d19c32846ed8757e2a4209a81d7b6baa5d2a074793cba5a3d22ac163746e12
+V8_ITEM_SEERS_CRYSTAL_TX=0xc4e9d7ea18edcacfedc57f01a8808bdbfd2b25a9e460d84f81094a179b2ca232
+V8_VAULT_MANAGER_TX=0x6174eed78f2055b7717cae37c18e95e58708de9b433fe2ff47fa9df1c1caddb6
+V8_BADGE_MANAGER_TX=0x3da9d8fbe6d71433166ff7a1683802202293d3e593c43a574d4af6430900f604
+V8_REPUTATION_AUTH_TX=0x12b8e06a46fc1ee7ce8d44504f4d561bf7a17cc7bb6005b1154d7faae06b3108
+V8_REPUTATION_REVOKE_TX=0x38f46e1e0beece4c33aa2aceaca6243a074e4049a405965bbc6bc27934dbee09
+V8_ESCROW_RELEASER_TX=0xf0be6332a786911022ce6b1c5a68598cf6bb45eee7b5ac0a8ae6139b2e432163
+V8_QM_ASC_TX=0xc4f924322f70f572afadf277aeba44f1453582499a84f352a84924bbf7f3a094
+V8_HERO_ASC_TX=0x109f31f958bfd21fc0a9c8e571e45256e7dc2e29a694eb56597ee862a59bb8a0
+V8_RAID_ASC_TX=0x47858e8b83f0775117eb73d096dc36d58cbdeaab4a758f32bf39ad7c7366565a
+V8_ASC_ESCROW_TX=0x1cdeea2e520440171093ada28474d523cf9ee11e048193407b7fd9ad26410d99
+V8_ASC_CHAIN_1_TX=0xf6095f7fc287bf858812bb7ea71846f6606c5e130639fe355f894df00ec213a6
+V8_ASC_CHAIN_3_TX=0x53f2aba3315eed1d2cc6c64eef454c69020462d0305fd1894cca914cd4922f72
+V8_ASC_PORTAL_TX=0xc8289eb47764c62cf3655a60cbf636570e23bdf3944ae2be06719439d61df407
+V8_ADAPTER_PORTAL_TX=0xb9152140e156d9c52d81c3cee6c280084547b27a7fcdf9e26989e4224465d10f
+V8_ADAPTER_ERC20_TX=0x02ecd6a0cfbc8c31ae5213ddbdf1da6dffd86dfa111ce8438e637a388d371d12
+V8_ADAPTER_SWAP_TX=0xbe91fdb8a3128050aa2adc61b9f3d6ed2659cceaf4c18fcdd6a1e2c2db412b9b
+V8_ADAPTER_SUPPLY_TX=0xb71f95427cb15e59245c5314d8fd58a1eaee8656788a5202332715cebf41f8d7
+V8_ADAPTER_BORROW_TX=0xd4d2575e9b3156ee56c4043c84b09031e71497a66b7425f57a3fa701cb606dd7
+V8_ADAPTER_ERC20_M_TX=0x11018dfeb69e8db704b775f18af105fe73decec612b6f21e16a201597c48b070
+V8_ALLOW_ERC20_WETH_TX=0xc0ff235fb82079646633d2d8cc011def842e54d885adada52fed333b29cd4b99
+V8_ALLOW_ERC20_USDC_TX=0x53ea55d2c59179343c002d3a4353cb83dd9892f59356e70af7e3df28fd1856f7
+V8_ALLOW_ERC20_AUSDC_TX=0xfe635e01f6ed471e427395c08a1605b67a2fb4c81cac972ba0fa419a41fbfdab
+V8_ALLOW_ERC20_ADAI_TX=0xc1040ba38ccd0e7d5b0b694600a401d0e0f9a1d3e593b7c7fb2081a6b0810245
+V8_ALLOW_ERC20_AWETH_TX=0xbfe2a189235483f86470344305b83344771a04848a651a6c3b8c5bd6e9595722
+V8_ALLOW_ERC20_ALINK_TX=0x3e6963bbdca188598aca52a6167fb365a791b09b5bff97e9781ba2adb6235b1e
+V8_ALLOW_SWAP_P500_TX=0xc53eca84a180b5d010dac0616427274364f19d300ef89a3f5ef37e94bf91b7c6
+V8_ALLOW_SWAP_P3000_TX=0xcd95a9490a27586a5640ecf515b98a4e75c647ff80906ab206f205ebad6ced53
+V8_ALLOW_AAVE_SUPPLY_TX=0x7880ce0435bd0783ccb75f8e4acec9a1762ce6460681dc4cd27dee2281e5b9c1
+V8_ALLOW_AAVE_BORROW_TX=0x0c64057593252f42da3cbe799fe89608f589f0d8a5e8c2b5829e01157967736f
+V8_ALLOW_ERC20_M_USDC_TX=0x5d30310401b0f70111b212f235e50a963e14354470d2492c2d04b3eb45203b8e
+V8_POOL500_TX=0x79413f175976d0307d3fe7a2b2c9cd552a7884c1f1c82207f00a58be450c9ff7
+V8_POOL3000_TX=0x769aa710a6b56564cd2b75abf4b2243e99cc0c808e13463ae19c759e00e38aab
+V8_HOOK_HERO_TX=0x778f8ffaf33f4a3ef102a960860a65e93ff9d71d8171ecd33aa827c4ecbc53da
+V8_HOOK_RAID_TX=0xc797fabcba1acaf5bd2a849723844db75b164d794b58f54ae881e51ac6aed814
+V8_BADGE_MINTER_RAID_TX=0x21afce02aaab1cd127fc4338804e44208915f83f586d1aa509d4aaf5465ec868
+V8_LOOT_ARENA_TX=0x67a5cc69f6df81af8e51d3ef3bc204941a44fcd4131aec15a6e8f8a33a540cf5
+V8_ARENA_REWARDS_TX=0x1296e73ef23ecb1549a3cd19ba5b378fc90ff560c13987632d44f10687d0c123
+V8_ARENA_EQUIPMENT_TX=0x55a4c1b9fbabefd90bdd04cc2532d3d1d5bf24d0b13826b33af6172343167164
+VAEL_HERO_ADDRESS_BLOCK=5463523
+QUEST_ASC_ADDRESS_BLOCK=5463525
+RAID_BOSS_ADDRESS_BLOCK=5463526
+SUPERSEDED_QUEST_MANAGER_ADDRESS=0xD701A48cc22224Ca4679178db7a749dC68725EFD
+SUPERSEDED_QUEST_ASC_ADDRESS=0x929eabBe43d498e7BA47BB69e8C9432703e969Aa
+SUPERSEDED_BADGE_NFT_ADDRESS=0xC3FF8f522408fF5FB2192519E70b875a9754aa94
+SUPERSEDED_VAEL_HERO_ADDRESS=0x8bE97BeBB253d7F660529e23e093F18645Fc974b
+SUPERSEDED_RAID_BOSS_ADDRESS=0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6
+SUPERSEDED_ARENA_ADDRESS=0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be
+SUPERSEDED_LOOT_ADDRESS=0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86
+SUPERSEDED_EQUIPMENT_ADDRESS=0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517
+SUPERSEDED_MARKETPLACE_ADDRESS=0x5d816890b23593E997f66292b7B446E5a8379D56
+VAEL_HERO_V1_ADDRESS=0x8bE97BeBB253d7F660529e23e093F18645Fc974b
+RAID_BOSS_V1_ADDRESS=0xE9BB305bCe2466f2Ee2739D499cb18f8721415F6
+ARENA_V1_ADDRESS=0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be
+LOOT_V1_ADDRESS=0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86
+EQUIPMENT_V1_ADDRESS=0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517
+MARKETPLACE_V1_ADDRESS=0x5d816890b23593E997f66292b7B446E5a8379D56
