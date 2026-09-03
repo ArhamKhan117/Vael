@@ -40,15 +40,21 @@ cast call $QUEST_MANAGER_ADDRESS \
 
 | Where | Contract | Address |
 |---|---|---|
-| Creditcoin 102031 | `QuestASC` | [`0x467bF17dcf7A5988dC96b2F8e3Af571169176780`](https://creditcoin-testnet.blockscout.com/address/0x467bF17dcf7A5988dC96b2F8e3Af571169176780) |
-| Creditcoin 102031 | `QuestManager` | [`0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377`](https://creditcoin-testnet.blockscout.com/address/0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377) |
+| Creditcoin 102031 | `QuestASC` | [`0x6e457d910285b5a927Da42742bb58218c5CD1885`](https://creditcoin-testnet.blockscout.com/address/0x6e457d910285b5a927Da42742bb58218c5CD1885) |
+| Creditcoin 102031 | `QuestManager` | [`0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e`](https://creditcoin-testnet.blockscout.com/address/0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e) |
 | Creditcoin 102031 | `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) |
 | Creditcoin 102031 | `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) |
 | Creditcoin 102031 | `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) |
 | Creditcoin 102031 | `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) |
+| Creditcoin 102031 | `VaelHero` | [`0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96`](https://creditcoin-testnet.blockscout.com/address/0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96) |
+| Creditcoin 102031 | `RaidBoss` | [`0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7`](https://creditcoin-testnet.blockscout.com/address/0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7) |
+| Creditcoin 102031 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) |
 | Sepolia 11155111 | `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 
-Full table, including the superseded deployments, in [ADDRESSES.md](./ADDRESSES.md).
+Full table, including every superseded deployment and the reason it was replaced, in
+[ADDRESSES.md](./ADDRESSES.md). Nine of these contracts were replaced together on 2026-09-10 in
+the one consolidated redeploy of `SPEC.md` §17.1; the four adapters were not, which is the point
+of putting decoding outside the core.
 
 ### Protocol addresses used
 
@@ -57,7 +63,7 @@ Full table, including the superseded deployments, in [ADDRESSES.md](./ADDRESSES.
 | Block prover precompile | `0x0000000000000000000000000000000000000FD2` |
 | ChainInfo precompile | `0x0000000000000000000000000000000000000fD3` |
 | Proof Builder API | `https://prover.cc3-testnet.creditcoin.network` |
-| Source chain key | Sepolia = `1` |
+| Source chain key | Sepolia = `1`, Ethereum mainnet = `3` |
 
 ## 3. The flow
 
@@ -422,17 +428,72 @@ credentials, which are validated lazily and only where they are used.
 
 ## 8. Known limits
 
+Everything here is true of the live deployment. Nothing in this document describes a feature that
+is written but not deployed; where that was the case in earlier phases it is now either deployed or
+listed below.
+
+### Attestcoin and the proof path
+
 - The canonical Ethereum transaction hash is not recoverable from the prover's encoding, so
   `recordCompletion` receives `keccak256(chainKey, blockHeight, replayKey)` as the source
   transaction identifier. It is unforgeable for the same reason the replay key is, but it is not the
   Ethereum tx hash. The worker records the real hash off chain.
+- Attestation latency is seven to nine minutes on Sepolia, measured at 522 seconds over 33 polls in
+  the milestone 7 partner run. Nothing in Vael can shorten it. The product is built around it: a quest
+  shows its proof state, the worker resumes across restarts, and a demo has to pre-record the wait.
+- One continuity proof proves exactly one source height, so a batch submission still costs one
+  continuity proof per distinct block. Batching helps when several actions land in the same block
+  or the same attestation pass, which is what `prep-raid-run.ts` arranges.
+- Proof material perishes. It is fetched immediately before submission, never cached.
 - Writability is not live on the protocol and is out of scope. Vael uses readability only.
-- A third-party protocol's event cannot name a quest, so the worker resolves which quest a log
-  belongs to from the index it builds off `QuestAccepted` and `RuleRegistered`: it asks which of
-  that player's open quests the action could satisfy, checks the log actually mentions the player,
-  and requires an ERC-20 `Transfer` before falling back to the token. It no longer needs an
-  operator-supplied mapping, which is what milestone 3 shipped with. The check still narrows rather
-  than decides: a wrong guess is refused by QuestASC, not accepted by the worker. Self-claim does
-  not have the question at all, because the player supplies the quest id.
+  `IVaelOutbound` declares the two publications Vael would make, and nothing implements it.
+- Ethereum mainnet, chainKey 3, is registered on QuestASC with one allowlisted emitter and is
+  provable, and **no quest is open against it**. `docs/MAINNET_SPIKE.md` returns go conditionally
+  on a keyed mainnet RPC endpoint, and the submission does not assume one.
+- A third-party protocol's event cannot name a quest, so the worker narrows a log to one of the
+  player's open quests. The narrowing is a filter, not a decision: a wrong guess is refused by
+  QuestASC. Self-claim does not have the question at all.
 - Supplying USDC or DAI to Aave on Sepolia reverts with error `51`, `SUPPLY_CAP_EXCEEDED`. The
   public test market is full; the live runs use LINK.
+
+### The game modules
+
+- **The arena seed is manipulable.** A duel resolves on
+  `keccak256(blockhash(block.number - 1), challengeId)`, so a resolver who dislikes the preview can
+  wait and call in a different block. Stakes are symmetric and either player can resolve, so the
+  worst case is a stalemate of two players each waiting for a favourable block, not a theft. Fixing
+  it properly needs commit-reveal or a VRF, which is a design change rather than an implementation
+  detail. It is recorded in `contracts/src/game/Arena.sol` above the function that does it.
+- The arena and the marketplace are pure Creditcoin systems. They spend and move what proofs
+  earned, and no proof is involved in a duel or a sale. Only the stats a duel reads and the items a
+  sale moves came from verified proofs.
+
+### The milestone 8 redeploy
+
+Nine contracts were replaced on 2026-09-10. Three kinds of state did not come with them, and the
+old contracts remain readable at the addresses in `docs/ADDRESSES.md`:
+
+- **Loot balances already dropped to players.** `Loot` has no owner mint, by design, and adding one
+  to migrate a testnet balance would have put a privileged mint beside a system whose whole claim is
+  that drops are earned. The item registry was re-registered; the balances were not.
+- **Quest ids and raid seasons restart at 1.** Every completed quest and burnt replay key from
+  before the redeploy is readable on QuestManager v6 and QuestASC v5. The first season on RaidBoss
+  v2 is the second season Vael has run.
+- **Badge history before the redeploy.** All ten badges were re-minted onto BadgeNFT v3 at their
+  original token ids and to their original owners, so an old link resolves, but the mint
+  transactions are the migration's, not the original completions'. The original `BadgeMinted` events
+  are on BadgeNFT v2.
+
+Re-minting needed the deployer to be a badge minter for the length of the migration, and importing
+heroes needed an owner-writable window on VaelHero. Both are closed, irreversibly in the hero's
+case, and `VerifyBaseline` asserts both.
+
+### Elsewhere
+
+- `Quest.rewardToken` is filled from `RewardVault.vaelToken()` for every quest, so on a campaign
+  quest it names the protocol's token rather than whatever `CampaignEscrow.rewardToken()` is. Both
+  are VAEL today. A partner paying in a different token would need that field to come from the
+  escrow, and it does not yet.
+- The deployer, the worker, and the ERC-8004 agent controller are one testnet key. Nothing in the
+  design requires that; it is a convenience of a single-operator testnet deployment, and the removal
+  test is what makes it harmless.
