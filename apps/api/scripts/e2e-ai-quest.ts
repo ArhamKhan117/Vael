@@ -3,6 +3,9 @@
  *
  *   QUEST_ID=10 pnpm --filter @vael/api e2e:ai-quest
  *
+ * It performs whichever action the rule on chain asks for, a Uniswap swap or an Aave supply. Which
+ * one that is was decided by the model from the player's verified history at generation time.
+ *
  * The point is that a generated quest is not special. Its rule went on chain at creation, the
  * player performs the action on Ethereum, and QuestASC verifies it exactly as it would verify a
  * quest written by hand. The generator has no privilege over completion at all: it created the
@@ -35,6 +38,14 @@ const ERC20_ABI = [
 const SWAP_ROUTER_ABI = [
   "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params) payable returns (uint256)",
 ]
+
+const AAVE_POOL_ABI = [
+  "function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)",
+]
+
+/** Mirrors VaelTypes.ActionType for the two the generator can pick that this script can perform. */
+const UNISWAP_SWAP = 1
+const AAVE_SUPPLY = 3
 
 const TOKEN_ABI = ["function balanceOf(address) view returns (uint256)"]
 
@@ -69,8 +80,11 @@ async function main() {
   if (quest[9].toLowerCase() !== player.address.toLowerCase()) {
     throw new Error(`quest ${questId} is assigned to ${quest[9]}, not ${player.address}`)
   }
-  if (Number(rule[0]) !== 1) {
-    throw new Error(`this script performs a Uniswap swap; quest ${questId} wants action ${rule[0]}`)
+  const actionType = Number(rule[0])
+  if (actionType !== UNISWAP_SWAP && actionType !== AAVE_SUPPLY) {
+    throw new Error(
+      `this script performs a Uniswap swap or an Aave supply; quest ${questId} wants action ${actionType}`
+    )
   }
 
   const already: boolean = await manager.getFunction("hasAccepted").staticCall(questId, player.address)
@@ -88,36 +102,51 @@ async function main() {
   log("   anchored at   ", `Sepolia height ${anchored}`)
 
   // ------------------------------------------------------------ the action
+  //
+  // Which action this is was decided by the model at generation time and written into the rule on
+  // chain. The script reads the rule and does what it says; it has no say in it.
 
   const tokenIn = rule[2] as string
-  const usdc = new Contract(tokenIn, ERC20_ABI, playerSepolia)
-  const decimals = Number(await usdc.getFunction("decimals").staticCall())
-  // Comfortably above the rule's minimum, so a rounding difference in the pool cannot fail it.
+  const token = new Contract(tokenIn, ERC20_ABI, playerSepolia)
+  const decimals = Number(await token.getFunction("decimals").staticCall())
+  // Comfortably above the rule's minimum, so a rounding difference cannot fail it.
   const amountIn = (BigInt(rule[3]) * 3n) / 2n + 10n ** BigInt(decimals) / 10n
 
-  const held: bigint = await usdc.getFunction("balanceOf").staticCall(player.address)
-  log("2. swapping on Uniswap v3")
+  const held: bigint = await token.getFunction("balanceOf").staticCall(player.address)
+  log("2. performing the action the rule asks for")
+  log("   action        ", actionType === UNISWAP_SWAP ? "Uniswap v3 swap" : "Aave v3 supply")
   log("   holding       ", `${formatUnits(held, decimals)} of the input token`)
   if (held < amountIn) throw new Error("not enough of the input token to clear the minimum")
 
-  const routerAddress = need("SEPOLIA_UNISWAP_ROUTER")
-  const wethAddress = need("SEPOLIA_WETH9")
-  await (await usdc.getFunction("approve")(routerAddress, amountIn)).wait(1)
+  let actionReceipt
+  if (actionType === UNISWAP_SWAP) {
+    const routerAddress = need("SEPOLIA_UNISWAP_ROUTER")
+    const wethAddress = need("SEPOLIA_WETH9")
+    await (await token.getFunction("approve")(routerAddress, amountIn)).wait(1)
 
-  const router = new Contract(routerAddress, SWAP_ROUTER_ABI, playerSepolia)
-  const swapTx = await router.getFunction("exactInputSingle")({
-    tokenIn,
-    tokenOut: wethAddress,
-    fee: 500,
-    recipient: player.address,
-    amountIn,
-    amountOutMinimum: 0,
-    sqrtPriceLimitX96: 0,
-  })
-  const swapReceipt = await swapTx.wait(1)
-  const sourceBlock = BigInt(swapReceipt.blockNumber)
-  log("   swap tx       ", `${SEPOLIA_EXPLORER}/tx/${swapReceipt.hash}`)
-  log("   amount in     ", `${formatUnits(amountIn, decimals)} against a minimum of ${formatUnits(rule[3], decimals)}`)
+    const router = new Contract(routerAddress, SWAP_ROUTER_ABI, playerSepolia)
+    const swapTx = await router.getFunction("exactInputSingle")({
+      tokenIn,
+      tokenOut: wethAddress,
+      fee: 500,
+      recipient: player.address,
+      amountIn,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0,
+    })
+    actionReceipt = await swapTx.wait(1)
+  } else {
+    const poolAddress = need("SEPOLIA_AAVE_POOL")
+    await (await token.getFunction("approve")(poolAddress, amountIn)).wait(1)
+
+    const pool = new Contract(poolAddress, AAVE_POOL_ABI, playerSepolia)
+    const supplyTx = await pool.getFunction("supply")(tokenIn, amountIn, player.address, 0)
+    actionReceipt = await supplyTx.wait(1)
+  }
+
+  const sourceBlock = BigInt(actionReceipt.blockNumber)
+  log("   sepolia tx    ", `${SEPOLIA_EXPLORER}/tx/${actionReceipt.hash}`)
+  log("   amount        ", `${formatUnits(amountIn, decimals)} against a minimum of ${formatUnits(rule[3], decimals)}`)
   log("   sepolia block ", sourceBlock.toString())
 
   // ------------------------------------------------------------ the proof
@@ -126,7 +155,7 @@ async function main() {
   const vael = new Contract(need("VAEL_TOKEN_ADDRESS"), TOKEN_ABI, cc)
   const before: bigint = await vael.getFunction("balanceOf").staticCall(player.address)
 
-  const result = await runPipeline(cc, sepolia, player, ascAddress, swapReceipt.hash, sourceBlock, questId)
+  const result = await runPipeline(cc, sepolia, player, ascAddress, actionReceipt.hash, sourceBlock, questId)
 
   const after: bigint = await vael.getFunction("balanceOf").staticCall(player.address)
   const questAfter = await manager.getFunction("getQuest").staticCall(questId)
@@ -135,7 +164,7 @@ async function main() {
   console.log("=== an AI-generated quest, completed through the ordinary proof path ===")
   console.log(`  quest              ${questId}`)
   console.log(`  metadata           ${quest[5]}`)
-  console.log(`  sepolia swap       ${swapReceipt.hash}`)
+  console.log(`  sepolia action     ${actionReceipt.hash}`)
   console.log(`  proof tx           ${CC_EXPLORER}/tx/${result.txHash}`)
   console.log(`  proof gas          ${result.gasUsed} / ${result.gasLimit}`)
   console.log(`  attestation wait   ${Math.round(result.attestationWaitMs / 1000)}s over ${result.attestationPolls} polls`)

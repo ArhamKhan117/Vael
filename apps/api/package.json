@@ -17,6 +17,7 @@
     "indexer": "tsx scripts/indexer.ts",
     "reindex": "tsx scripts/reindex.ts",
     "export-state": "tsx scripts/export-state.ts",
+    "make-quest": "tsx scripts/make-quest.ts",
     "pin-badges": "tsx scripts/pin-badges.ts",
     "pin-items": "tsx scripts/pin-items.ts",
     "e2e:modules": "tsx scripts/e2e-modules.ts",
