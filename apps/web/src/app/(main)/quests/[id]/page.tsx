@@ -24,6 +24,7 @@ import { useQuestContract } from "@/hooks/useQuestContract"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import {
   ipfsToHttp,
+  PLACEHOLDER_METADATA_URI,
   fetchIPFSMetadata,
   type QuestMetadata,
 } from "@/lib/ipfs"
@@ -82,7 +83,7 @@ export default function QuestDetailPage() {
 
   useEffect(() => {
     const uri = quest?.metadataURI
-    if (!uri?.startsWith("ipfs://")) {
+    if (!uri?.startsWith("ipfs://") || uri === PLACEHOLDER_METADATA_URI) {
       setMetadata(null)
       return
     }
@@ -545,7 +546,6 @@ export default function QuestDetailPage() {
                       questId={BigInt(questId)}
                       rule={verificationRule}
                       status={proofStatus}
-                      tokenSymbol={rewardToken}
                     />
                   </div>
                 )}

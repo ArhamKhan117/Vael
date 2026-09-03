@@ -17,8 +17,6 @@ interface ClaimPanelProps {
   questId: bigint
   rule: VerificationRule
   status: ProofStatus
-  tokenSymbol?: string
-  tokenDecimals?: number
   onClaimed?: (creditcoinTxHash: string) => void
 }
 
@@ -30,14 +28,7 @@ interface ClaimPanelProps {
  * our worker, because a platform that stops working when its servers do is the thing Vael exists
  * to replace.
  */
-export function ClaimPanel({
-  questId,
-  rule,
-  status,
-  tokenSymbol,
-  tokenDecimals,
-  onClaimed,
-}: ClaimPanelProps) {
+export function ClaimPanel({ questId, rule, status, onClaimed }: ClaimPanelProps) {
   const [sourceTxHash, setSourceTxHash] = useState(status.sourceTxHash ?? "")
   const isPortal = rule.actionType === ActionType.Portal
   const deepLink = actionDeepLink(rule.actionType)
@@ -45,7 +36,7 @@ export function ClaimPanel({
 
   return (
     <div className="space-y-4">
-      <RuleCard rule={rule} tokenSymbol={tokenSymbol} tokenDecimals={tokenDecimals} />
+      <RuleCard rule={rule} />
 
       <div className="rounded border border-[#1A1A1A] bg-black">
         <div className="border-b border-[#1A1A1A] px-4 py-3">

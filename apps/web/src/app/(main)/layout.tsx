@@ -1,7 +1,6 @@
 import "@/app/globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
-import { ProfileGuard } from "@/components/profile-guard";
 
 export default function RootLayout({
   children,
@@ -12,7 +11,6 @@ export default function RootLayout({
   // to carry its own min-h-screen, and a short one then left a screen-tall gap above the footer.
   return (
     <div className="flex min-h-screen flex-col">
-      <ProfileGuard />
       <Navbar />
       <div className="flex-1">{children}</div>
       <Footer />

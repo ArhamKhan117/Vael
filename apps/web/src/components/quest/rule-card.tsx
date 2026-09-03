@@ -5,11 +5,10 @@ import { formatUnits } from "viem"
 
 import { ACTION_LABELS, ActionType, VerificationRule } from "@/lib/attestcoin/types"
 import { SEPOLIA_EXPLORER_URL } from "@/lib/chains"
+import { ruleAmountUnit } from "@/lib/tokens"
 
 interface RuleCardProps {
   rule: VerificationRule
-  tokenSymbol?: string
-  tokenDecimals?: number
 }
 
 function short(address: string) {
@@ -23,7 +22,10 @@ function short(address: string) {
  * chain: it is exactly what QuestASC will check, and it cannot change once the quest exists.
  * Hiding it would make a failed claim feel arbitrary.
  */
-export function RuleCard({ rule, tokenSymbol = "tokens", tokenDecimals = 18 }: RuleCardProps) {
+export function RuleCard({ rule }: RuleCardProps) {
+  // The units come from the rule's own token, never from the quest's reward token. Passing the
+  // reward token in here printed a portal quest's 0.0005 ETH minimum as "0.0005 VAEL".
+  const unit = ruleAmountUnit(rule.token, rule.actionType)
   const rows: { label: string; value: ReactNode }[] = [
     { label: "Action", value: ACTION_LABELS[rule.actionType] ?? `Type ${rule.actionType}` },
     {
@@ -44,7 +46,9 @@ export function RuleCard({ rule, tokenSymbol = "tokens", tokenDecimals = 18 }: R
   if (rule.minAmount > 0n) {
     rows.push({
       label: "Minimum amount",
-      value: `${formatUnits(rule.minAmount, tokenDecimals)} ${tokenSymbol}`,
+      value: unit.known
+        ? `${formatUnits(rule.minAmount, unit.decimals)} ${unit.symbol}`
+        : `${rule.minAmount.toString()} units of ${short(rule.token)}`,
     })
   }
   if (rule.playerMustMatch) {

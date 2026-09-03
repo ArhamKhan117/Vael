@@ -53,7 +53,17 @@ export function ipfsToHttp(uri: string) {
   return `${DEFAULT_IPFS_GATEWAY}${path}`
 }
 
+/**
+ * The milestone 4 stand-in, still on chain for any quest created before metadata was pinned. It is not
+ * a CID, so asking a gateway for it returns 400 and a CORS error in the console rather than a
+ * document. The caller falls back to what the chain itself says about the quest.
+ */
+export const PLACEHOLDER_METADATA_URI = "ipfs://placeholder"
+
 export async function fetchIPFSMetadata(uri: string): Promise<QuestMetadata> {
+  if (uri.trim() === PLACEHOLDER_METADATA_URI) {
+    throw new Error("this quest has no pinned metadata")
+  }
   const url = ipfsToHttp(uri)
   const response = await fetch(url, { cache: "no-store" })
   if (!response.ok) {
