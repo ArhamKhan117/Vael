@@ -6,6 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p .",
     "start": "node dist/index.js",
+    "start:worker": "node dist/bin/worker.js",
+    "start:indexer": "node dist/bin/indexer.js",
     "lint": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.scripts.json",
     "test": "jest",
     "test:watch": "jest --watch",

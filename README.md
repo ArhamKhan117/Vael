@@ -122,6 +122,15 @@ pnpm --filter @vael/api worker     # watches Sepolia, proves, submits; also inde
 pnpm --filter @vael/api indexer    # indexes Creditcoin only, signs nothing
 ```
 
+Both of those run under `tsx`, which is the development shape. The production shape is compiled:
+
+```bash
+pnpm --filter @vael/api build
+pnpm --filter @vael/api start           # API on :4000, from dist/index.js
+pnpm --filter @vael/api start:worker    # dist/bin/worker.js
+pnpm --filter @vael/api start:indexer   # dist/bin/indexer.js
+```
+
 | | Worker | Indexer |
 |---|---|---|
 | What it does | Watches allowlisted Sepolia emitters, waits for attestation, fetches a proof, submits it to QuestASC | Reads Creditcoin's own events into the store |
@@ -172,6 +181,25 @@ pnpm --filter @vael/api dev     # http://localhost:4000
 
 cd contracts && forge build && forge test
 ```
+
+### Production, locally
+
+Four processes, all compiled, all against the live Creditcoin deployment and Supabase. This is the
+shape the submission run in `docs/E2E_LOG.md` was recorded in.
+
+```bash
+pnpm --filter @vael/api build
+pnpm --filter @vael/web build
+
+pnpm --filter @vael/api start           # API,     http://localhost:4000
+pnpm --filter @vael/api start:worker    # proof worker
+pnpm --filter @vael/api start:indexer   # Creditcoin indexer
+pnpm --filter @vael/web start -p 3101   # web,     http://localhost:3101
+```
+
+The web app reads `NEXT_PUBLIC_API_URL`, so point it at the API before building; the addresses it
+uses are baked in at build time from `apps/web/.env.local`, which
+`python3 contracts/script/sync-env.py --write` fills from `docs/ADDRESSES.md`.
 
 Copy each `.env.example` to its real counterpart and fill it in.
 Every variable is documented in `docs/SPEC.md` section 13.
