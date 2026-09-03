@@ -372,6 +372,9 @@ export class SupabaseWorkerStore implements WorkerStore {
         player: hit.player.toLowerCase(),
         damage: hit.damage,
         query_id: hit.replayKey,
+        hp_remaining: hit.hpRemaining,
+        action_type: hit.actionType,
+        creditcoin_block: hit.creditcoinBlock,
         creditcoin_tx_hash: null,
         created_at: hit.createdAt,
       },
@@ -391,10 +394,12 @@ export class SupabaseWorkerStore implements WorkerStore {
       seasonId: row.season_id,
       player: row.player,
       damage: String(row.damage),
-      hpRemaining: "0",
-      actionType: 0,
+      // Rows written before these columns existed have nothing to report, and reporting them as
+      // zero is what made every hit look like it had killed the boss.
+      hpRemaining: row.hp_remaining == null ? "" : String(row.hp_remaining),
+      actionType: Number(row.action_type ?? 0),
       replayKey: row.query_id,
-      creditcoinBlock: 0,
+      creditcoinBlock: Number(row.creditcoin_block ?? 0),
       createdAt: row.created_at,
     }))
   }
