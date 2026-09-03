@@ -427,9 +427,12 @@ credentials, which are validated lazily and only where they are used.
   transaction identifier. It is unforgeable for the same reason the replay key is, but it is not the
   Ethereum tx hash. The worker records the real hash off chain.
 - Writability is not live on the protocol and is out of scope. Vael uses readability only.
-- The worker resolves which quest a third-party log belongs to from an operator-supplied mapping.
-  A third-party protocol's event cannot name a quest, so until accepted quests are indexed off
-  chain the worker needs to be told. Self-claim does not have this limitation: the player supplies
-  the quest id.
+- A third-party protocol's event cannot name a quest, so the worker resolves which quest a log
+  belongs to from the index it builds off `QuestAccepted` and `RuleRegistered`: it asks which of
+  that player's open quests the action could satisfy, checks the log actually mentions the player,
+  and requires an ERC-20 `Transfer` before falling back to the token. It no longer needs an
+  operator-supplied mapping, which is what milestone 3 shipped with. The check still narrows rather
+  than decides: a wrong guess is refused by QuestASC, not accepted by the worker. Self-claim does
+  not have the question at all, because the player supplies the quest id.
 - Supplying USDC or DAI to Aave on Sepolia reverts with error `51`, `SUPPLY_CAP_EXCEEDED`. The
   public test market is full; the live runs use LINK.

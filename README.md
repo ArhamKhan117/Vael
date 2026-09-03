@@ -26,6 +26,34 @@ Vael replaces it with a cryptographic proof that an EVM contract checks itself.
 The Attestcoin block prover precompile verifies a Merkle proof of the source transaction against an attested Sepolia block header, and `QuestASC` then decodes the receipt, checks the emitting contract against an allowlist, binds the player to the indexed log address, and enforces the amount and block window.
 A quest completes because the chain agreed it did.
 
+## The removal test
+
+The claim is that no key can complete a quest. Here is how to check it, in one command, without a
+private key and without sending a transaction:
+
+```bash
+cast call 0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e \
+  'recordCompletion(uint256,address,bytes32,bytes32)' \
+  1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
+  0x0000000000000000000000000000000000000000000000000000000000000000 \
+  0x0000000000000000000000000000000000000000000000000000000000000000 \
+  --rpc-url https://rpc.cc3-testnet.creditcoin.network
+```
+
+It reverts with `QuestManager__OnlyQuestASC` (`0xe2a34f59`). That address is the deployer, which owns
+every contract in the system. The same holds for `VaelHero.grantXP`, `RaidBoss.dealDamage`, and
+`CampaignEscrow.releaseReward`: the only caller each accepts is `QuestASC`, and the only thing
+`QuestASC` accepts is a proof the Block Prover precompile has verified.
+
+`contracts/script/smoke-baseline.sh` runs the whole check, and
+`forge script script/VerifyBaseline.s.sol:VerifyBaseline` asserts 95 of these bindings keylessly
+against the live deployment.
+
+There is deliberately no completion endpoint in the API. There is no admin function that mints a
+badge, no oracle path, and no owner override. The one privileged write in the system was the
+migration window that carried heroes and badges onto the redeployed contracts, and both halves of
+it are closed and asserted closed.
+
 ## Architecture
 
 ```mermaid
@@ -91,8 +119,10 @@ react to every proof it accepts:
 
 - **`VaelHero`** — a soul-bound ERC-721, one per wallet, free to mint. Each verified action grants
   XP by type (portal 50, transfer 60, swap 100, supply 120, borrow 150), scaled 1.5x at five times
-  the quest minimum and 2x at twenty-five, and feeds one of strength, agility, or intellect. There
-  is no function that grants XP by hand.
+  the quest minimum and 2x at twenty-five, then multiplied by a streak: acting again within about a
+  day of the last proved action adds 10% per consecutive day, capped at double. The streak is
+  settled against the source block of the proved action, not against wall-clock time, so it cannot
+  be gamed by a clock. There is no function that grants XP by hand.
 - **`RaidBoss`** — one community boss per season. Damage is `base(action) * (10 + heroLevel) / 10 *
   tier`, so levelling your hero makes you matter more in the raid. When the boss dies the loot pool
   splits by damage share, the last hitter takes a reserved 5%, and every contributor can claim a
@@ -205,10 +235,60 @@ Copy each `.env.example` to its real counterpart and fill it in.
 Every variable is documented in `docs/SPEC.md` section 13.
 Real env files are ignored and must never be committed.
 
+## Live URLs
+
+**Pending deployment.** The app has not been hosted yet. Every number in this README was produced
+by running it locally against the live Creditcoin testnet deployment, which is public and can be
+checked without running anything: the addresses below are source-verified on Blockscout and the
+transaction hashes in `docs/E2E_LOG.md` resolve in the explorer.
+
+| | URL |
+|---|---|
+| Web app | pending deployment |
+| API | pending deployment |
+| Demo video | pending recording |
+
+## Addresses
+
+Twenty-two contracts, all source-verified. The full table with deploy transactions, blocks, the
+wiring, and every superseded deployment with the reason it was replaced is in
+[`docs/ADDRESSES.md`](./docs/ADDRESSES.md).
+
+| Contract | Creditcoin testnet (102031) |
+|---|---|
+| `QuestASC` | [`0x6e457d910285b5a927Da42742bb58218c5CD1885`](https://creditcoin-testnet.blockscout.com/address/0x6e457d910285b5a927Da42742bb58218c5CD1885) |
+| `QuestManager` | [`0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e`](https://creditcoin-testnet.blockscout.com/address/0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e) |
+| `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) |
+| `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) |
+| `BadgeNFT` | [`0x6b57F8a913FBC175ff46B53542F23D362e46d8f2`](https://creditcoin-testnet.blockscout.com/address/0x6b57F8a913FBC175ff46B53542F23D362e46d8f2) |
+| `VaelHero` | [`0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96`](https://creditcoin-testnet.blockscout.com/address/0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96) |
+| `RaidBoss` | [`0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7`](https://creditcoin-testnet.blockscout.com/address/0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7) |
+| `Arena` | [`0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B`](https://creditcoin-testnet.blockscout.com/address/0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B) |
+| `Loot` | [`0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601`](https://creditcoin-testnet.blockscout.com/address/0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601) |
+| `Marketplace` | [`0x33dba17e54b030B3C9A751332513e9a610e76A46`](https://creditcoin-testnet.blockscout.com/address/0x33dba17e54b030B3C9A751332513e9a610e76A46) |
+| `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) |
+| `QuestPortal` (Sepolia) | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
+
+## Evidence
+
+| What | Where |
+|---|---|
+| Every live end-to-end run, with hashes, gas, and timings | [`docs/E2E_LOG.md`](./docs/E2E_LOG.md) |
+| How Vael uses Attestcoin, surface by surface, with measurements | [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md) |
+| Deployed addresses, wiring, and the full supersession history | [`docs/ADDRESSES.md`](./docs/ADDRESSES.md) |
+| Architecture, contracts, constants, phases, and the decisions not taken | [`docs/SPEC.md`](./docs/SPEC.md) |
+| Ethereum mainnet feasibility spike, keyless, with its conditions | [`docs/MAINNET_SPIKE.md`](./docs/MAINNET_SPIKE.md) |
+| Requirement checklist with a link per row | [`docs/HACKATHON_REQUIREMENTS.md`](./docs/HACKATHON_REQUIREMENTS.md) |
+| Demo script, with the segments that must be pre-recorded and why | [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) |
+| Screenshots of every page, taken from the production build | [`docs/evidence/`](./docs/evidence) |
+
 ## Status
 
-Deployed addresses land in `docs/ADDRESSES.md` as each phase ships.
-The phase plan and definition of done live in `docs/SPEC.md` section 17.
+All contracts are deployed to Creditcoin testnet and source-verified; `docs/ADDRESSES.md` is the
+current table. The phase plan and definition of done live in `docs/SPEC.md` section 17.
+
+What is **not** done, stated here rather than left to be discovered: the app is not hosted, the demo
+video is not recorded, and the pitch deck is not written.
 
 ## License
 
