@@ -5,10 +5,15 @@ player really did the thing.
 There is no trusted backend key anywhere in the completion path.
 This document describes exactly how that works, with the deployed addresses and the live evidence.
 
-Status: **milestone 4 complete.** All five action types are decoded end to end on the live networks:
-a Vael portal check-in, an ERC-20 transfer, a Uniswap v3 swap, an Aave v3 supply, and an Aave v3
-borrow. Every one has a real Sepolia transaction and a real Creditcoin verification, listed in
-section 6.
+Status: **complete and deployed.** All five action types are decoded end to end on the live
+networks: a Vael portal check-in, an ERC-20 transfer, a Uniswap v3 swap, an Aave v3 supply, and an
+Aave v3 borrow. Every one has a real Sepolia transaction and a real Creditcoin verification, listed
+in section 6, along with a batch submission, a browser self-claim performed with the worker
+stopped, and a proof-gated partner payout.
+
+Nothing described here is written but undeployed. Everything this document claims is on the
+addresses in section 2, all of which are source-verified on Blockscout. What Vael does **not** do
+is in section 8, which is not a short list.
 
 ---
 
@@ -26,7 +31,7 @@ cd contracts
 set -a; source .env; set +a
 set -a; eval "$(grep -E '^[A-Z0-9_]+=0x' ../docs/ADDRESSES.md | grep -vE '_TX=|_BLOCK=')"; set +a
 
-# 41 keyless assertions over the live deployment, sends nothing:
+# 95 keyless assertions over the live deployment, sends nothing:
 forge script script/VerifyBaseline.s.sol:VerifyBaseline --rpc-url creditcoin
 
 # The deployer is not QuestASC, so this reverts:
@@ -294,7 +299,8 @@ if (msg.sender != questASC) revert ...OnlyQuestASC(msg.sender);
 ```
 
 `setQuestASC` is one-shot on both, so no later owner action can point them at something that has
-not verified a proof. There is no `grantXP` and no `dealDamage` reachable from outside.
+not verified a proof. Neither module has any other externally reachable way to write hero XP or
+boss damage.
 
 You can check that without trusting this document:
 

@@ -37,13 +37,31 @@ cast call 0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e \
   1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
   0x0000000000000000000000000000000000000000000000000000000000000000 \
   0x0000000000000000000000000000000000000000000000000000000000000000 \
+  --from 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
   --rpc-url https://rpc.cc3-testnet.creditcoin.network
 ```
 
-It reverts with `QuestManager__OnlyQuestASC` (`0xe2a34f59`). That address is the deployer, which owns
-every contract in the system. The same holds for `VaelHero.grantXP`, `RaidBoss.dealDamage`, and
-`CampaignEscrow.releaseReward`: the only caller each accepts is `QuestASC`, and the only thing
-`QuestASC` accepts is a proof the Block Prover precompile has verified.
+```
+Error: execution reverted: QuestManager__OnlyQuestASC(0x017DFB929979AC1b7e1a080c88Db56Bee45846d2)
+```
+
+That address is the deployer, which owns every contract in the system, and the selector is
+`0xe2a34f59`. The same holds for the two game modules and the partner escrow:
+
+```bash
+# VaelHero__OnlyQuestASC(0x017DFB92…) — hero XP arrives only as a hook from QuestASC
+cast call 0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96 \
+  'onQuestCompleted(uint64,uint256,address,uint8,address,uint256,uint8,uint64,bytes32)' \
+  1 1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 0 \
+  0x0000000000000000000000000000000000000000 0 1 0 \
+  0x0000000000000000000000000000000000000000000000000000000000000001 \
+  --from 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
+  --rpc-url https://rpc.cc3-testnet.creditcoin.network
+```
+
+`RaidBoss.onQuestCompleted` and `CampaignEscrow.releaseReward` refuse the same way. The only caller
+each accepts is `QuestASC`, and the only thing `QuestASC` accepts is a proof the Block Prover
+precompile has verified.
 
 `contracts/script/smoke-baseline.sh` runs the whole check, and
 `forge script script/VerifyBaseline.s.sol:VerifyBaseline` asserts 95 of these bindings keylessly
@@ -131,6 +149,21 @@ react to every proof it accepts:
 Both reject any caller that is not `QuestASC`, and both bind to it one-shot. Hooks run after the
 reward is paid, inside `try/catch` with a gas cap, so a broken game module can never cost a player
 their reward.
+
+Four more modules spend and move what proofs earned, and hold no privilege over the core:
+
+- **`Arena`** — duels for VAEL stakes, fought on chain with the stats a hero earned through proofs.
+  The contract writes the whole fight into the event as three bytes per swing and the client
+  replays it, so pressing replay twice gives the same fight. Winner takes both stakes less a 2%
+  burn.
+- **`Loot`** and **`Equipment`** — ERC-1155 items in four slots per hero, escrowed while equipped.
+  A raid drop's rarity is a pure function of damage share, so it is earned; only the arena's drop
+  table rolls.
+- **`Marketplace`** — fixed-price loot sales for VAEL, items escrowed at listing, 2% to the
+  treasury.
+
+Adding all four cost no redeploy of the core, and `VerifyBaseline` asserts that none of them is a
+hook, a badge minter, or anything QuestASC calls.
 
 `/hero` and `/raid` render with Phaser 3. React owns the wallet, the data, and every write; Phaser
 only draws.
