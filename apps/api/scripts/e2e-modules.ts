@@ -23,7 +23,8 @@ const ARENA_ABI = [
   "function challenge(address opponent, uint256 stake) returns (uint256)",
   "function accept(uint256 challengeId)",
   "function resolve(uint256 challengeId)",
-  "function challenges(uint256) view returns (address challenger, address opponent, uint256 stake, uint64 openedAtBlock, uint64 acceptedAtBlock, uint8 status, address winner)",
+  "function challenges(uint256) view returns (address challenger, address opponent, uint256 stake, uint64 openedAtBlock, uint64 acceptedAtBlock, uint64 seedBlock, uint8 status, address winner)",
+  "function seedOf(uint256 challengeId) view returns (bytes32)",
   "function nextChallengeId() view returns (uint256)",
   "function statsOf(address player) view returns (uint32 level, uint16 strength, uint16 agility, uint16 intellect)",
   "event ArenaResolved(uint256 indexed challengeId, address indexed winner, address indexed loser, uint256 payout, uint256 burned, bytes32 seed, bytes rounds)",
@@ -221,13 +222,15 @@ async function main() {
     await send(`${label}: accept`, () => fn(asOpponent, "accept")(challengeId))
 
     const accepted = await fn(arena, "challenges")(challengeId)
-    await waitForNewBlock(provider, Number(accepted[4]))
+    // The seed block is committed at acceptance and resolve needs it produced, so the wait is for
+    // that block rather than for any new one.
+    await waitForNewBlock(provider, Number(accepted[5]))
 
     const resolver = challenger === deployer ? arena : arenaAsPlayer2
     const hash = await send(`${label}: resolve`, () => fn(resolver, "resolve")(challengeId))
 
     const after = await fn(arena, "challenges")(challengeId)
-    if (Number(after[5]) !== 3) throw new Error(`${label} did not reach Resolved (status ${after[5]})`)
+    if (Number(after[6]) !== 3) throw new Error(`${label} did not reach Resolved (status ${after[6]})`)
 
     const receipt = await provider.getTransactionReceipt(hash)
     const resolved = receipt?.logs
@@ -242,10 +245,10 @@ async function main() {
 
     const swings = resolved ? (String(resolved.args.rounds).length - 2) / 6 : 0
     log(
-      `${label}: winner ${after[6]}, payout ${resolved ? formatEther(resolved.args.payout) : "?"} VAEL, ` +
+      `${label}: winner ${after[7]}, payout ${resolved ? formatEther(resolved.args.payout) : "?"} VAEL, ` +
         `burned ${resolved ? formatEther(resolved.args.burned) : "?"} VAEL, ${swings} swings`
     )
-    return { challengeId: Number(challengeId), winner: String(after[6]), swings }
+    return { challengeId: Number(challengeId), winner: String(after[7]), swings }
   }
 
   const duelA = await duel(deployer, player2, "duel A (deployer challenges)")
