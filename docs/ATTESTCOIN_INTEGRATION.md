@@ -211,25 +211,73 @@ compared with the root the provider returned.
 
 ## 6. Live evidence
 
-Full detail in [E2E_LOG.md](./E2E_LOG.md).
+Full detail, with gas and timings for every run, in [E2E_LOG.md](./E2E_LOG.md).
 
-| Action | Sepolia tx | Creditcoin tx | Attest wait | Submit gas |
-|---|---|---|---|---|
-| Portal check-in | [`0x09b24411…13de21d`](https://sepolia.etherscan.io/tx/0x09b244110dd08eb4dd7c755128e4ac4395a0d262835f511dd96cb226913de21d) | [`0xe8d5950d…468e9f`](https://creditcoin-testnet.blockscout.com/tx/0xe8d5950d5545028c5f9695b255b628d5282778e397f3166a9fa6f095cb468e9f) | 534 s | 686,028 |
-| ERC-20 transfer | [`0x491881cf…016197`](https://sepolia.etherscan.io/tx/0x491881cf3ccedfb68f086162e83458bc5c9fda4670a08af0690cf6aa55016197) | [`0xf19c66a1…6e0de1`](https://creditcoin-testnet.blockscout.com/tx/0xf19c66a1fc087b84946c271bd2d3160fe044a6bbfcb0478badd43c0dfb6e0de1) | 408 s | 715,526 |
-| Uniswap v3 swap | [`0x12131f6e…4601ac`](https://sepolia.etherscan.io/tx/0x12131f6e2e39d4a9d758db142b6f5c0b9bb356074c76ed9ec48e563d014601ac) | [`0xc81c3a1c…6fedbc`](https://creditcoin-testnet.blockscout.com/tx/0xc81c3a1c774d4b56412213418259de0099955f15b218e4915a64bd3636fedcbc) | 473 s | 779,716 |
-| Aave v3 supply | [`0xc287d946…1a1c61`](https://sepolia.etherscan.io/tx/0xc287d946fdba4e0a239e8d837d4625c3f596bbcac4c7c6a9695702a4c91a1c61) | [`0x990f8e66…3c10b4`](https://creditcoin-testnet.blockscout.com/tx/0x990f8e66a3c343c1f6832639e3e2ee72f4dcba1dc277cf63ccf8396ea73c10b4) | 502 s | 784,924 |
-| Aave v3 borrow | [`0xf8458f11…05d027`](https://sepolia.etherscan.io/tx/0xf8458f11bdb1b5a0b8d293ba55bda5d4bbdb07b86e94833874c01cd44205d027) | [`0x492de6e7…8c851a`](https://creditcoin-testnet.blockscout.com/tx/0x492de6e7487ee9c7c1bbc062ef5989167ed2c6e0b92f6c71a97de78ee98c851a) | 518 s | 774,956 |
+Everything in this section was performed on the current deployment on 2026-09-10, against
+processes built for production rather than run with `tsx`.
 
-Every run released exactly the quest reward, minted a badge, and claimed the replay key. A replay of
-the portal transaction was refused at preflight with `AlreadyClaimed` and cost no gas.
+### The five action types
 
-`submitBatch` was also exercised live: two source transactions four blocks apart, each with its
-own continuity proof (six roots and two), in one Creditcoin transaction
-[`0xfe132531…350a50`](https://creditcoin-testnet.blockscout.com/tx/0xfe132531f9ffd797fccc3b7af36309ff96c90302f62aac51f56e17c17d350a50)
-for 1,174,990 gas, about 21% less than submitting the two separately.
+Each of the five was proved live on the current deployment or the one before it. The first three
+below are from today's runs; the two Aave rows are the Aave supply from today and the Aave borrow
+from milestone 3b, which is the same adapter and the same code path against the same emitter.
 
-The exact proof material for four of these is committed under `contracts/test/fixtures/`, and
+| Action | Sepolia tx | Creditcoin tx | Attest wait |
+|---|---|---|---|
+| Portal check-in | [`0x4a9dfaf5…9fd38b`](https://sepolia.etherscan.io/tx/0x4a9dfaf51f7da7ce068243b7dcda1312a202ce67122b7fed1df110ca2b9fd38b) | [`0x5fea44b8…7df3c0`](https://creditcoin-testnet.blockscout.com/tx/0x5fea44b8aebebc8c8bd5dc1c0802a304bab3cb315058081a498ea606bf7df3c0) | 504 s |
+| ERC-20 transfer | [`0x13751dbf…95a5aa`](https://sepolia.etherscan.io/tx/0x13751dbf6774b0440464876c5972c3628a55dddb9c82a8b56ff9a2c04295a5aa) | [`0xb4dc2664…58fa0a`](https://creditcoin-testnet.blockscout.com/tx/0xb4dc2664afe75739ddbd20c8cbe6bdce2ef1fec4989cf576bee562144358fa0a) | 439 s, batched |
+| Uniswap v3 swap | [`0x33ff996f…6a5d4d`](https://sepolia.etherscan.io/tx/0x33ff996f282662b63476a8a41013c69c9dcb4e09fee0a2ecb8660b92cc6a5d4d) | [`0xb4dc2664…58fa0a`](https://creditcoin-testnet.blockscout.com/tx/0xb4dc2664afe75739ddbd20c8cbe6bdce2ef1fec4989cf576bee562144358fa0a) | 439 s, batched |
+| Aave v3 supply | [`0x3a2337ba…affffb`](https://sepolia.etherscan.io/tx/0x3a2337ba867cf5ff9dc094124ffda80ed25e636ec9b0981c905d658a8caffffb) | [`0x1080c5a7…9ea18e`](https://creditcoin-testnet.blockscout.com/tx/0x1080c5a7eb78fe70b381715c426b834061966d23ca255a43b292dd359e9ea18e) | 471 s |
+| Aave v3 borrow | [`0xf8458f11…05d027`](https://sepolia.etherscan.io/tx/0xf8458f11bdb1b5a0b8d293ba55bda5d4bbdb07b86e94833874c01cd44205d027) | [`0x492de6e7…8c851a`](https://creditcoin-testnet.blockscout.com/tx/0x492de6e7487ee9c7c1bbc062ef5989167ed2c6e0b92f6c71a97de78ee98c851a) | 518 s, on QuestASC v3 |
+
+Every run released exactly the quest's reward, minted a badge, and burned the replay key.
+
+### Batching
+
+`submitBatch` carried the ERC-20 transfer and the Uniswap swap above in one Creditcoin transaction,
+[`0xb4dc2664…58fa0a`](https://creditcoin-testnet.blockscout.com/tx/0xb4dc2664afe75739ddbd20c8cbe6bdce2ef1fec4989cf576bee562144358fa0a), four Sepolia blocks
+apart, for **1,194,636 gas**. It carried **two** continuity proofs, ten roots and six: one
+continuity proof proves exactly one source height, so batching saves the second Creditcoin
+transaction rather than the proof material.
+
+The two members came from **different proof sources**, the raw block and the Proof Builder API, and
+verified identically through the same precompile.
+
+### Replay is refused, and it costs nothing
+
+The worker had detected the ERC-20 transfer before the batch claimed it. On restart it tried:
+
+```
+failed 0x13751dbf…95a5aa: AlreadyClaimed(0xa303f091192e90c4ba9f638f412d0b6a93c8e494db763f9dbecddf5703b6af0f)
+failed 0x2a874aff…55ad83: NothingRecognised(1, 11675334, 79)
+```
+
+Both at preflight, through `eth_call`, so neither cost gas. The second is the worker guessing wrong
+about which quest a nearby `Transfer` belonged to and being refused, which is the intended shape:
+the worker narrows, QuestASC decides.
+
+### The proof path without the worker
+
+Quest 11 was accepted in the browser, acted on Sepolia, and completed by the player's own wallet
+fetching the proof from the Proof Builder and calling `verifyAndEmit`:
+[`0x1dab0174…913912`](https://creditcoin-testnet.blockscout.com/tx/0x1dab017412f69afaa9e506b91507dd2828068e9b05dd3b0e994f502e96913912). **The worker was
+stopped for the whole of it.** Screenshots in `docs/evidence/final/`.
+
+### Proof-gated partner payouts
+
+A partner funded a 995 VAEL pool, published a quest against it, and the escrow released **exactly
+the quest's reward, 250 VAEL**, in the same receipt as the proof:
+[`0xfa37db6f…a4f273`](https://creditcoin-testnet.blockscout.com/tx/0xfa37db6f50688a559710c456c937f0dd68d47433ec5f73d38c47cf429fa4f273). The cancelled
+campaign's remaining 745 VAEL was returned through `QuestASC.refundCampaign`:
+[`0xf2c62f9e…0d7399`](https://creditcoin-testnet.blockscout.com/tx/0xf2c62f9e8e25d5d1f123d961a0b0b08bbce05fd0b47818284ec054a3f30d7399).
+
+`CampaignEscrow.releaseReward` accepts one caller, QuestASC, and QuestASC reaches it only after the
+precompile has verified a Merkle proof and a continuity proof. A partner's money cannot leave the
+escrow except behind a real transaction on Ethereum.
+
+### Fixtures
+
+The exact proof material for four earlier runs is committed under `contracts/test/fixtures/`, and
 `contracts/test/RealFixtures.t.sol` replays those bytes through the real adapters offline, so the
 decoding is regression-tested against what the network actually produced rather than against
 hand-written shapes.
@@ -263,12 +311,20 @@ One Creditcoin transaction carries the proof, the payout, and both game modules'
 
 | Transaction | Events |
 |---|---|
-| [`0x8cb56237…893017`](https://creditcoin-testnet.blockscout.com/tx/0x8cb56237f0702384a76515425056ffeb9010e6c73aa066c0a14b5c46d6893017) | `QuestCompleted`, `QuestProofApplied`, `HeroXPGranted`, `RaidDamage` |
-| [`0x81ad34a2…b28301`](https://creditcoin-testnet.blockscout.com/tx/0x81ad34a268e852997cb7c5b03e550fb6c7a4793a3c58f386147f24d435b28301) | the same, plus `RaidDefeated` |
+| [`0x5fea44b8…7df3c0`](https://creditcoin-testnet.blockscout.com/tx/0x5fea44b8aebebc8c8bd5dc1c0802a304bab3cb315058081a498ea606bf7df3c0) | `QuestCompleted`, `QuestProofApplied`, `RewardReleased`, `BadgeMinted`, `HeroXPGranted`, `RaidDamage` |
+| [`0xef665faf…7d37d3`](https://creditcoin-testnet.blockscout.com/tx/0xef665faf2a5fb0a4a738993f3fc3a96618d85ef039009692f4f1ca03f97d37d3) | the same, plus `RaidDefeated` |
 
-Five verified portal actions took the hero to level 2 with strength 5, took a 500 HP boss to zero,
-and paid a 1000 VAEL loot pool. Every number is reproducible from the formulas and the proofs;
-`docs/E2E_LOG.md` works through the arithmetic.
+Five verified portal actions on the current deployment took a hero from level 3 to level 4, took a
+500 HP boss to zero, and paid a 1,000 VAEL loot pool to its single contributor.
+
+**The streak multiplier is visible in that run.** A portal action is worth 50 base XP, and the five
+were worth 90, 95, 100, 100 and 100 because the hero's streak ran from 8 to 12: the multiplier is
+`1 + 0.1` per consecutive day of proved activity, capped at double. 485 XP rather than 250. The
+streak is settled against the source block of the proved action, not against wall-clock time, so it
+cannot be moved by a clock.
+
+Every number is reproducible from the formulas and the proofs; `docs/E2E_LOG.md` works through the
+arithmetic.
 
 ### Hooks cannot hold a reward hostage
 
@@ -354,26 +410,40 @@ anyway.
 
 ### What it produced, live
 
-Two quests, one for each test wallet, both created on chain with their metadata pinned.
+On the current deployment the generator was asked for a daily quest for each test wallet. Both were
+created on chain with their metadata pinned, and both cite a history the index built from
+`QuestProofApplied` alone.
 
-| | Deployer, daily | player2, weekly |
+| | Deployer, daily | player2, daily |
 |---|---|---|
-| Quest | 10 | 11 |
-| Title | First Swap Adventure | First Swap Quest |
-| Action | `uniswapSwap` | `uniswapSwap` |
+| Quest | 10 | 9 |
+| Title | Lending Basics | Swap Your Way Forward |
+| Action | `aaveSupply` | `uniswapSwap` |
 | Difficulty | 3 | 2 |
-| Reward | 150 VAEL | 30 VAEL |
-| Metadata | `ipfs://QmQs5yb1zZXt4XwNRYe32x6niQFiQjWXiFbtatoDpmMNSM` | `ipfs://QmULNXZDbTaDVJzwfES4LzSbSvQsQWMJHdrt72CqV7fjPt` |
+| Reward | 120 VAEL | 50 VAEL |
+| Metadata | `ipfs://QmY9ZNCbLrRKfXpzcXAv731ptR2qJd6HyfQQVU9NQWjWMW` | `ipfs://QmNfVEfsbTUTgqgdrqX3pxj3nb43qbfNPEEmjCess6E4Zn` |
 
-Both cite real history. For the deployer: "The player has only performed portal actions and has no
-verified uniswapSwap actions yet, so this quest nudges them toward a new action type." For player2,
-which had a single proof at the time: "The player has only one verified action, a portal."
-The difficulty and reward differ between them for that reason, which is the behaviour the profile
-is there to produce.
+The deployer's profile at that moment was `portal 5, uniswapSwap 1, erc20Transfer 1, aaveSupply 0,
+aaveBorrow 0`, every one of those counts a verified proof from the same afternoon, and the model
+said:
 
-Quest 10 was then completed through the ordinary path, with no involvement from the generator: a
-real USDC to WETH swap on Sepolia, an Attestcoin proof, and 150 VAEL released by QuestASC. Receipts
-are in `docs/E2E_LOG.md`.
+> The player has verified portal, uniswapSwap, and erc20Transfer actions but has not yet performed
+> any Aave interactions. Introducing an aaveSupply quest will diversify their DeFi experience and
+> encourage them to explore lending protocols.
+
+player2's profile was a single portal proof, and it got a Uniswap swap at a lower difficulty for a
+smaller reward. The difficulty and the reward differ between the two for that reason, which is the
+behaviour the profile exists to produce.
+
+**The model chose the action type and the difficulty. The server chose the emitter and the token**,
+from its own allowlist. That is why quest 10's rule names aLINK rather than the USDC a model might
+prefer: the public Aave test market's USDC and DAI supply caps are full, and the server knows that
+and the model does not. A model that could name an emitter could name any contract, so it never
+gets to.
+
+Quest 10 was then completed through the ordinary path with no further involvement from the
+generator: a real Aave v3 supply on Sepolia, an Attestcoin proof, and 120 VAEL released by QuestASC
+in [`0x1080c5a7…9ea18e`](https://creditcoin-testnet.blockscout.com/tx/0x1080c5a7eb78fe70b381715c426b834061966d23ca255a43b292dd359e9ea18e).
 
 ## 6c. Writability: what changes, and what does not
 
