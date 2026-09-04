@@ -164,7 +164,7 @@ export default function NavbarDashboard() {
                                 Connect Wallet
                             </Button> */}
 
-                            <ConnectWalletButton />
+                            <ConnectWalletButton fullWidth />
                         </div>
                     </div>
                 </header>

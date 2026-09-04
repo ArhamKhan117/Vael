@@ -31,7 +31,11 @@ const CHAIN_NAMES: Record<number, string> = {
 /** Sepolia is a valid place to be: it is where players perform the source action. */
 const SUPPORTED_CHAIN_IDS: number[] = [CREDITCOIN_CHAIN_ID, SEPOLIA_CHAIN_ID]
 
-export default function ConnectWalletButton() {
+/**
+ * `fullWidth` is for the places that stack it in a column, such as a dashboard drawer. In the
+ * header it sizes to its content, because the header lays itself out around it.
+ */
+export default function ConnectWalletButton({ fullWidth = false }: { fullWidth?: boolean } = {}) {
   const { address, isConnected, chainId } = useAccount()
   const { disconnect } = useDisconnect()
   const { open } = useAppKit()
@@ -68,21 +72,25 @@ export default function ConnectWalletButton() {
   const isWrongNetwork =
     isConnected && chainId != null && !SUPPORTED_CHAIN_IDS.includes(chainId)
 
+  const width = fullWidth ? "w-full" : "w-auto"
+
   return (
-    <div className="w-full">
+    <div className={width}>
       {!isConnected ? (
         <Button
           variant="default"
           onClick={openConnectModal}
-          className="rounded w-full font-semibold bg-white text-black hover:bg-white/80"
+          className={`h-9 rounded bg-white font-semibold text-black hover:bg-white/80 ${width}`}
         >
-          Connect Wallet
+          {/* At phone width the word "Wallet" is what gets cut, and "Connect" alone is clear. */}
+          <span className="sm:hidden">Connect</span>
+          <span className="hidden sm:inline">Connect Wallet</span>
         </Button>
       ) : isWrongNetwork ? (
         <Button
           variant="default"
           onClick={openNetworksModal}
-          className="rounded w-full font-semibold bg-white text-black hover:bg-white/80"
+          className={`h-9 rounded bg-white font-semibold text-black hover:bg-white/80 ${width}`}
         >
           Wrong network
         </Button>
@@ -91,12 +99,16 @@ export default function ConnectWalletButton() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="default"
-              className="rounded font-semibold w-full bg-white text-black hover:bg-white/80"
+              className={`h-9 rounded bg-white font-semibold text-black hover:bg-white/80 ${width}`}
             >
               {shortAddress(address ?? "")}
-              {balance
-                ? ` (${Number(balance.formatted).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${balance.symbol})`
-                : ""}
+              {/* The balance is the first thing to go when the header runs out of room. The
+                  address stays, because it is how a player knows which wallet they are in. */}
+              {balance ? (
+                <span className="hidden sm:inline">
+                  {` (${Number(balance.formatted).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${balance.symbol})`}
+                </span>
+              ) : null}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded">
