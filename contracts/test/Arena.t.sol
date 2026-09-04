@@ -96,13 +96,16 @@ contract ArenaTest is Test {
         _train(bob, SWAP, 1, 6); // agility
     }
 
+    /// @dev Rolls past the committed seed block, which is `SEED_DELAY_BLOCKS` after acceptance,
+    /// so the duel is resolvable. Reading the constant off the contract rather than hard-coding it
+    /// keeps the tests honest if the delay ever changes.
     function _duel() internal returns (uint256 id) {
         _fighters();
         vm.prank(alice);
         id = arena.challenge(bob, STAKE);
         vm.prank(bob);
         arena.accept(id);
-        vm.roll(block.number + 1);
+        vm.roll(block.number + arena.SEED_DELAY_BLOCKS() + 1);
     }
 
     // ------------------------------------------------------------- lifecycle
@@ -117,7 +120,7 @@ contract ArenaTest is Test {
         assertEq(token.balanceOf(alice), before - STAKE, "stake left the challenger");
         assertEq(token.balanceOf(address(arena)), STAKE);
         assertEq(arena.escrowed(), STAKE);
-        (,, uint256 stake,,, Arena.Status status,) = arena.challenges(id);
+        (,, uint256 stake,,,, Arena.Status status,) = arena.challenges(id);
         assertEq(stake, STAKE);
         assertEq(uint256(status), uint256(Arena.Status.Open));
     }
@@ -164,7 +167,7 @@ contract ArenaTest is Test {
         arena.challenge(alice, STAKE);
     }
 
-    function test_CannotResolveInTheAcceptanceBlock() public {
+    function test_CannotResolveBeforeTheSeedBlockIsProduced() public {
         _fighters();
         vm.prank(alice);
         uint256 id = arena.challenge(bob, STAKE);
@@ -198,7 +201,7 @@ contract ArenaTest is Test {
         // Read the open block back off the contract rather than caching block.number in a local.
         // Under via_ir the optimiser folds repeated NUMBER reads together and cannot see vm.roll,
         // so a cached local silently becomes the post-roll value.
-        (,,, uint64 opened,,,) = arena.challenges(id);
+        (,,, uint64 opened,,,,) = arena.challenges(id);
         uint64 expiresAt = opened + arena.EXPIRY_BLOCKS();
 
         vm.roll(expiresAt);
@@ -279,7 +282,7 @@ contract ArenaTest is Test {
 
         arena.resolve(id);
 
-        (,,,,,, address winner) = arena.challenges(id);
+        (,,,,,,, address winner) = arena.challenges(id);
         assertEq(winner, expected, "resolve fought the same fight preview did");
     }
 
@@ -337,7 +340,7 @@ contract ArenaTest is Test {
         uint256 id = arena.challenge(bob, STAKE);
         vm.prank(bob);
         arena.accept(id);
-        vm.roll(block.number + 1);
+        vm.roll(block.number + arena.SEED_DELAY_BLOCKS() + 1);
 
         uint256 aliceBefore = token.balanceOf(alice);
         uint256 bobBefore = token.balanceOf(bob);
@@ -350,7 +353,7 @@ contract ArenaTest is Test {
         assertEq(token.totalSupply(), supplyBefore, "a draw burns nothing");
         assertEq(arena.escrowed(), 0);
 
-        (,,,,,, address winner) = arena.challenges(id);
+        (,,,,,,, address winner) = arena.challenges(id);
         assertEq(winner, address(0));
     }
 
@@ -367,7 +370,7 @@ contract ArenaTest is Test {
 
         arena.resolve(id);
 
-        (,,,,,, address winner) = arena.challenges(id);
+        (,,,,,,, address winner) = arena.challenges(id);
         uint256 gained = winner == alice
             ? token.balanceOf(alice) - aliceBefore
             : token.balanceOf(bob) - bobBefore;
@@ -394,8 +397,156 @@ contract ArenaTest is Test {
         uint256 id = _duel();
         vm.prank(carol);
         arena.resolve(id);
-        (,,,,, Arena.Status status,) = arena.challenges(id);
+        (,,,,,, Arena.Status status,) = arena.challenges(id);
         assertEq(uint256(status), uint256(Arena.Status.Resolved));
+    }
+
+    // ------------------------------------------------------------- the committed seed
+
+    /// @notice The whole point of committing the seed: when you resolve cannot change the outcome.
+    /// @dev Against the old contract this fails. It seeded from `blockhash(block.number - 1)`, so
+    /// resolving in a different block gave a different fight, and a resolver could shop for one.
+    function test_TheOutcomeIsTheSameWhicheverBlockYouResolveIn() public {
+        // Two identical duels, accepted in the same block, resolved many blocks apart.
+        _fighters();
+        vm.prank(alice);
+        uint256 first = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(first);
+
+        uint64 seedBlock = _seedBlockOf(first);
+
+        // Resolve one block after the seed block.
+        vm.roll(seedBlock + 1);
+        bytes32 early = arena.seedOf(first);
+        (address earlyWinner,) = arena.preview(alice, bob, early);
+
+        // And read the same duel's seed a hundred blocks later.
+        vm.roll(seedBlock + 100);
+        bytes32 late = arena.seedOf(first);
+        (address lateWinner,) = arena.preview(alice, bob, late);
+
+        assertEq(early, late, "the seed moved with the resolution block");
+        assertEq(earlyWinner, lateWinner, "the winner moved with the resolution block");
+
+        arena.resolve(first);
+        (,,,,,,, address winner) = arena.challenges(first);
+        assertEq(winner, lateWinner, "resolve disagreed with the committed seed");
+    }
+
+    function test_SeedIsUnknowableUntilItsBlockIsProduced() public {
+        _fighters();
+        vm.prank(alice);
+        uint256 id = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(id);
+
+        assertEq(arena.seedOf(id), bytes32(0), "a seed existed in the acceptance block");
+        vm.roll(_seedBlockOf(id));
+        assertEq(arena.seedOf(id), bytes32(0), "a seed existed in the seed block itself");
+        vm.roll(_seedBlockOf(id) + 1);
+        assertTrue(arena.seedOf(id) != bytes32(0), "no seed once the block was produced");
+    }
+
+    function test_ResolveIsRefusedOnceTheWindowCloses() public {
+        _fighters();
+        vm.prank(alice);
+        uint256 id = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(id);
+
+        uint64 seedBlock = _seedBlockOf(id);
+        uint64 closesAt = seedBlock + arena.RESOLVE_WINDOW_BLOCKS();
+
+        // The last block inside the window still resolves.
+        vm.roll(closesAt);
+        assertTrue(arena.seedOf(id) != bytes32(0), "the seed aged out inside the window");
+
+        vm.roll(closesAt + 1);
+        assertEq(arena.seedOf(id), bytes32(0), "a seed survived the window");
+        vm.expectRevert(
+            abi.encodeWithSelector(Arena.Arena__SeedWindowClosed.selector, id, seedBlock, closesAt)
+        );
+        arena.resolve(id);
+    }
+
+    function test_AStaleDuelIsVoidedAndBothStakesComeBack() public {
+        _fighters();
+        uint256 aliceBefore = token.balanceOf(alice);
+        uint256 bobBefore = token.balanceOf(bob);
+
+        vm.prank(alice);
+        uint256 id = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(id);
+
+        uint64 closesAt = _seedBlockOf(id) + arena.RESOLVE_WINDOW_BLOCKS();
+
+        // Not while it can still be fought.
+        vm.roll(closesAt);
+        vm.expectRevert(abi.encodeWithSelector(Arena.Arena__StillResolvable.selector, id, closesAt));
+        vm.prank(alice);
+        arena.voidDuel(id);
+
+        vm.roll(closesAt + 1);
+        uint256 supplyBefore = token.totalSupply();
+        vm.prank(bob);
+        arena.voidDuel(id);
+
+        assertEq(token.balanceOf(alice), aliceBefore, "the challenger did not get their stake back");
+        assertEq(token.balanceOf(bob), bobBefore, "the opponent did not get their stake back");
+        assertEq(token.totalSupply(), supplyBefore, "a void burned something");
+        assertEq(token.balanceOf(address(arena)), 0, "the arena kept escrow");
+        assertEq(arena.escrowed(), 0);
+
+        (,,,,,, Arena.Status status,) = arena.challenges(id);
+        assertEq(uint256(status), uint256(Arena.Status.Voided));
+    }
+
+    function test_OnlyAParticipantCanVoid() public {
+        _fighters();
+        vm.prank(alice);
+        uint256 id = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(id);
+        vm.roll(_seedBlockOf(id) + arena.RESOLVE_WINDOW_BLOCKS() + 1);
+
+        vm.expectRevert(abi.encodeWithSelector(Arena.Arena__NotAParticipant.selector, carol));
+        vm.prank(carol);
+        arena.voidDuel(id);
+    }
+
+    function test_AVoidedDuelCannotBeVoidedOrResolvedAgain() public {
+        _fighters();
+        vm.prank(alice);
+        uint256 id = arena.challenge(bob, STAKE);
+        vm.prank(bob);
+        arena.accept(id);
+        vm.roll(_seedBlockOf(id) + arena.RESOLVE_WINDOW_BLOCKS() + 1);
+
+        vm.prank(alice);
+        arena.voidDuel(id);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Arena.Arena__WrongStatus.selector, id, Arena.Status.Accepted, Arena.Status.Voided
+            )
+        );
+        vm.prank(bob);
+        arena.voidDuel(id);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Arena.Arena__WrongStatus.selector, id, Arena.Status.Accepted, Arena.Status.Voided
+            )
+        );
+        arena.resolve(id);
+    }
+
+    /// @dev The seed block is read off the contract rather than computed here, so a change to
+    /// SEED_DELAY_BLOCKS cannot leave these tests quietly asserting the wrong block.
+    function _seedBlockOf(uint256 id) internal view returns (uint64 seedBlock) {
+        (,,,,, seedBlock,,) = arena.challenges(id);
     }
 
     // ------------------------------------------------------------- integrations

@@ -44,13 +44,18 @@ interface IBurnableToken is IERC20 {
 /// function of the two heroes' stats and one seed, and the full round log is emitted so a client
 /// can replay the fight exactly. Nobody, including the owner, can change a result.
 ///
-/// **Known property of the seed.** `docs/SPEC.md` §4.1 specifies
-/// `keccak256(blockhash(block.number - 1), challengeId)`, and that is what this does. A resolver
-/// who dislikes the outcome can therefore wait and call in a different block. Stakes are symmetric
-/// and either player can resolve, so the worst case is a stalemate of two players each waiting for
-/// a block that favours them, not a theft. Fixing it properly needs a commit-reveal or a VRF,
-/// which is a design change rather than an implementation detail, so it is recorded rather than
-/// quietly diverged from.
+/// **The seed is committed at acceptance, not chosen at resolution.** `accept` fixes
+/// `seedBlock = block.number + 2`, a block whose hash nobody knows yet, and `resolve` uses
+/// `blockhash(seedBlock)`. There is therefore exactly one seed per duel and no resolver can shop
+/// for a better one by waiting: calling in a different block produces the same fight.
+///
+/// Resolution is bounded because `blockhash` only reaches back 256 blocks. A duel must be resolved
+/// after `seedBlock` and within `RESOLVE_WINDOW_BLOCKS` of it, and one that is not can be voided by
+/// either player with both stakes returned. Nobody's money is trapped by a seed that has aged out.
+///
+/// A validator producing `seedBlock` could still influence its own hash, which is the residual any
+/// blockhash scheme carries; removing it needs a VRF. What is gone is the part a player could
+/// exploit: choosing when to call.
 contract Arena is Ownable {
     using SafeERC20 for IERC20;
 
@@ -60,7 +65,8 @@ contract Arena is Ownable {
         Accepted,
         Resolved,
         Expired,
-        Cancelled
+        Cancelled,
+        Voided
     }
 
     struct Challenge {
@@ -69,6 +75,8 @@ contract Arena is Ownable {
         uint256 stake;
         uint64 openedAtBlock;
         uint64 acceptedAtBlock;
+        /// @dev The block whose hash seeds the fight, fixed at acceptance and unknown then.
+        uint64 seedBlock;
         Status status;
         address winner;
     }
@@ -80,6 +88,16 @@ contract Arena is Ownable {
     /// @dev 7200 blocks, roughly a day at this chain's cadence. After it, the challenger takes
     /// their stake back and the challenge is closed for good.
     uint64 public constant EXPIRY_BLOCKS = 7200;
+
+    /// @notice Blocks after acceptance whose hash seeds the duel.
+    /// @dev Two rather than one: the hash of the next block is already being decided when accept
+    /// lands, so it is the first one nobody can have seen.
+    uint64 public constant SEED_DELAY_BLOCKS = 2;
+
+    /// @notice Blocks after `seedBlock` within which a duel must be resolved.
+    /// @dev `blockhash` reaches back 256 blocks, so 250 leaves margin for the transaction to land.
+    /// Past it the seed is unreadable and the duel is voidable instead.
+    uint64 public constant RESOLVE_WINDOW_BLOCKS = 250;
 
     /// @notice Basis points of the pot burned on a decisive result.
     uint256 public constant BURN_BPS = 200;
@@ -111,7 +129,10 @@ contract Arena is Ownable {
     event ArenaChallenged(
         uint256 indexed challengeId, address indexed challenger, address indexed opponent, uint256 stake
     );
-    event ArenaAccepted(uint256 indexed challengeId, address indexed opponent, uint64 acceptedAtBlock);
+    event ArenaAccepted(
+        uint256 indexed challengeId, address indexed opponent, uint64 acceptedAtBlock, uint64 seedBlock
+    );
+    event ArenaVoided(uint256 indexed challengeId, address indexed challenger, address indexed opponent, uint256 refund);
     event ArenaCancelled(uint256 indexed challengeId, address indexed challenger, uint256 refund);
     event ArenaExpired(uint256 indexed challengeId, address indexed challenger, uint256 refund);
     /// @dev `rounds` is the compact log a client replays: one byte per half-round, see `_encode`.
@@ -138,6 +159,9 @@ contract Arena is Ownable {
     error Arena__NotExpiredYet(uint256 challengeId, uint64 expiresAtBlock);
     error Arena__Expired(uint256 challengeId);
     error Arena__TooSoon(uint256 challengeId);
+    error Arena__SeedWindowClosed(uint256 challengeId, uint64 seedBlock, uint64 closedAtBlock);
+    error Arena__StillResolvable(uint256 challengeId, uint64 closesAtBlock);
+    error Arena__NotAParticipant(address caller);
 
     constructor(address owner_, address stakeToken, address hero) Ownable(owner_) {
         if (stakeToken == address(0) || hero == address(0)) revert Arena__ZeroAddress();
@@ -174,6 +198,7 @@ contract Arena is Ownable {
             stake: stake,
             openedAtBlock: uint64(block.number),
             acceptedAtBlock: 0,
+            seedBlock: 0,
             status: Status.Open,
             winner: address(0)
         });
@@ -193,11 +218,14 @@ contract Arena is Ownable {
 
         duel.status = Status.Accepted;
         duel.acceptedAtBlock = uint64(block.number);
+        // Committed here and never rewritten. Whoever calls resolve, and whenever they call it
+        // inside the window, gets this seed.
+        duel.seedBlock = uint64(block.number) + SEED_DELAY_BLOCKS;
 
         escrowed += duel.stake;
         IERC20(address(STAKE_TOKEN)).safeTransferFrom(msg.sender, address(this), duel.stake);
 
-        emit ArenaAccepted(challengeId, msg.sender, uint64(block.number));
+        emit ArenaAccepted(challengeId, msg.sender, uint64(block.number), duel.seedBlock);
     }
 
     /// @notice Withdraw an unanswered challenge.
@@ -235,11 +263,14 @@ contract Arena is Ownable {
         if (duel.status != Status.Accepted) {
             revert Arena__WrongStatus(challengeId, Status.Accepted, duel.status);
         }
-        // A seed drawn from the previous block hash is meaningless in the acceptance block itself,
-        // because that hash is already known to whoever accepted.
-        if (block.number <= duel.acceptedAtBlock) revert Arena__TooSoon(challengeId);
+        // The seed block must have been produced, and its hash must still be readable.
+        if (block.number <= duel.seedBlock) revert Arena__TooSoon(challengeId);
+        uint64 closesAt = duel.seedBlock + RESOLVE_WINDOW_BLOCKS;
+        if (block.number > closesAt) {
+            revert Arena__SeedWindowClosed(challengeId, duel.seedBlock, closesAt);
+        }
 
-        bytes32 seed = keccak256(abi.encodePacked(blockhash(block.number - 1), challengeId));
+        bytes32 seed = keccak256(abi.encodePacked(blockhash(duel.seedBlock), challengeId));
         (address winner, bytes memory rounds) = _fight(duel.challenger, duel.opponent, seed);
 
         duel.status = Status.Resolved;
@@ -272,6 +303,45 @@ contract Arena is Ownable {
         }
 
         emit ArenaResolved(challengeId, winner, loser, payout, burned, seed, rounds);
+    }
+
+    /// @notice Return both stakes on a duel whose seed has aged out of reach.
+    /// @dev Either player can call it, and only after the resolution window has closed. `blockhash`
+    /// no longer answers for `seedBlock` by then, so there is no fight left to have; the honest
+    /// outcome is that neither side wins and neither side loses their stake. Nothing is burned.
+    function voidDuel(uint256 challengeId) external {
+        Challenge storage duel = challenges[challengeId];
+        if (duel.status == Status.None) revert Arena__UnknownChallenge(challengeId);
+        if (duel.status != Status.Accepted) {
+            revert Arena__WrongStatus(challengeId, Status.Accepted, duel.status);
+        }
+        if (msg.sender != duel.challenger && msg.sender != duel.opponent) {
+            revert Arena__NotAParticipant(msg.sender);
+        }
+
+        uint64 closesAt = duel.seedBlock + RESOLVE_WINDOW_BLOCKS;
+        if (block.number <= closesAt) revert Arena__StillResolvable(challengeId, closesAt);
+
+        duel.status = Status.Voided;
+
+        uint256 stake = duel.stake;
+        escrowed -= stake * 2;
+        IERC20(address(STAKE_TOKEN)).safeTransfer(duel.challenger, stake);
+        IERC20(address(STAKE_TOKEN)).safeTransfer(duel.opponent, stake);
+
+        emit ArenaVoided(challengeId, duel.challenger, duel.opponent, stake);
+    }
+
+    /// @notice The seed a duel will be fought with, or zero while it cannot be known.
+    /// @dev Zero before the seed block is produced and zero again once its hash has aged out, which
+    /// are the two states in which `resolve` refuses. A client can show the fight before paying gas
+    /// for it by passing this to `preview`.
+    function seedOf(uint256 challengeId) external view returns (bytes32) {
+        Challenge storage duel = challenges[challengeId];
+        if (duel.status != Status.Accepted) return bytes32(0);
+        if (block.number <= duel.seedBlock) return bytes32(0);
+        if (block.number > duel.seedBlock + RESOLVE_WINDOW_BLOCKS) return bytes32(0);
+        return keccak256(abi.encodePacked(blockhash(duel.seedBlock), challengeId));
     }
 
     /// @notice Simulate a duel without touching state, for a UI preview.

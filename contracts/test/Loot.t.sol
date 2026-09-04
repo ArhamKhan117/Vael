@@ -403,10 +403,11 @@ contract LootTest is Test {
         uint256 id = live.challenge(bob, 10 ether);
         vm.prank(bob);
         live.accept(id);
-        vm.roll(block.number + 1);
+        // The seed block is two ahead of acceptance and resolve needs it produced.
+        vm.roll(block.number + 3);
         live.resolve(id);
 
-        (,,,,,, address winner) = live.challenges(id);
+        (,,,,,,, address winner) = live.challenges(id);
         assertEq(winner, alice, "the hero with stats wins");
         assertEq(loot.balanceOf(alice, swordId) + loot.balanceOf(alice, plateId), 1, "a Common drop landed");
     }
