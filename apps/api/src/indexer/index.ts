@@ -364,10 +364,25 @@ export class CreditcoinIndexer {
         break
       }
       case "ArenaAccepted": {
+        // The superseded Arena's event carried no seed block. Recording it only when it is there
+        // keeps a rescan over both contracts honest about which duels committed a seed.
+        const seedBlock = parsed.args.seedBlock
         await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
           ...existing,
           status: "accepted",
           acceptedAtBlock: log.blockNumber,
+          ...(seedBlock !== undefined ? { seedBlock: Number(seedBlock) } : {}),
+        }))
+        outcome.arena += 1
+        break
+      }
+      case "ArenaVoided": {
+        // The seed aged out of blockhash's reach before anyone resolved, so both stakes went back
+        // and nothing was burned. Not a result, and deliberately not recorded as one.
+        await this.patchChallenge(Number(parsed.args.challengeId), (existing) => ({
+          ...existing,
+          status: "voided",
+          resolvedAtBlock: log.blockNumber,
         }))
         outcome.arena += 1
         break

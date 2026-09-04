@@ -52,6 +52,8 @@ interface CampaignQuest {
   questId: number
   metadataURI: string
   rewardPerParticipant: string
+  /** uint256 as a decimal string. Anything but "0" means the escrow pays, not the vault. */
+  campaignId: string
   assignedParticipant: string
   status: number
   accepted: boolean
@@ -410,7 +412,12 @@ function PartnerCampaignPageInner() {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="text-zinc-200">
                       Quest {quest.questId} · {ACTIONS[quest.actionType]?.label ?? quest.actionType} ·{" "}
-                      {vael(quest.rewardPerParticipant)} VAEL
+                      {vael(quest.rewardPerParticipant)} VAEL{" "}
+                      {/* Derived from the quest's campaign id. The struct's rewardToken names the
+                          protocol's vault token for every quest and cannot say this. */}
+                      <span className={quest.campaignId !== "0" ? "text-emerald-400" : "text-zinc-500"}>
+                        from the {quest.campaignId !== "0" ? "campaign escrow" : "reward vault"}
+                      </span>
                     </span>
                     <span
                       className={

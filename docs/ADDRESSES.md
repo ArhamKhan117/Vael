@@ -32,7 +32,7 @@ replaced.
 | `QuestManager` | [`0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e`](https://creditcoin-testnet.blockscout.com/address/0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e) | [`0xec01d729…a12281`](https://creditcoin-testnet.blockscout.com/tx/0xec01d72916512f1839543e64d8e0d5cd67ffce13c7327458539940f924a12281) | 5463524 | Quest lifecycle. `recordCompletion` is `onlyQuestASC`. Pays from the vault only when a quest has no campaign |
 | `QuestASC` | [`0x6e457d910285b5a927Da42742bb58218c5CD1885`](https://creditcoin-testnet.blockscout.com/address/0x6e457d910285b5a927Da42742bb58218c5CD1885) | [`0x705a77df…16a5cb`](https://creditcoin-testnet.blockscout.com/tx/0x705a77dfd05df01502197de370d2ead88e9e083fe709b5b34761053e0016a5cb) | 5463525 | Verifies Attestcoin proofs and applies them. The only contract that can complete a quest |
 | `RaidBoss` | [`0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7`](https://creditcoin-testnet.blockscout.com/address/0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7) | [`0x9f4e1268…fd1b9f`](https://creditcoin-testnet.blockscout.com/tx/0x9f4e1268ac09730ac2291a7947d9cef541ba9c7580ea1f1cbe7594a3dafd1b9f) | 5463526 | Season boss. Damage arrives only as a hook from QuestASC |
-| `Arena` | [`0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B`](https://creditcoin-testnet.blockscout.com/address/0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B) | [`0x25b9d26a…15a999`](https://creditcoin-testnet.blockscout.com/tx/0x25b9d26a5a4b3c4f3fd0555fe6e7da0a8c171ac58333d7ca2d54646c1115a999) | 5463527 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
+| `Arena` | [`0xAF6Fe3daC56Fd05dD04a2CdeE97516CD2E90D4DF`](https://creditcoin-testnet.blockscout.com/address/0xAF6Fe3daC56Fd05dD04a2CdeE97516CD2E90D4DF) | [`0x943673fd…668f76`](https://creditcoin-testnet.blockscout.com/tx/0x943673fd335450ba87c7eb2fbc2ecfa6340df62ef0f8240fe4788aeb9c668f76) | 5464689 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
 | `Loot` | [`0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601`](https://creditcoin-testnet.blockscout.com/address/0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601) | [`0x3988dc4a…7b85de`](https://creditcoin-testnet.blockscout.com/tx/0x3988dc4a025f3c74442eea4fe59a24efcbf526b4f2610cece4a0773e8a7b85de) | 5463528 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
 | `Equipment` | [`0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45`](https://creditcoin-testnet.blockscout.com/address/0x3924E2AE751d1FE2d84753dC42c3C34708c5Da45) | [`0x8f6b833c…383a76`](https://creditcoin-testnet.blockscout.com/tx/0x8f6b833c0e44a096211e43a46f1d41a72415b4da3b79124c8254093d21383a76) | 5463529 | Four slots per hero, items escrowed while equipped |
 | `Marketplace` | [`0x33dba17e54b030B3C9A751332513e9a610e76A46`](https://creditcoin-testnet.blockscout.com/address/0x33dba17e54b030B3C9A751332513e9a610e76A46) | [`0x26b48659…1ecfad`](https://creditcoin-testnet.blockscout.com/tx/0x26b48659df71983269d6367625dbcd608e35d11b13a626a248d4c6a43b1ecfad) | 5463530 | Fixed-price loot sales for VAEL, 2% to the treasury |
@@ -185,6 +185,18 @@ changed contracts, and seven more hold one of them, or something that holds one 
 | `Loot` v1 | `0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86` | Holds `RAID` immutably. A Loot pointing at the old boss could not see the new boss's damage |
 | `Equipment` v1 | `0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517` | Holds both `HERO` and `LOOT` immutably |
 | `Marketplace` v1 | `0x5d816890b23593E997f66292b7B446E5a8379D56` | Holds `LOOT` immutably |
+
+### Superseded in milestone 9, 2026-09-10
+
+| Contract | Address | Why superseded |
+|---|---|---|
+| `Arena` v2 | `0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B` | Seeded a duel from `blockhash(block.number - 1)` at resolution, so a resolver could wait for a block they liked. v3 commits `seedBlock` at acceptance and bounds resolution to a window, with a void path for a duel that misses it |
+
+Nothing held the Arena address immutably, so this replaced one contract and re-pointed one slot.
+`Loot.arena` is both the address Loot trusts and the minter role for arena drops, so setting it to
+the new Arena granted the new one and revoked the old one in the same transaction; it was read back
+afterwards. The old Arena escrowed nothing at the time, which the redeploy script checks before it
+will proceed, because a duel still holding stake would have been stranded.
 
 **What did not carry across, stated plainly.** Heroes, badges, and the loot item registry were
 migrated. ERC-1155 loot balances already dropped to players were not: Loot has no owner mint, by
@@ -483,9 +495,9 @@ W4_RAID_ASC_TX=0x40ae6bf426b0a53ce05d8d0e9e1b8fad41000ca57ee6c290408bf559c99e6b9
 W4_HOOK_HERO_TX=0x7ff2bc1f5ec0c1f6d0e8299ae35e159e6de8e8ca9bc919c6345f59c959e4cd79
 W4_HOOK_RAID_TX=0x3e7c1229e8dedb8ea60812462d741ac6598f1ccbbddcacdf86efb76b18100965
 W4_BADGE_MINTER_TX=0xea1a7cfdf01fd836a65a02039b74e5724813ffa8c722ad96bebc0f660964ebad
-ARENA_ADDRESS=0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B
-ARENA_ADDRESS_TX=0x25b9d26a5a4b3c4f3fd0555fe6e7da0a8c171ac58333d7ca2d54646c1115a999
-ARENA_ADDRESS_BLOCK=5463527
+ARENA_ADDRESS=0xAF6Fe3daC56Fd05dD04a2CdeE97516CD2E90D4DF
+ARENA_ADDRESS_TX=0x943673fd335450ba87c7eb2fbc2ecfa6340df62ef0f8240fe4788aeb9c668f76
+ARENA_ADDRESS_BLOCK=5464689
 LOOT_ADDRESS=0x59a40C93A2819B866Fd1495a9d7ce7D7DAc49601
 LOOT_ADDRESS_TX=0x3988dc4a025f3c74442eea4fe59a24efcbf526b4f2610cece4a0773e8a7b85de
 LOOT_ADDRESS_BLOCK=5463528
@@ -617,3 +629,10 @@ ARENA_V1_ADDRESS=0xe3A14E7D140AA38A7c6Ebe6B7C3639539789f6be
 LOOT_V1_ADDRESS=0xD7eA8ca568b0E8BfECC74e88CcC71A438f581D86
 EQUIPMENT_V1_ADDRESS=0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517
 MARKETPLACE_V1_ADDRESS=0x5d816890b23593E997f66292b7B446E5a8379D56
+V9_ARENA_ADDRESS=0xAF6Fe3daC56Fd05dD04a2CdeE97516CD2E90D4DF
+V9_ARENA_ADDRESS_TX=0x943673fd335450ba87c7eb2fbc2ecfa6340df62ef0f8240fe4788aeb9c668f76
+V9_ARENA_ADDRESS_BLOCK=5464689
+V9_LOOT_ARENA_TX=0x10cea306565c739404221de3603947bd1f65540c6b5577f2279e8b7908be14b5
+V9_ARENA_REWARDS_TX=0x253b4b002e8e10990ce57de6d1250c646af35e3133c4a7046906808a56a24a18
+V9_ARENA_EQUIPMENT_TX=0xef6b7ca429e44e6ffc1a3a565c92963cb860455982b58001667e177eb82a1b69
+ARENA_V2_ADDRESS=0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B

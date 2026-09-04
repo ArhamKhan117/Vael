@@ -507,6 +507,7 @@ export class SupabaseWorkerStore implements WorkerStore {
         rounds: challenge.rounds ?? null,
         opened_at_block: challenge.openedAtBlock,
         accepted_at_block: challenge.acceptedAtBlock ?? null,
+        seed_block: challenge.seedBlock ?? null,
         resolved_at_block: challenge.resolvedAtBlock ?? null,
         updated_at: challenge.updatedAt,
       },
@@ -782,6 +783,7 @@ function challengeFromRow(row: any): IndexedChallenge {
   if (row.seed) challenge.seed = row.seed
   if (row.rounds) challenge.rounds = row.rounds
   if (row.accepted_at_block != null) challenge.acceptedAtBlock = Number(row.accepted_at_block)
+  if (row.seed_block != null) challenge.seedBlock = Number(row.seed_block)
   if (row.resolved_at_block != null) challenge.resolvedAtBlock = Number(row.resolved_at_block)
   return challenge
 }

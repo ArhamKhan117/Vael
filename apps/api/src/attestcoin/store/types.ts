@@ -161,7 +161,7 @@ export interface IndexedChallenge {
   challenger: string
   opponent: string
   stake: string
-  status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled"
+  status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled" | "voided"
   winner?: string
   payout?: string
   burned?: string
@@ -170,6 +170,8 @@ export interface IndexedChallenge {
   rounds?: string
   openedAtBlock: number
   acceptedAtBlock?: number
+  /** The block whose hash seeds the duel, committed at acceptance. */
+  seedBlock?: number
   resolvedAtBlock?: number
   updatedAt: string
 }

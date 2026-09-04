@@ -534,12 +534,14 @@ listed below.
 
 ### The game modules
 
-- **The arena seed is manipulable.** A duel resolves on
-  `keccak256(blockhash(block.number - 1), challengeId)`, so a resolver who dislikes the preview can
-  wait and call in a different block. Stakes are symmetric and either player can resolve, so the
-  worst case is a stalemate of two players each waiting for a favourable block, not a theft. Fixing
-  it properly needs commit-reveal or a VRF, which is a design change rather than an implementation
-  detail. It is recorded in `contracts/src/game/Arena.sol` above the function that does it.
+- **The arena seed still has a validator-shaped residual.** `accept` commits
+  `seedBlock = block.number + 2` and `resolve` uses `blockhash(seedBlock)`, so there is exactly one
+  seed per duel and a resolver cannot shop for a better one by waiting; that was the exploitable
+  part and it is gone. What remains is that whoever produces `seedBlock` influences its hash, which
+  every blockhash scheme carries and only a VRF removes.
+- **A duel must be resolved within 250 blocks of its seed block**, because `blockhash` reaches back
+  256. One that is not can be voided by either player, returning both stakes with nothing burned,
+  so no money is trapped; but it is a duel that never happened rather than a result.
 - The arena and the marketplace are pure Creditcoin systems. They spend and move what proofs
   earned, and no proof is involved in a duel or a sale. Only the stats a duel reads and the items a
   sale moves came from verified proofs.
@@ -568,8 +570,10 @@ case, and `VerifyBaseline` asserts both.
 
 - `Quest.rewardToken` is filled from `RewardVault.vaelToken()` for every quest, so on a campaign
   quest it names the protocol's token rather than whatever `CampaignEscrow.rewardToken()` is. Both
-  are VAEL today. A partner paying in a different token would need that field to come from the
-  escrow, and it does not yet.
+  are VAEL today. Changing the field needs a core redeploy, so the product does not read it for
+  this: the API derives who pays from the quest's `campaignId`, and every card, quest page and
+  studio row says "campaign escrow" or "reward vault" from that instead. A partner paying in a
+  different token would still need the field itself to come from the escrow.
 - The deployer, the worker, and the ERC-8004 agent controller are one testnet key. Nothing in the
   design requires that; it is a convenience of a single-operator testnet deployment, and the removal
   test is what makes it harmless.

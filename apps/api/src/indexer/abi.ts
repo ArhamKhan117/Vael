@@ -20,7 +20,12 @@ export const INDEXER_ABI = [
   "event RaidDefeated(uint64 indexed seasonId, address indexed lastHitter, uint256 totalDamage)",
   // Arena
   "event ArenaChallenged(uint256 indexed challengeId, address indexed challenger, address indexed opponent, uint256 stake)",
+  // Two signatures, as with BadgeMinted: the superseded Arena emitted three arguments and the
+  // current one emits the committed seed block as a fourth. Different argument lists mean
+  // different topic0 values, so one interface decodes whichever is live.
   "event ArenaAccepted(uint256 indexed challengeId, address indexed opponent, uint64 acceptedAtBlock)",
+  "event ArenaAccepted(uint256 indexed challengeId, address indexed opponent, uint64 acceptedAtBlock, uint64 seedBlock)",
+  "event ArenaVoided(uint256 indexed challengeId, address indexed challenger, address indexed opponent, uint256 refund)",
   "event ArenaResolved(uint256 indexed challengeId, address indexed winner, address indexed loser, uint256 payout, uint256 burned, bytes32 seed, bytes rounds)",
   "event ArenaDrawn(uint256 indexed challengeId, address challengerRefund, address opponentRefund, bytes32 seed, bytes rounds)",
   "event ArenaCancelled(uint256 indexed challengeId, address indexed challenger, uint256 refund)",
@@ -99,7 +104,10 @@ export const EQUIPMENT_READ_ABI = [
 ] as const
 
 export const ARENA_READ_ABI = [
-  "function challenges(uint256 challengeId) view returns (address challenger, address opponent, uint256 stake, uint64 openedAtBlock, uint64 acceptedAtBlock, uint8 status, address winner)",
+  "function challenges(uint256 challengeId) view returns (address challenger, address opponent, uint256 stake, uint64 openedAtBlock, uint64 acceptedAtBlock, uint64 seedBlock, uint8 status, address winner)",
+  "function seedOf(uint256 challengeId) view returns (bytes32)",
+  "function SEED_DELAY_BLOCKS() view returns (uint64)",
+  "function RESOLVE_WINDOW_BLOCKS() view returns (uint64)",
   "function nextChallengeId() view returns (uint256)",
   "function EXPIRY_BLOCKS() view returns (uint64)",
 ] as const

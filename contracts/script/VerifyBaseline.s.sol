@@ -209,6 +209,29 @@ contract VerifyBaseline is Script {
         _eq("Arena.rewards is Loot", address(arena.rewards()), address(loot));
         _eq("Arena.equipment is Equipment", address(arena.equipment()), address(equipment));
 
+        // The duel seed is committed at acceptance rather than chosen at resolution, and the
+        // resolution window has to stay inside blockhash's 256-block reach or a duel becomes
+        // unresolvable and can only be voided.
+        require(arena.SEED_DELAY_BLOCKS() > 0, "VerifyBaseline: Arena seeds from the acceptance block");
+        checks++;
+        console.log("ok   Arena.SEED_DELAY_BLOCKS", arena.SEED_DELAY_BLOCKS());
+        require(
+            arena.RESOLVE_WINDOW_BLOCKS() > 0 && arena.RESOLVE_WINDOW_BLOCKS() < 256,
+            "VerifyBaseline: Arena resolve window is outside blockhash's reach"
+        );
+        checks++;
+        console.log("ok   Arena.RESOLVE_WINDOW_BLOCKS", arena.RESOLVE_WINDOW_BLOCKS());
+
+        // Loot.arena is both the address Loot trusts and the arena minter role, so a superseded
+        // Arena keeping it would keep the ability to mint drops.
+        address supersededArena = vm.envOr("ARENA_V2_ADDRESS", address(0));
+        if (supersededArena != address(0)) {
+            _isTrue(
+                "Loot no longer lets the superseded Arena mint",
+                loot.arena() != supersededArena
+            );
+        }
+
         _eq("Loot.RAID is RaidBoss", address(loot.RAID()), address(raid));
         _eq("Loot.arena is Arena", loot.arena(), address(arena));
 

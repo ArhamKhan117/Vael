@@ -84,7 +84,7 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
           <div className="flex items-center justify-between text-zinc-500">
             <span>PAID BY</span>
             <span className="text-xs text-white">
-              {quest.fundedBy === "escrow" ? "Partner escrow" : "Reward vault"}
+              {quest.fundedBy === "escrow" ? "Campaign escrow" : "Reward vault"}
             </span>
           </div>
           <div className="flex items-start justify-between gap-3 text-zinc-500">

@@ -438,6 +438,15 @@ export default function QuestDetailPage() {
                   <div className="text-lg font-semibold text-white">
                     {rewardAmount} {rewardToken}
                   </div>
+                  {/* Who actually pays is derived from the quest's campaign id, not from the
+                      struct's rewardToken, which names the protocol's vault token for every quest.
+                      See docs/ATTESTCOIN_INTEGRATION.md section 8. */}
+                  <div className="text-[11px] text-zinc-500">
+                    Paid by{" "}
+                    <span className={quest.fundedBy === "escrow" ? "text-emerald-400" : "text-zinc-300"}>
+                      {quest.fundedBy === "escrow" ? "Campaign escrow" : "Reward vault"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
