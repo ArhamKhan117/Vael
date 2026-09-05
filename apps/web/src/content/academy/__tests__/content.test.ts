@@ -47,13 +47,22 @@ describe("Academy content", () => {
   it("either links a verifiable action or says plainly that it cannot", () => {
     for (const module of ACADEMY_MODULES) {
       if (module.doQuest.available) {
-        // Mirrors VaelTypes.ActionType: Portal, UniswapSwap, Erc20Transfer, AaveSupply, AaveBorrow.
+        // Mirrors VaelTypes.ActionType: Portal, UniswapSwap, Erc20Transfer, AaveSupply,
+        // AaveBorrow, PenguinSwapSwap, WrapNative.
         expect(module.doQuest.actionType).toBeGreaterThanOrEqual(0)
-        expect(module.doQuest.actionType).toBeLessThanOrEqual(4)
+        expect(module.doQuest.actionType).toBeLessThanOrEqual(6)
         expect(module.doQuest.steps.length).toBeGreaterThanOrEqual(2)
       } else {
         expect(module.doQuest.unavailableReason.length).toBeGreaterThan(40)
       }
+    }
+  })
+
+  // The point of the Academy is that every module ends somewhere the chain can see. A module that
+  // teaches and then has nothing to do is half a module, and this is the assertion that says so.
+  it("every module ends in an action that is actually available", () => {
+    for (const module of ACADEMY_MODULES) {
+      expect(module.doQuest.available).toBe(true)
     }
   })
 

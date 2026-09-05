@@ -7,6 +7,7 @@ import { ArrowLeft, Check, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { QUIZ_PASS_MARK, academyModule } from "@/content/academy"
+import { FIRST_NATIVE_ACTION } from "@/lib/actions"
 import { useAcademy } from "@/hooks/useAcademy"
 import { useReownWallet } from "@/hooks/useReownWallet"
 
@@ -33,6 +34,9 @@ export default function AcademyModulePage() {
   // The linked quest is the one this address actually accepted on chain. If there is none, the
   // page says to go and accept one rather than inventing an id to link to.
   const doQuest = module.doQuest
+  // Which completion path this module's action belongs to. Action types at or above
+  // FIRST_NATIVE_ACTION are settled by NativePortal on Creditcoin, not by a proof.
+  const isNative = doQuest.available && doQuest.actionType >= FIRST_NATIVE_ACTION
   const linkedQuest = doQuest.available
     ? data?.openQuests.find((quest) => quest.actionType === doQuest.actionType)
     : undefined
@@ -214,9 +218,9 @@ export default function AcademyModulePage() {
               </div>
 
               <p className="mt-4 text-[11px] leading-relaxed text-zinc-600">
-                Completing it awards a Common badge through the normal quest flow, which means
-                QuestASC mints it after verifying your proof. Passing the quiz above does not mint
-                anything, and nothing off-chain can.
+                {isNative
+                  ? "Completing it awards a Common badge in the same transaction as the swap, because NativePortal performs the action and records the completion together. Passing the quiz above does not mint anything, and nothing off-chain can."
+                  : "Completing it awards a Common badge through the normal quest flow, which means QuestASC mints it after verifying your proof. Passing the quiz above does not mint anything, and nothing off-chain can."}
               </p>
             </>
           )}

@@ -494,6 +494,100 @@ proof is exactly how a valid proof gets aimed at the wrong interpretation.
   outbound contract reads state rather than mutating it, which is why it is declared as a separate
   interface rather than as methods bolted onto QuestASC.
 
+## 6d. Native quests, and the line they do not cross
+
+Every quest described above happens on Ethereum and is settled on Creditcoin against an Attestcoin
+proof.
+milestone 10 adds a second kind: a quest whose action happens on Creditcoin itself, through PenguinSwap.
+These are not Attestcoin-verified, and the reason is worth stating plainly rather than burying.
+
+### Why they carry no proof
+
+Attestcoin proves that something happened on a chain Creditcoin cannot see.
+A PenguinSwap swap happens on Creditcoin, in a block Creditcoin produced, in a transaction the EVM
+is executing right now.
+Asking the Block Prover to prove it would mean asking Creditcoin to prove Creditcoin to itself, and
+waiting several minutes for an attestation of a block it already has.
+That is not extra security. It is a longer path to the same certainty, and dressing it up as
+verification would make the word mean less everywhere else in this document.
+
+### What replaces the proof
+
+Nothing replaces it, because nothing needs to.
+
+`NativePortal` does not observe the action and then attest to it.
+It **performs** the action, inside the completing transaction, out of the player's own balance:
+
+```
+player -> NativePortal.swapViaPenguinSwap(questId, tokenIn, tokenOut, fee, amountIn, minOut)
+            safeTransferFrom(msg.sender, ...)          the player's tokens, or it reverts
+            ISwapRouter.exactInputSingle(recipient: msg.sender)
+            QuestManager.recordCompletion(...)         same transaction, or none of it happened
+```
+
+There is no window between the action and the completion in which a claim about the action could be
+made.
+If the swap reverts, the completion reverts with it.
+If the player has not accepted the quest, is not the assigned participant, or sends less than the
+rule's minimum, `_checkedRule` reverts before any token moves.
+
+The replay key is `keccak256(chainid, block.number, questId, player)`, which is the completion's own
+position rather than a foreign log's.
+It is not comparable to a proof-path key and is not meant to be: it is unforgeable for the same
+reason the transaction is.
+
+### The two paths cannot be confused for one another
+
+This is enforced in four places, not by convention:
+
+| | Proof path | Native path |
+|---|---|---|
+| Completing contract | `QuestASC` | `NativePortal` |
+| Action types | `Portal`, `UniswapSwap`, `Erc20Transfer`, `AaveSupply`, `AaveBorrow` | `PenguinSwapSwap`, `WrapNative` |
+| Event | `QuestProofApplied` | `NativeActionApplied` |
+| Chain key in the hook call | the source chain, 1 or 3 | `0` |
+
+`QuestManager.createQuest` reads the rule's action type and files the quest into exactly one of the
+two, at creation, permanently: an action type at or above `FIRST_NATIVE_ACTION` becomes a native
+quest and its rule never reaches `QuestASC`; anything below it registers a rule on `QuestASC` and
+`NativePortal` will refuse it with `NativePortal__NotNativeQuest`.
+`recordCompletion` then dispatches on that same flag and reverts with `QuestManager__WrongCompleter`
+if the wrong contract calls.
+So `NativePortal` cannot complete a Sepolia quest even if it wanted to, and `QuestASC` cannot
+complete a PenguinSwap quest.
+
+The event names differ deliberately.
+An indexer that treated `NativeActionApplied` as a proof would be reporting something false, and
+naming both events the same thing would have made that mistake easy.
+
+### Why this is honest rather than a shortcut
+
+The thing this project refuses is a **trusted key**: a backend that watches a chain, decides a
+player did something, and calls `recordCompletion`.
+That is what the whole proof path exists to avoid, and the native path does not reintroduce it:
+
+- `NativePortal` has no privilege to say an action happened. It only has the ability to make one
+  happen, with the player's own tokens, at the player's own instruction.
+- The player is `msg.sender` throughout. Nobody can perform a native quest on somebody else's
+  behalf, because the tokens come out of the caller and the quest is checked against the caller.
+- The deployer cannot complete a native quest any more than it can complete a proved one. Calling
+  `recordCompletion` directly still reverts, and `swapViaPenguinSwap` on somebody else's quest
+  reverts with `NativePortal__NotTheParticipant`.
+- The rewards are the same rewards, released by the same `RewardVault` under the same
+  `onlyQuestManager` gate, through the same two hooks in the same order.
+
+The honest summary is: a native quest is proved by being executed, and a Sepolia quest is proved by
+Attestcoin, and the difference is which chain the action was on rather than how much trust it takes.
+
+### What it costs
+
+A native quest is one transaction and roughly ten seconds, against a Sepolia quest's two
+transactions and several minutes of waiting for attestation coverage.
+That is the point of it for a new player: the first quest anyone does should not begin with
+bridging test ETH and end with a five-minute wait.
+It is not the point of the project, and the campaign quests, the partner payouts and the raid all
+still run on proofs.
+
 ## 7. Setup
 
 Contracts, tests, and deployment: `contracts/README.md`.

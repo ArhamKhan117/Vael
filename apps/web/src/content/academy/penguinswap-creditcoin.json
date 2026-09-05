@@ -1,7 +1,7 @@
 {
   "slug": "penguinswap-creditcoin",
   "title": "PenguinSwap on Creditcoin",
-  "summary": "Trading on Creditcoin's own DEX, and why an action that happens here needs no proof at all.",
+  "summary": "Trading on Creditcoin's own DEX, why an action that happens here carries no proof, and why that is not a shortcut.",
   "lessons": [
     {
       "title": "A DEX on the chain the game lives on",
@@ -15,23 +15,28 @@
       "title": "Why a local action needs no proof",
       "body": [
         "Everything Vael proves is proved because it happened somewhere Creditcoin cannot see. A swap on Ethereum has to be carried across by a Merkle proof and a continuity proof, because no contract on Creditcoin has any record of an Ethereum block.",
-        "A swap on PenguinSwap has no such gap. It is a log in a Creditcoin block, and a Creditcoin contract can read Creditcoin state and events directly. There is no proof to build because there is nothing to bridge.",
+        "A swap on PenguinSwap has no such gap. It is a transaction in a block Creditcoin produced. Asking the Block Prover to prove it would be asking Creditcoin to prove Creditcoin to itself, and waiting minutes for an attestation of a block it already has.",
         "That is a real difference in the trust model and it cuts both ways. Local actions are cheaper and immediate, with no attestation wait. Cross-chain actions are what make the proof machinery necessary, and they are where Vael's central claim, that no backend key can complete a quest, actually gets tested."
       ]
     },
     {
-      "title": "What that means for quests",
+      "title": "How a native quest is settled instead",
       "body": [
-        "Every quest Vael can verify today reads a log from Ethereum Sepolia through the Attestcoin precompile: Portal check-ins, ERC-20 transfers, Uniswap v3 swaps, and Aave v3 supplies and borrows. Each is served by an adapter contract registered against the event signature it decodes.",
-        "A Creditcoin-native action would not go through that path. It would be verified by reading the local log directly, which is a different code path that Vael has not built. There is no PenguinSwap adapter deployed, so this module has no verified do quest attached to it yet, and saying otherwise would be inventing a feature.",
-        "The lessons and the quiz here still count toward your academy progress. The badge, as everywhere in Vael, comes only from a quest the chain actually verified, so use one of the other modules' quests to earn it."
+        "A native quest goes through NativePortal rather than QuestASC. You call it, it pulls your tokens, it performs the swap on PenguinSwap with you as the recipient, and it records the completion, all inside one transaction. There is no moment between the action and the completion in which anyone could make a claim about what you did.",
+        "That is why it needs no proof and is still not a shortcut. NativePortal has no privilege to say an action happened; it only has the ability to make one happen, with your tokens, at your instruction. If the swap reverts, the completion reverts with it. If you are not the assigned participant, or you have not accepted the quest, or you send less than the minimum, it reverts before a single token moves.",
+        "The two paths cannot be confused. A quest is filed to exactly one of them when it is created, by its action type, and cannot move. QuestASC cannot complete a PenguinSwap quest and NativePortal cannot complete a Sepolia one. Even the events are named differently, QuestProofApplied against NativeActionApplied, so nothing reading the chain can mistake one for the other."
       ]
     }
   ],
   "quiz": [
     {
       "question": "Which chain does PenguinSwap run on?",
-      "options": ["Ethereum mainnet", "Ethereum Sepolia", "Creditcoin", "Both Ethereum and Creditcoin"],
+      "options": [
+        "Ethereum mainnet",
+        "Ethereum Sepolia",
+        "Creditcoin",
+        "Both Ethereum and Creditcoin"
+      ],
       "answer": 2,
       "why": "It is Creditcoin's own DEX, which is exactly what makes it different from Uniswap in Vael's terms."
     },
@@ -61,27 +66,35 @@
       "question": "Which actions can Vael verify today?",
       "options": [
         "Any transaction on any chain",
-        "Portal check-ins, ERC-20 transfers, Uniswap v3 swaps, and Aave v3 supplies and borrows on Ethereum Sepolia",
+        "Portal check-ins, ERC-20 transfers, Uniswap v3 swaps and Aave v3 supplies and borrows on Ethereum Sepolia, plus PenguinSwap swaps and native wraps on Creditcoin",
         "Only Portal check-ins",
         "Anything on Creditcoin, and nothing elsewhere"
       ],
       "answer": 1,
-      "why": "Each of those has an adapter contract registered against the event signature it decodes."
+      "why": "The five Sepolia actions each have an adapter registered against the event signature they decode. The two Creditcoin actions need no adapter, because NativePortal performs them."
     },
     {
-      "question": "How would a Creditcoin-native quest be verified, if one existed?",
+      "question": "How does NativePortal settle a Creditcoin-native quest?",
       "options": [
-        "By a backend watching the chain and calling QuestASC",
-        "By the same Merkle and continuity proofs used for Ethereum",
-        "By reading the local log directly, with no proof to build",
-        "It could not be verified at all"
+        "A backend watches the chain and calls QuestManager once it sees the swap",
+        "It performs the swap itself and records the completion in the same transaction",
+        "It builds the same Merkle and continuity proofs used for Ethereum",
+        "It reads the swap log in a later transaction and attests to it"
       ],
-      "answer": 2,
-      "why": "A local log is already in state the contract can see. That is a different code path from the cross-chain one, and Vael has not built it."
+      "answer": 1,
+      "why": "There is no gap for anyone to make a claim in. The action and the completion succeed together or neither happens, and the tokens come out of your own address."
     }
   ],
   "doQuest": {
-    "available": false,
-    "unavailableReason": "There is no PenguinSwap adapter deployed. A Creditcoin-native action is verified by reading the local log rather than by an Attestcoin proof, and Vael has not built that path. Rather than link a quest that does not exist, this module leaves the slot empty."
+    "available": true,
+    "actionType": 5,
+    "actionName": "PenguinSwap swap",
+    "title": "Swap on PenguinSwap, Creditcoin testnet",
+    "steps": [
+      "Accept a PenguinSwap quest on the quest board. A native quest anchors to no source height, because the action has not happened yet and will happen inside the completing transaction.",
+      "Approve NativePortal to spend the token you are selling. It pulls exactly the amount you name and clears the approval again in the same transaction.",
+      "Call swapViaPenguinSwap with the quest id, the pair, the fee tier and your own slippage floor. The router pays the proceeds straight to you; nothing is ever held by Vael.",
+      "The reward, the badge, your hero XP and any raid damage all land in that same transaction. There is nothing to submit afterwards and nothing to wait for."
+    ]
   }
 }

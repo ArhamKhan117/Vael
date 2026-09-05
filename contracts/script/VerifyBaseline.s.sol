@@ -13,6 +13,7 @@ import {BadgeNFT} from "../src/BadgeNFT.sol";
 import {QuestManager} from "../src/QuestManager.sol";
 import {CampaignEscrow} from "../src/CampaignEscrow.sol";
 import {QuestASC} from "../src/QuestASC.sol";
+import {NativePortal} from "../src/source/NativePortal.sol";
 import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 import {VaelHero} from "../src/game/VaelHero.sol";
 import {RaidBoss} from "../src/game/RaidBoss.sol";
@@ -83,6 +84,7 @@ contract VerifyBaseline is Script {
         BadgeNFT badge = BadgeNFT(vm.envAddress("BADGE_NFT_ADDRESS"));
         QuestManager manager = QuestManager(vm.envAddress("QUEST_MANAGER_ADDRESS"));
         QuestASC questASC = QuestASC(vm.envAddress("QUEST_ASC_ADDRESS"));
+        NativePortal nativePortal = NativePortal(payable(vm.envAddress("NATIVE_PORTAL_ADDRESS")));
         address questPortal = vm.envAddress("QUEST_PORTAL_ADDRESS");
         VaelHero hero = VaelHero(vm.envAddress("VAEL_HERO_ADDRESS"));
         RaidBoss raid = RaidBoss(vm.envAddress("RAID_BOSS_ADDRESS"));
@@ -195,6 +197,44 @@ contract VerifyBaseline is Script {
         _isTrue("VaelHero has no completer change pending", heroPending == ZERO);
         (address raidPending,,) = raid.pendingCompleter();
         _isTrue("RaidBoss has no completer change pending", raidPending == ZERO);
+        console.log("=== the native path ===");
+        // The second completion path. It is checked here for the same reason the first one is: a
+        // quest that can be completed by the wrong contract is not a quest, it is a request.
+        _hasCode("NativePortal", address(nativePortal));
+        _eq("NativePortal.QUEST_MANAGER", address(nativePortal.QUEST_MANAGER()), address(manager));
+        _eq("QuestManager.nativePortal", manager.nativePortal(), address(nativePortal));
+        _eq(
+            "NativePortal.swapRouter is PenguinSwap",
+            nativePortal.swapRouter(),
+            vm.envAddress("PENGUINSWAP_ROUTER_ADDRESS")
+        );
+        _eq(
+            "NativePortal.wrappedNative is WCTC",
+            nativePortal.wrappedNative(),
+            vm.envAddress("PENGUINSWAP_WCTC_ADDRESS")
+        );
+        // Pointing at an address with no code would be wiring that reads correct and reverts.
+        _hasCode("PenguinSwap SwapRouter", vm.envAddress("PENGUINSWAP_ROUTER_ADDRESS"));
+        _hasCode("PenguinSwap WCTC", vm.envAddress("PENGUINSWAP_WCTC_ADDRESS"));
+
+        // Both paths carry the same hooks in the same order, or the same action would be worth
+        // different XP depending on which chain it happened on.
+        _eq("NativePortal.hooks[0] is VaelHero", address(nativePortal.hooks(0)), address(hero));
+        _eq("NativePortal.hooks[1] is RaidBoss", address(nativePortal.hooks(1)), address(raid));
+        require(nativePortal.hookCount() == 2, "VerifyBaseline: NativePortal needs exactly two hooks");
+        checks++;
+        console.log("ok   NativePortal carries exactly two hooks");
+        _isTrue("VaelHero accepts NativePortal as a completer", hero.completers(address(nativePortal)));
+        _isTrue("RaidBoss accepts NativePortal as a completer", raid.completers(address(nativePortal)));
+
+        // Completing is the only privilege it has. It mints nothing and reviews nothing.
+        _isTrue("BadgeNFT does not let NativePortal mint", !badge.minters(address(nativePortal)));
+        _isTrue(
+            "ReputationRegistry does not authorise NativePortal",
+            !reputation.isReviewerAuthorized(address(nativePortal))
+        );
+
+        console.log("=== game modules, continued ===");
         _eq("RaidBoss.HERO", address(raid.HERO()), address(hero));
         _eq("RaidBoss.LOOT_TOKEN", address(raid.LOOT_TOKEN()), address(token));
         _isTrue("BadgeNFT lets RaidBoss mint", badge.minters(address(raid)));
