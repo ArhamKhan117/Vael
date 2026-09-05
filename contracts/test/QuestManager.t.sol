@@ -225,13 +225,20 @@ contract QuestManagerTest is Test {
         assertEq(uint256(quest.status), uint256(QuestManager.QuestStatus.Completed));
     }
 
-    function test_RecordCompletion_RevertIf_NotQuestASC() public {
+    /// @notice A proved quest names QuestASC as its completer, and refuses everybody else.
+    /// @dev The revert carries the address it expected, so a wrong-path attempt is legible rather
+    /// than a bare "not allowed".
+    function test_RecordCompletion_RevertIf_NotTheQuestsCompleter() public {
         uint256 questId = _createQuest();
 
         vm.prank(participant);
         questManager.acceptQuest(questId);
 
-        vm.expectRevert(abi.encodeWithSelector(QuestManager.QuestManager__OnlyQuestASC.selector, address(0x9999)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuestManager.QuestManager__WrongCompleter.selector, address(0x9999), address(questASC)
+            )
+        );
         vm.prank(address(0x9999));
         questManager.recordCompletion(questId, participant, keccak256("replay"), keccak256("srctx"));
     }

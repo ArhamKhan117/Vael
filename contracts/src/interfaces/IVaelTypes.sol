@@ -14,8 +14,22 @@ library VaelTypes {
         UniswapSwap,
         Erc20Transfer,
         AaveSupply,
-        AaveBorrow
+        AaveBorrow,
+        /// @dev Creditcoin-native, performed by NativePortal rather than proved. Attestcoin attests
+        /// other chains to Creditcoin and not Creditcoin to itself, so a PenguinSwap swap has no
+        /// proof to carry; NativePortal executes it and completes the quest in the same
+        /// transaction instead. See docs/ATTESTCOIN_INTEGRATION.md section 9.
+        PenguinSwapSwap,
+        /// @dev Also native: wrapping CTC into WCTC, which is what a player needs before their
+        /// first PenguinSwap trade.
+        WrapNative
     }
+
+    /// @notice First action type that is executed natively rather than proved.
+    /// @dev Anything below it goes through QuestASC and an Attestcoin proof; anything from here up
+    /// goes through NativePortal. Kept as a constant so the boundary is one place, not a list of
+    /// enum members repeated in three contracts.
+    uint8 internal constant FIRST_NATIVE_ACTION = uint8(ActionType.PenguinSwapSwap);
 
     /// @notice What a proved log must look like to satisfy one quest.
     /// @dev Every field here narrows what counts. Nothing in it can widen acceptance, which is why

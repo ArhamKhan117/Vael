@@ -97,8 +97,26 @@ contract QuestManager is Ownable, IQuestManager {
 
     mapping(uint256 questId => Quest) private _quests;
     mapping(uint256 questId => mapping(address participant => ParticipantProgress)) private _participantProgress;
-    /// @notice The only contract allowed to record completions. Set once, after deployment.
+    /// @notice The only contract allowed to record completions for an Attestcoin-verified quest.
+    /// @dev Set once, after deployment.
     address public questASC;
+
+    /// @notice The only contract allowed to record completions for a Creditcoin-native quest.
+    /// @dev Set once, for the same reason. A quest belongs to exactly one path: the rule's action
+    /// type decides which, at creation, and nothing can move it afterwards.
+    address public nativePortal;
+
+    /// @notice The rule a native quest is judged against, read by NativePortal.
+    /// @dev An Attestcoin quest's rule lives in QuestASC because that is what reads it. A native
+    /// quest's has to live here, because NativePortal is handed the quest id and needs to know what
+    /// the quest asked for before it does anything.
+    mapping(uint256 questId => VaelTypes.VerificationRule) private _nativeRules;
+
+    /// @notice Which path owns a quest, written at creation and never afterwards.
+    /// @dev Explicit rather than inferred from the stored rule: inferring it would rest on "Portal
+    /// is never native", which is true today and is exactly the kind of thing that stops being true
+    /// quietly.
+    mapping(uint256 questId => bool) public isNativeQuest;
 
     event QuestCreated(
         uint256 indexed questId,
@@ -121,8 +139,13 @@ contract QuestManager is Ownable, IQuestManager {
     );
     event QuestCancelled(uint256 indexed questId);
     event QuestASCUpdated(address indexed questASC);
+    event NativePortalUpdated(address indexed nativePortal);
 
     error QuestManager__OnlyQuestASC(address caller);
+    error QuestManager__WrongCompleter(address caller, address expected);
+    error QuestManager__NativePortalAlreadySet(address current);
+    error QuestManager__InvalidNativePortal();
+    error QuestManager__NativePortalNotSet();
     error QuestManager__QuestASCAlreadySet(address current);
     error QuestManager__InvalidQuestASC();
     error QuestManager__QuestNotActive(uint256 questId);
@@ -195,10 +218,17 @@ contract QuestManager is Ownable, IQuestManager {
             REWARD_VAULT.fundQuest(questId, params.rewardPerParticipant);
         }
 
-        // The rule lives in QuestASC, which is the only contract that reads it. Registering it
-        // here, at creation, means a quest can never exist without the rule that governs it.
-        if (questASC == address(0)) revert QuestManager__QuestASCNotSet();
-        IQuestASC(questASC).setRule(questId, params.sourceChainKey, params.rule);
+        // The rule is registered at creation either way, so a quest can never exist without the
+        // rule that governs it. Where it goes depends on which path will complete the quest, and
+        // that is decided here, once, by the action type.
+        if (uint8(params.rule.actionType) >= VaelTypes.FIRST_NATIVE_ACTION) {
+            if (nativePortal == address(0)) revert QuestManager__NativePortalNotSet();
+            isNativeQuest[questId] = true;
+            _nativeRules[questId] = params.rule;
+        } else {
+            if (questASC == address(0)) revert QuestManager__QuestASCNotSet();
+            IQuestASC(questASC).setRule(questId, params.sourceChainKey, params.rule);
+        }
 
         emit QuestCreated(questId, agentId, msg.sender, params.category, params.protocol);
     }
@@ -227,12 +257,21 @@ contract QuestManager is Ownable, IQuestManager {
         // Anchor the quest in source-chain time. Reading the attested frontier rather than a
         // caller-supplied height is what stops a player accepting a quest and then claiming a
         // transaction they already made: the proved action must sit strictly above this.
-        IChainInfo.HeightHashResult memory frontier =
-            ChainInfoLib.chainInfo().get_latest_attestation_height_and_hash(quest.sourceChainKey);
-        if (!frontier.exists) revert QuestManager__SourceChainNotAttested(quest.sourceChainKey);
-        progress.acceptedAtSourceHeight = frontier.height;
+        //
+        // A native quest has no source chain and therefore no frontier to read. It does not need
+        // one: the action it asks for is performed inside the transaction that completes it, so
+        // there is no earlier transaction to reach back for. Anchoring it to Creditcoin's own
+        // height would be a number that looks like the protection and is not.
+        uint64 anchor = 0;
+        if (!isNativeQuest[questId]) {
+            IChainInfo.HeightHashResult memory frontier =
+                ChainInfoLib.chainInfo().get_latest_attestation_height_and_hash(quest.sourceChainKey);
+            if (!frontier.exists) revert QuestManager__SourceChainNotAttested(quest.sourceChainKey);
+            anchor = frontier.height;
+        }
+        progress.acceptedAtSourceHeight = anchor;
 
-        emit QuestAccepted(questId, msg.sender, quest.sourceChainKey, frontier.height);
+        emit QuestAccepted(questId, msg.sender, quest.sourceChainKey, anchor);
     }
 
     /**
@@ -245,10 +284,16 @@ contract QuestManager is Ownable, IQuestManager {
         address participant,
         bytes32 replayKey,
         bytes32 sourceTxHash
-    ) external onlyQuestASC {
-
+    ) external {
         Quest storage quest = _quests[questId];
         if (quest.agentController == address(0)) revert QuestManager__QuestNotFound(questId);
+
+        // One quest, one path, decided at creation. QuestASC cannot complete a native quest and
+        // NativePortal cannot complete a proved one, so neither can stand in for the other and
+        // neither is a general-purpose completion key.
+        address expected = isNativeQuest[questId] ? nativePortal : questASC;
+        if (msg.sender != expected) revert QuestManager__WrongCompleter(msg.sender, expected);
+
         if (quest.status != QuestStatus.Active) revert QuestManager__QuestNotActive(questId);
         if (quest.expiry != 0 && block.timestamp > quest.expiry) revert QuestManager__QuestExpired(questId);
 
@@ -335,6 +380,22 @@ contract QuestManager is Ownable, IQuestManager {
      * @notice Bind this manager to its QuestASC verifier. One-shot and irreversible, so no
      *         later owner action can redirect completions to an unverified caller.
      */
+    /// @notice Bind the native completion path. Set once, like QuestASC.
+    /// @dev NativePortal executes a Creditcoin action itself and completes the quest in the same
+    /// transaction. It is not a trusted reporter: it is the contract that did the thing, and it
+    /// can only complete quests whose rule said they were native.
+    function setNativePortal(address nativePortal_) external onlyOwner {
+        if (nativePortal_ == address(0)) revert QuestManager__InvalidNativePortal();
+        if (nativePortal != address(0)) revert QuestManager__NativePortalAlreadySet(nativePortal);
+        nativePortal = nativePortal_;
+        emit NativePortalUpdated(nativePortal_);
+    }
+
+    /// @notice The rule a native quest is judged against.
+    function nativeRule(uint256 questId) external view returns (VaelTypes.VerificationRule memory) {
+        return _nativeRules[questId];
+    }
+
     function setQuestASC(address questASC_) external onlyOwner {
         if (questASC_ == address(0)) revert QuestManager__InvalidQuestASC();
         if (questASC != address(0)) revert QuestManager__QuestASCAlreadySet(questASC);
