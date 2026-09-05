@@ -390,11 +390,11 @@ function PartnerCampaignPageInner() {
               From the index for what the chain verified, and from the worker&apos;s queue for what
               is still in flight.
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-amber-300/80">
-              Cancelling a campaign and taking the unspent budget back is not available on the live
-              deployment. <code>CampaignEscrow.refundToPartner</code> accepts only QuestASC, and the
-              QuestASC in service has no function that calls it, so the pool has no path out yet.
-              The fix is written and tested and ships with the consolidated redeploy in SPEC §17.1.
+            <p className="mt-2 text-[11px] leading-relaxed text-zinc-600">
+              An unspent budget comes back through <code>QuestASC.refundCampaign</code>, which is
+              owner-only: a refund moves money out of a pool that quests may still be paying from,
+              so it is not a button on this page. <code>CampaignEscrow.refundToPartner</code>
+              accepts one caller, QuestASC, which is also the only path a payout takes.
             </p>
           </header>
           {!view || view.quests.length === 0 ? (

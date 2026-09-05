@@ -45,13 +45,21 @@ function detectQuestType(metadata: QuestMetadata | null): "daily" | "weekly" | n
   return null
 }
 
-const CATEGORY_STYLE: Record<string, { code: string; bg: string; text: string }> =
-  {
-    swap: { code: "SWAP", bg: "bg-sky-500/15", text: "text-sky-400" },
-    liquidity: { code: "LP", bg: "bg-sky-500/15", text: "text-sky-400" },
-    stake: { code: "STAKE", bg: "bg-indigo-500/15", text: "text-indigo-400" },
-    lend: { code: "LEND", bg: "bg-indigo-500/15", text: "text-indigo-400" },
-  }
+/**
+ * Styling by the action the rule actually checks, not by `Quest.category`.
+ *
+ * The category enum is display-only and the quest agent sets it to Swap for everything, so a page
+ * that trusted it labelled an Aave supply quest "SWAP". The action type is the field the chain
+ * enforces, and it is what a player needs to read.
+ */
+const ACTION_STYLE: Record<number, { code: string; bg: string; text: string }> = {
+  0: { code: "PORTAL", bg: "bg-zinc-500/15", text: "text-zinc-300" },
+  1: { code: "SWAP", bg: "bg-sky-500/15", text: "text-sky-400" },
+  2: { code: "TRANSFER", bg: "bg-emerald-500/15", text: "text-emerald-400" },
+  3: { code: "SUPPLY", bg: "bg-indigo-500/15", text: "text-indigo-400" },
+  4: { code: "BORROW", bg: "bg-amber-500/15", text: "text-amber-400" },
+}
+const UNKNOWN_ACTION = { code: "QUEST", bg: "bg-zinc-500/15", text: "text-zinc-300" }
 
 export default function QuestDetailPage() {
   const params = useParams()
@@ -163,9 +171,8 @@ export default function QuestDetailPage() {
   const title = metadata?.title ?? quest.title ?? `Quest #${quest.questId}`
   const summary = metadata?.summary ?? metadata?.metadataSnippet ?? ""
   const goal = metadata?.goal ?? ""
-  const category = (metadata?.category ?? quest.category ?? "swap").toLowerCase()
   const difficulty = metadata?.difficulty ?? "medium"
-  const style = CATEGORY_STYLE[category] ?? CATEGORY_STYLE.swap
+  const style = ACTION_STYLE[quest.action?.actionType ?? -1] ?? UNKNOWN_ACTION
 
   const rewardAmount = metadata?.reward?.amount ?? quest.rewardVael ?? "0"
   const rewardToken = metadata?.reward?.token ?? "VAEL"
@@ -252,7 +259,7 @@ export default function QuestDetailPage() {
         <section className="grid gap-6 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-8">
             <div className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
-              <div className="relative aspect-video w-full bg-zinc-900">
+              <div className="relative aspect-[2/1] w-full bg-zinc-900 sm:aspect-video">
                 {hasBanner ? (
                   <Image
                     src={bannerUrl}

@@ -70,7 +70,9 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-white">{quest.title}</h3>
           <p className="line-clamp-3 text-xs leading-relaxed text-zinc-400">
-            {quest.description || `A ${quest.category.toLowerCase()} quest on Ethereum Sepolia.`}
+            {/* The fallback names the action the rule checks, not Quest.category, which the
+                agent sets to Swap for every quest and would call a portal check-in a swap. */}
+            {quest.description || `${quest.action.actionName} on Ethereum Sepolia.`}
           </p>
         </div>
 
