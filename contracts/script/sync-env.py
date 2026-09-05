@@ -30,6 +30,7 @@ API_KEYS = [
     "BADGE_NFT_ADDRESS",
     "QUEST_MANAGER_ADDRESS",
     "QUEST_ASC_ADDRESS",
+    "NATIVE_PORTAL_ADDRESS",
     "CAMPAIGN_ESCROW_ADDRESS",
     "VAEL_HERO_ADDRESS",
     "RAID_BOSS_ADDRESS",
@@ -38,6 +39,10 @@ API_KEYS = [
     "EQUIPMENT_ADDRESS",
     "MARKETPLACE_ADDRESS",
     "QUEST_PORTAL_ADDRESS",
+    "PENGUINSWAP_ROUTER_ADDRESS",
+    "PENGUINSWAP_WCTC_ADDRESS",
+    "PENGUINSWAP_USD1_ADDRESS",
+    "PENGUINSWAP_POOL_WCTC_USD1_500",
 ]
 
 WEB_KEYS = [
@@ -45,6 +50,7 @@ WEB_KEYS = [
     "BADGE_NFT_ADDRESS",
     "QUEST_MANAGER_ADDRESS",
     "QUEST_ASC_ADDRESS",
+    "NATIVE_PORTAL_ADDRESS",
     "CAMPAIGN_ESCROW_ADDRESS",
     "VAEL_HERO_ADDRESS",
     "RAID_BOSS_ADDRESS",
@@ -53,6 +59,13 @@ WEB_KEYS = [
     "EQUIPMENT_ADDRESS",
     "MARKETPLACE_ADDRESS",
     "QUEST_PORTAL_ADDRESS",
+    # PenguinSwap. Not ours, but the swap panel has to name the router it approves and the pool it
+    # prices against, and a hardcoded address in a component is the thing this script exists to
+    # stop happening.
+    "PENGUINSWAP_ROUTER_ADDRESS",
+    "PENGUINSWAP_WCTC_ADDRESS",
+    "PENGUINSWAP_USD1_ADDRESS",
+    "PENGUINSWAP_POOL_WCTC_USD1_500",
 ]
 
 TARGETS = [

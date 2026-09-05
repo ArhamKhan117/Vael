@@ -106,3 +106,90 @@ export const questPortalAbi = [
     outputs: [],
   },
 ] as const
+
+/**
+ * NativePortal on Creditcoin, the second completion path.
+ *
+ * It performs the action rather than verifying a claim about one, so there is no proof argument
+ * here and no submission step afterwards. Both calls complete the quest in the same transaction.
+ */
+export const nativePortalAbi = [
+  {
+    type: "function",
+    name: "swapViaPenguinSwap",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "questId", type: "uint256" },
+      { name: "tokenIn", type: "address" },
+      { name: "tokenOut", type: "address" },
+      { name: "fee", type: "uint24" },
+      { name: "amountIn", type: "uint256" },
+      { name: "minOut", type: "uint256" },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "wrapNative",
+    stateMutability: "payable",
+    inputs: [{ name: "questId", type: "uint256" }],
+    outputs: [{ name: "wrapped", type: "uint256" }],
+  },
+] as const
+
+/** The two ERC-20 calls the swap panel needs: a balance, an allowance, and an approval. */
+export const erc20Abi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const
+
+/** Uniswap v3 pool, read-only. Used to price a swap without deploying or trusting a quoter. */
+export const uniswapV3PoolAbi = [
+  {
+    type: "function",
+    name: "slot0",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "sqrtPriceX96", type: "uint160" },
+      { name: "tick", type: "int24" },
+      { name: "observationIndex", type: "uint16" },
+      { name: "observationCardinality", type: "uint16" },
+      { name: "observationCardinalityNext", type: "uint16" },
+      { name: "feeProtocol", type: "uint8" },
+      { name: "unlocked", type: "bool" },
+    ],
+  },
+  {
+    type: "function",
+    name: "token0",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const

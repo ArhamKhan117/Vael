@@ -7,7 +7,7 @@ import { ArrowLeft, Check, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { QUIZ_PASS_MARK, academyModule } from "@/content/academy"
-import { FIRST_NATIVE_ACTION } from "@/lib/actions"
+import { FIRST_NATIVE_ACTION } from "@/lib/attestcoin/types"
 import { useAcademy } from "@/hooks/useAcademy"
 import { useReownWallet } from "@/hooks/useReownWallet"
 

@@ -30,7 +30,8 @@ import {
 } from "@/lib/ipfs"
 import PartnershipCarousel from "@/components/partnership-carousel"
 import { ClaimPanel } from "@/components/quest/claim-panel"
-import { ActionType, ProofStatus, VerificationRule } from "@/lib/attestcoin/types"
+import { NativeActionPanel } from "@/components/quest/native-action-panel"
+import { ActionType, ProofStatus, VerificationRule, isNativeAction } from "@/lib/attestcoin/types"
 import { useProofStatus, useVerificationRule } from "@/hooks/useProofStatus"
 import { CONTRACT_ADDRESSES } from "@/lib/contracts"
 
@@ -58,6 +59,8 @@ const ACTION_STYLE: Record<number, { code: string; bg: string; text: string }> =
   2: { code: "TRANSFER", bg: "bg-emerald-500/15", text: "text-emerald-400" },
   3: { code: "SUPPLY", bg: "bg-indigo-500/15", text: "text-indigo-400" },
   4: { code: "BORROW", bg: "bg-amber-500/15", text: "text-amber-400" },
+  5: { code: "PENGUINSWAP", bg: "bg-cyan-500/15", text: "text-cyan-300" },
+  6: { code: "WRAP CTC", bg: "bg-violet-500/15", text: "text-violet-300" },
 }
 const UNKNOWN_ACTION = { code: "QUEST", bg: "bg-zinc-500/15", text: "text-zinc-300" }
 
@@ -173,6 +176,7 @@ export default function QuestDetailPage() {
   const goal = metadata?.goal ?? ""
   const difficulty = metadata?.difficulty ?? "medium"
   const style = ACTION_STYLE[quest.action?.actionType ?? -1] ?? UNKNOWN_ACTION
+  const isNativeQuest = isNativeAction(quest.action?.actionType ?? -1)
 
   const rewardAmount = metadata?.reward?.amount ?? quest.rewardVael ?? "0"
   const rewardToken = metadata?.reward?.token ?? "VAEL"
@@ -551,18 +555,34 @@ export default function QuestDetailPage() {
                       Quest Accepted
                     </p>
                     <p className="mt-1 text-xs text-zinc-400">
-                      Your Sepolia block window is anchored. Act now, then prove it.
+                      {isNativeQuest
+                        ? "This one happens on Creditcoin. Perform it below and the reward lands in the same transaction."
+                        : "Your Sepolia block window is anchored. Act now, then prove it."}
                     </p>
                   </div>
                 )}
 
                 {(isAccepted || hasAccepted) && !isCompleted && verificationRule && (
                   <div className="pt-2">
-                    <ClaimPanel
-                      questId={BigInt(questId)}
-                      rule={verificationRule}
-                      status={proofStatus}
-                    />
+                    {/* A quest belongs to exactly one completion path, fixed at creation by its
+                        action type. Offering the proof form on a native quest would be offering a
+                        step that cannot work. */}
+                    {isNativeQuest ? (
+                      <NativeActionPanel
+                        questId={BigInt(questId)}
+                        rule={verificationRule}
+                        onCompleted={() => {
+                          void refetchQuest()
+                          void refetchProgress()
+                        }}
+                      />
+                    ) : (
+                      <ClaimPanel
+                        questId={BigInt(questId)}
+                        rule={verificationRule}
+                        status={proofStatus}
+                      />
+                    )}
                   </div>
                 )}
 
