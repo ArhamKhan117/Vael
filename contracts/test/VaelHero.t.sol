@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {CompleterSet} from "../src/access/CompleterSet.sol";
 import {Test} from "forge-std/Test.sol";
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
@@ -24,7 +25,11 @@ contract VaelHeroTest is Test {
 
     function setUp() public {
         hero = new VaelHero(owner);
-        hero.setQuestASC(questASC);
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            hero.initialiseCompleters(only);
+        }
     }
 
     function _complete(address who, uint8 action, uint8 tier, uint64 sourceBlock) internal {
@@ -143,11 +148,53 @@ contract VaelHeroTest is Test {
         hero.onQuestCompleted(1, 1, player, PORTAL, address(0), 0, 1, 10, keccak256("k"));
     }
 
-    function test_SetQuestASCIsOneShot() public {
+    function test_TheCompleterSetIsBootstrappedOnlyOnce() public {
+        address[] memory only = new address[](1);
+        only[0] = other;
+        vm.expectRevert(CompleterSet.CompleterSet__AlreadyInitialised.selector);
+        hero.initialiseCompleters(only);
+    }
+
+    /// @notice A change to who may write game state is announced a day before it takes effect.
+    function test_AddingACompleterWaitsOutTheDelay() public {
+        hero.proposeCompleter(other, true);
+        assertFalse(hero.completers(other), "a proposal took effect immediately");
+
+        (address pending, bool allowed, uint64 readyAt) = hero.pendingCompleter();
+        assertEq(pending, other);
+        assertTrue(allowed);
+        assertEq(readyAt, uint64(block.timestamp + hero.COMPLETER_DELAY()));
+
         vm.expectRevert(
-            abi.encodeWithSelector(VaelHero.VaelHero__QuestASCAlreadySet.selector, questASC)
+            abi.encodeWithSelector(CompleterSet.CompleterSet__DelayNotElapsed.selector, readyAt)
         );
-        hero.setQuestASC(other);
+        hero.acceptCompleter();
+
+        vm.warp(readyAt);
+        hero.acceptCompleter();
+        assertTrue(hero.completers(other), "the change never landed");
+
+        (address cleared,,) = hero.pendingCompleter();
+        assertEq(cleared, address(0), "the proposal was not cleared");
+    }
+
+    function test_AProposalCanBeWithdrawn() public {
+        hero.proposeCompleter(other, true);
+        hero.cancelCompleterProposal();
+
+        (address pending,,) = hero.pendingCompleter();
+        assertEq(pending, address(0));
+
+        vm.warp(block.timestamp + hero.COMPLETER_DELAY() + 1);
+        vm.expectRevert(CompleterSet.CompleterSet__NoPendingChange.selector);
+        hero.acceptCompleter();
+        assertFalse(hero.completers(other), "a withdrawn proposal still landed");
+    }
+
+    function test_OnlyTheOwnerCanTouchTheCompleterSet() public {
+        vm.prank(other);
+        vm.expectRevert();
+        hero.proposeCompleter(other, true);
     }
 
     /// @dev A player who never minted must cost nothing and break nothing.

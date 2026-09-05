@@ -183,9 +183,18 @@ contract VerifyBaseline is Script {
         checks++;
         console.log("ok   exactly two hooks registered");
 
-        // Each module must refuse callers other than QuestASC, or anyone could mint XP.
-        _eq("VaelHero.questASC", hero.questASC(), address(questASC));
-        _eq("RaidBoss.questASC", raid.questASC(), address(questASC));
+        // Each module must refuse a caller that is not one of the two completion paths, or anyone
+        // could mint XP. The set is bootstrapped once and every later change waits out a delay.
+        _isTrue("VaelHero accepts QuestASC as a completer", hero.completers(address(questASC)));
+        _isTrue("RaidBoss accepts QuestASC as a completer", raid.completers(address(questASC)));
+        _isTrue("VaelHero completer set is initialised", hero.completersInitialised());
+        _isTrue("RaidBoss completer set is initialised", raid.completersInitialised());
+        // A pending change to either set is a privilege in flight, and it should be visible here
+        // rather than only in an event nobody is watching.
+        (address heroPending,,) = hero.pendingCompleter();
+        _isTrue("VaelHero has no completer change pending", heroPending == ZERO);
+        (address raidPending,,) = raid.pendingCompleter();
+        _isTrue("RaidBoss has no completer change pending", raidPending == ZERO);
         _eq("RaidBoss.HERO", address(raid.HERO()), address(hero));
         _eq("RaidBoss.LOOT_TOKEN", address(raid.LOOT_TOKEN()), address(token));
         _isTrue("BadgeNFT lets RaidBoss mint", badge.minters(address(raid)));

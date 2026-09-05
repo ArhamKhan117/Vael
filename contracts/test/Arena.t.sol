@@ -54,7 +54,11 @@ contract ArenaTest is Test {
     function setUp() public {
         token = new VaelToken(owner);
         hero = new VaelHero(owner);
-        hero.setQuestASC(questASC);
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            hero.initialiseCompleters(only);
+        }
         arena = new Arena(owner, address(token), address(hero));
 
         token.mint(alice, 10_000 ether);

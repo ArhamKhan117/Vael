@@ -4,6 +4,8 @@ pragma solidity ^0.8.28;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+import {CompleterSet} from "../access/CompleterSet.sol";
+
 import {ICompletionHook} from "../interfaces/ICompletionHook.sol";
 import {VaelTypes} from "../interfaces/IVaelTypes.sol";
 
@@ -23,7 +25,7 @@ import {VaelTypes} from "../interfaces/IVaelTypes.sol";
 /// A hero cannot be migrated by its owner, because it is soul-bound and holds state no ERC-721
 /// interface exposes, so the import is the only way a redeploy does not erase everybody's history.
 /// See `docs/SPEC.md` §17.1 for the redeploy this ships in.
-contract VaelHero is ERC721, Ownable, ICompletionHook {
+contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
     struct Hero {
         uint32 level;
         uint64 xp;
@@ -56,8 +58,6 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
     /// that has nothing to do with what they did that day.
     uint16 public constant MAX_STREAK_BONUS = 10;
 
-    /// @notice The only address allowed to grant XP. Set once.
-    address public questASC;
 
     mapping(address player => uint256 tokenId) public heroOf;
     mapping(uint256 tokenId => Hero) private _heroes;
@@ -101,14 +101,6 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
 
     // ---------------------------------------------------------------- admin
 
-    /// @dev One-shot, for the same reason QuestManager's is: no later owner action should be able
-    /// to redirect XP to a caller that has not verified a proof.
-    function setQuestASC(address questASC_) external onlyOwner {
-        if (questASC_ == address(0)) revert VaelHero__InvalidQuestASC();
-        if (questASC != address(0)) revert VaelHero__QuestASCAlreadySet(questASC);
-        questASC = questASC_;
-        emit QuestASCUpdated(questASC_);
-    }
 
     // ---------------------------------------------------------------- minting
 
@@ -183,7 +175,10 @@ contract VaelHero is ERC721, Ownable, ICompletionHook {
         uint64 sourceBlock,
         bytes32 replayKey
     ) external {
-        if (msg.sender != questASC) revert VaelHero__OnlyQuestASC(msg.sender);
+        // Both completion paths reach here: QuestASC for an Attestcoin-verified quest and
+        // NativePortal for a synchronous Creditcoin one. Neither is trusted for what it says,
+        // only for having already established it; see CompleterSet.
+        if (!completers[msg.sender]) revert VaelHero__OnlyQuestASC(msg.sender);
 
         uint256 tokenId = heroOf[player];
         if (tokenId == 0) return;

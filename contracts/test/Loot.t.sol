@@ -54,8 +54,16 @@ contract LootTest is Test {
         badge.setBadgeURI(1, "ipfs://placeholder");
 
         raid = new RaidBoss(owner, token, IVaelHeroLevels(address(hero)), IBadgeMinter(address(badge)));
-        raid.setQuestASC(questASC);
-        hero.setQuestASC(questASC);
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            raid.initialiseCompleters(only);
+        }
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            hero.initialiseCompleters(only);
+        }
         badge.setMinter(address(raid), true);
 
         loot = new LootHarness(owner, address(raid));

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {CompleterSet} from "../src/access/CompleterSet.sol";
 import {Test} from "forge-std/Test.sol";
 
 import {RaidBoss, IVaelHeroLevels, IBadgeMinter} from "../src/game/RaidBoss.sol";
@@ -35,8 +36,16 @@ contract RaidBossTest is Test {
         badge.setBadgeURI(1, "ipfs://placeholder");
 
         raid = new RaidBoss(owner, token, IVaelHeroLevels(address(hero)), IBadgeMinter(address(badge)));
-        raid.setQuestASC(questASC);
-        hero.setQuestASC(questASC);
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            raid.initialiseCompleters(only);
+        }
+        {
+            address[] memory only = new address[](1);
+            only[0] = questASC;
+            hero.initialiseCompleters(only);
+        }
         badge.setMinter(address(raid), true);
 
         token.mint(owner, 10_000 ether);
@@ -215,11 +224,52 @@ contract RaidBossTest is Test {
         raid.onQuestCompleted(1, 1, alice, PORTAL, address(0), 0, 1, 0, keccak256("k"));
     }
 
-    function test_SetQuestASCIsOneShot() public {
+    function test_TheCompleterSetIsBootstrappedOnlyOnce() public {
+        address[] memory only = new address[](1);
+        only[0] = alice;
+        vm.expectRevert(CompleterSet.CompleterSet__AlreadyInitialised.selector);
+        raid.initialiseCompleters(only);
+    }
+
+    /// @notice A change to who may deal damage is announced a day before it takes effect.
+    function test_AddingACompleterWaitsOutTheDelay() public {
+        raid.proposeCompleter(alice, true);
+        assertFalse(raid.completers(alice), "a proposal took effect immediately");
+
+        (address pending, bool allowed, uint64 readyAt) = raid.pendingCompleter();
+        assertEq(pending, alice);
+        assertTrue(allowed);
+        assertEq(readyAt, uint64(block.timestamp + raid.COMPLETER_DELAY()));
+
         vm.expectRevert(
-            abi.encodeWithSelector(RaidBoss.RaidBoss__QuestASCAlreadySet.selector, questASC)
+            abi.encodeWithSelector(CompleterSet.CompleterSet__DelayNotElapsed.selector, readyAt)
         );
-        raid.setQuestASC(alice);
+        raid.acceptCompleter();
+
+        vm.warp(readyAt);
+        raid.acceptCompleter();
+        assertTrue(raid.completers(alice), "the change never landed");
+    }
+
+    function test_AProposalCanBeWithdrawn() public {
+        raid.proposeCompleter(alice, true);
+        raid.cancelCompleterProposal();
+        vm.warp(block.timestamp + raid.COMPLETER_DELAY() + 1);
+        vm.expectRevert(CompleterSet.CompleterSet__NoPendingChange.selector);
+        raid.acceptCompleter();
+        assertFalse(raid.completers(alice), "a withdrawn proposal still landed");
+    }
+
+    /// @notice Removing a completer is the same announced change in the other direction.
+    function test_ACompleterCanBeRemovedAfterTheDelay() public {
+        raid.proposeCompleter(questASC, false);
+        vm.warp(block.timestamp + raid.COMPLETER_DELAY());
+        raid.acceptCompleter();
+        assertFalse(raid.completers(questASC), "the completer was not removed");
+
+        vm.expectRevert(abi.encodeWithSelector(RaidBoss.RaidBoss__OnlyQuestASC.selector, questASC));
+        vm.prank(questASC);
+        raid.onQuestCompleted(1, 1, alice, 0, address(0), 0, 1, 10, keccak256("k"));
     }
 
     /// @dev A player with no hero still contributes, at the level-0 multiplier of exactly 1.

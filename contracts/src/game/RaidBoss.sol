@@ -2,6 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {CompleterSet} from "../access/CompleterSet.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -23,7 +25,7 @@ interface IBadgeMinter {
 /// is dealt by `onQuestCompleted`, callable only by QuestASC, so nobody can grind a boss down with
 /// a script: each hit is a real DeFi action on Ethereum that the block prover verified on
 /// Creditcoin. Loot is then split by damage share, which is only fair if the damage is real.
-contract RaidBoss is Ownable, ICompletionHook {
+contract RaidBoss is Ownable, CompleterSet, ICompletionHook {
     using SafeERC20 for IERC20;
 
     struct Season {
@@ -52,9 +54,6 @@ contract RaidBoss is Ownable, ICompletionHook {
     IERC20 public immutable LOOT_TOKEN;
     IVaelHeroLevels public immutable HERO;
     IBadgeMinter public immutable BADGE;
-
-    /// @notice The only address allowed to deal damage. Set once.
-    address public questASC;
 
     uint64 public currentSeasonId;
     mapping(uint64 seasonId => Season) private _seasons;
@@ -96,13 +95,6 @@ contract RaidBoss is Ownable, ICompletionHook {
 
     // ---------------------------------------------------------------- admin
 
-    function setQuestASC(address questASC_) external onlyOwner {
-        if (questASC_ == address(0)) revert RaidBoss__InvalidQuestASC();
-        if (questASC != address(0)) revert RaidBoss__QuestASCAlreadySet(questASC);
-        questASC = questASC_;
-        emit QuestASCUpdated(questASC_);
-    }
-
     /// @notice Open a new season, funding the loot pool up front.
     /// @dev The pool is transferred in at the start rather than promised, so the payout a
     /// contributor is owed is always already held by this contract. The owner must approve first.
@@ -142,7 +134,10 @@ contract RaidBoss is Ownable, ICompletionHook {
         uint64,
         bytes32 replayKey
     ) external {
-        if (msg.sender != questASC) revert RaidBoss__OnlyQuestASC(msg.sender);
+        // Both completion paths reach here: QuestASC for an Attestcoin-verified quest and
+        // NativePortal for a synchronous Creditcoin one. Neither is trusted for what it says,
+        // only for having already established it; see CompleterSet.
+        if (!completers[msg.sender]) revert RaidBoss__OnlyQuestASC(msg.sender);
 
         uint64 seasonId = currentSeasonId;
         if (seasonId == 0) return;
