@@ -98,3 +98,6 @@ Thumbs.db
 
 # Worker state when Supabase is not configured
 .state/
+
+# Logs and pid files from local runs.
+.logs/

@@ -245,24 +245,53 @@ pnpm --filter @vael/api dev     # http://localhost:4000
 cd contracts && forge build && forge test
 ```
 
-### Production, locally
+## Run it locally
 
-Four processes, all compiled, all against the live Creditcoin deployment and Supabase. This is the
-shape the submission run in `docs/E2E_LOG.md` was recorded in.
+Two commands. The first builds everything for production and starts all four processes against the
+live Creditcoin testnet deployment; the second stops them.
 
 ```bash
-pnpm --filter @vael/api build
-pnpm --filter @vael/web build
+./scripts/run-local.sh
+./scripts/stop-local.sh
+```
+
+Then open, from Windows as well as from WSL, because WSL2 forwards localhost:
+
+| | |
+|---|---|
+| App | **http://localhost:3101** |
+| API health | **http://localhost:4000/health** |
+
+It starts four processes, all compiled rather than run through `tsx` or `next dev`, which is the
+shape the submission run in `docs/E2E_LOG.md` was recorded in:
+
+| Process | Command | Log |
+|---|---|---|
+| API | `node dist/index.js` on :4000 | `.logs/api.log` |
+| Proof worker | `node dist/bin/worker.js` | `.logs/worker.log` |
+| Creditcoin indexer | `node dist/bin/indexer.js` | `.logs/indexer.log` |
+| Web | `next start -p 3101` | `.logs/web.log` |
+
+`.logs/` is gitignored. `run-local.sh` refuses to start if either port is already in use, because
+two indexers writing the same cursors is worse than an error message, and it waits for both the API
+and the web app to actually answer before it claims to have started anything.
+
+Before the first run, copy `apps/api/.env.example` and `apps/web/.env.example` to their real
+counterparts and fill them in; every variable is documented in `docs/SPEC.md` section 13. The web
+app bakes its contract addresses in at build time, so
+`python3 contracts/script/sync-env.py --write` fills them from `docs/ADDRESSES.md` and the build
+picks them up.
+
+To run the pieces by hand instead:
+
+```bash
+pnpm --filter @vael/api build && pnpm --filter @vael/web build
 
 pnpm --filter @vael/api start           # API,     http://localhost:4000
 pnpm --filter @vael/api start:worker    # proof worker
 pnpm --filter @vael/api start:indexer   # Creditcoin indexer
 pnpm --filter @vael/web start -p 3101   # web,     http://localhost:3101
 ```
-
-The web app reads `NEXT_PUBLIC_API_URL`, so point it at the API before building; the addresses it
-uses are baked in at build time from `apps/web/.env.local`, which
-`python3 contracts/script/sync-env.py --write` fills from `docs/ADDRESSES.md`.
 
 Copy each `.env.example` to its real counterpart and fill it in.
 Every variable is documented in `docs/SPEC.md` section 13.
