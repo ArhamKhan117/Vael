@@ -253,18 +253,40 @@ questsRouter.get("/users/:address/rewards", async (req, res, next) => {
     const mine = rewards.filter(
       (reward) => reward.recipient.toLowerCase() === address.toLowerCase()
     )
-    const titleOf = (questId: number) =>
-      quests.find((quest) => quest.questId === questId)?.title || `Quest #${questId}`
+
+    /**
+     * Find the quest a historical row actually refers to, or none.
+     *
+     * Quest ids are only comparable inside one QuestManager. RewardVault, CampaignEscrow and
+     * BadgeNFT all survive a redeploy, so their events keep referring to quest ids that a new
+     * QuestManager has since reissued from 1. Matching on the id alone would put the title of a
+     * brand new quest on a reward earned months ago, on a quest that no longer exists.
+     *
+     * A reward or a badge can never precede the quest that produced it, so a candidate whose
+     * creation block is above the row's block belongs to a later generation and is not a match.
+     */
+    const questFor = (questId: number, atBlock: number) => {
+      const candidate = quests.find((quest) => quest.questId === questId)
+      if (!candidate) return undefined
+      const created = candidate.creditcoinBlock ?? 0
+      return created > atBlock ? undefined : candidate
+    }
+    const titleOf = (questId: number, atBlock: number) =>
+      questFor(questId, atBlock)?.title || `Quest #${questId}`
 
     let total = 0n
     for (const reward of mine) total += BigInt(reward.amount)
 
     return res.json({
       rewards: mine.map((reward) => {
-        const badge = badges.find((entry) => entry.questId === reward.questId)
+        // Same rule for the badge: BadgeNFT survives a redeploy, so a badge minted for the old
+        // quest 3 must not be attached to a reward for the new one.
+        const badge = badges.find(
+          (entry) => entry.questId === reward.questId && entry.creditcoinBlock <= reward.creditcoinBlock
+        )
         return {
           questId: reward.questId,
-          questTitle: titleOf(reward.questId),
+          questTitle: titleOf(reward.questId, reward.creditcoinBlock),
           rewardAmount: formatUnits(reward.amount, 18),
           transactionHash: reward.creditcoinTxHash,
           creditcoinBlock: reward.creditcoinBlock,
