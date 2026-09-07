@@ -19,10 +19,17 @@ is in section 8, which is not a short list.
 
 ## 1. The claim, and how to check it
 
-`QuestManager.recordCompletion` is gated by `onlyQuestASC`, and `QuestManager.setQuestASC` is
-one-shot: it reverts if called a second time.
-`QuestASC` reaches `recordCompletion` only after the Attestcoin block prover precompile has
-returned true for a Merkle and continuity proof of the player's source transaction.
+`QuestManager.recordCompletion` accepts only the completer that the quest's own action type names,
+and reverts with `QuestManager__WrongCompleter` for anybody else. Both bindings are one-shot:
+`setQuestASC` and `setNativePortal` each revert if called a second time.
+
+For every quest whose action happens on Ethereum, that completer is `QuestASC`, and `QuestASC`
+reaches `recordCompletion` only after the Attestcoin block prover precompile has returned true for a
+Merkle and continuity proof of the player's source transaction.
+
+Quests whose action happens on Creditcoin go to `NativePortal` instead, which carries no proof
+because it performs the action itself inside the completing transaction. Section 6d is what that
+means and why it is not a weaker claim; the two paths cannot be swapped for one another.
 
 You can check both facts without trusting this document:
 
@@ -45,14 +52,14 @@ cast call $QUEST_MANAGER_ADDRESS \
 
 | Where | Contract | Address |
 |---|---|---|
-| Creditcoin 102031 | `QuestASC` | [`0x6e457d910285b5a927Da42742bb58218c5CD1885`](https://creditcoin-testnet.blockscout.com/address/0x6e457d910285b5a927Da42742bb58218c5CD1885) |
-| Creditcoin 102031 | `QuestManager` | [`0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e`](https://creditcoin-testnet.blockscout.com/address/0x488dc9C1F6ed0c1d3456E55200C78FACeE7C903e) |
+| Creditcoin 102031 | `QuestASC` | [`0x05958dD789EaC1de84e864d6b3956C90d3e90d0f`](https://creditcoin-testnet.blockscout.com/address/0x05958dD789EaC1de84e864d6b3956C90d3e90d0f) |
+| Creditcoin 102031 | `QuestManager` | [`0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7`](https://creditcoin-testnet.blockscout.com/address/0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7) |
 | Creditcoin 102031 | `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) |
 | Creditcoin 102031 | `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) |
 | Creditcoin 102031 | `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) |
 | Creditcoin 102031 | `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) |
-| Creditcoin 102031 | `VaelHero` | [`0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96`](https://creditcoin-testnet.blockscout.com/address/0x48C1f60EBf6fE1bE821CE3557818ba24d1589a96) |
-| Creditcoin 102031 | `RaidBoss` | [`0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7`](https://creditcoin-testnet.blockscout.com/address/0x2c01f35B5f3BDD6078af2093AbbB838CfD8C47C7) |
+| Creditcoin 102031 | `VaelHero` | [`0x6Da74d3F37973FA99eDF8153D2155a9F70235b77`](https://creditcoin-testnet.blockscout.com/address/0x6Da74d3F37973FA99eDF8153D2155a9F70235b77) |
+| Creditcoin 102031 | `RaidBoss` | [`0x201Fe44a8E26Ce866A5DB807b29b90710b527c41`](https://creditcoin-testnet.blockscout.com/address/0x201Fe44a8E26Ce866A5DB807b29b90710b527c41) |
 | Creditcoin 102031 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) |
 | Sepolia 11155111 | `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 
@@ -201,7 +208,9 @@ obstacle, the revert is still `AlreadyClaimed`, so a preflight can tell a replay
 | Action after acceptance | strictly above `acceptedAtSourceHeight` | `test_BlockAtAcceptedHeightRejected` |
 | Batch all-or-nothing | `submitBatch` reverts as a whole | `test_Batch_AllOrNothing` |
 | Adapters never revert | fuzzed over arbitrary logs | `testFuzz_AdaptersNeverRevertOnArbitraryLogs` |
-| Only QuestASC completes a quest | `onlyQuestASC`, one-shot binding | `test_RecordCompletion_RevertIf_NotQuestASC` |
+| Only QuestASC completes a proof quest | dispatch on the action type, one-shot binding | `test_RecordCompletion_RevertIf_NotTheQuestsCompleter` |
+| NativePortal cannot complete a proof quest | same dispatch, from the other side | `test_TheNativePortalCannotCompleteAProvedQuest` |
+| QuestASC cannot complete a native quest | `QuestManager__WrongCompleter` | `test_QuestASCCannotCompleteANativeQuest` |
 
 ## 5b. Two proof sources
 
