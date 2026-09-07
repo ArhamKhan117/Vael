@@ -26,6 +26,18 @@ but no weapons at all, so the weapons come from Tiny Dungeon.
 
 CC0 permits both without condition; the packs are credited above regardless.
 
+## Quest action artwork
+
+`apps/web/public/actions/*.png` are original, drawn by `apps/web/scripts/make-action-art.mjs` from
+integer primitives on a 32x32 grid. Nothing is traced, downscaled, or derived from anything.
+
+They deliberately are **not** each protocol's own brand mark. A logo is somebody else's trademark
+and the rule above is that every committed asset is CC0 or ours; drawing an imitation of a logo
+would be worse than either choice. So the art says what the *action* is, which is what the player
+is actually being asked to do, and the protocol is named in text beside it. Ethereum actions carry
+a grey chain mark in the corner and Creditcoin actions a gold one, so the two swap icons, which are
+the same action on different chains, are never ambiguous.
+
 ## Not included
 
 **0x72 Dungeon Tileset II** is listed in `docs/SPEC.md` §8.6 but is not committed here. It is hosted

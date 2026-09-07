@@ -29,6 +29,7 @@ import {
   type QuestMetadata,
 } from "@/lib/ipfs"
 import PartnershipCarousel from "@/components/partnership-carousel"
+import { ActionArt, ActionBanner } from "@/components/action-art"
 import { ClaimPanel } from "@/components/quest/claim-panel"
 import { NativeActionPanel } from "@/components/quest/native-action-panel"
 import { ActionType, ProofStatus, VerificationRule, isNativeAction } from "@/lib/attestcoin/types"
@@ -249,13 +250,16 @@ export default function QuestDetailPage() {
             )}
           </div>
 
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold md:text-4xl">{title}</h1>
-            {metadata?.projectName && (
-              <p className="text-base font-medium text-zinc-400 md:text-lg">
-                {metadata.projectName}
-              </p>
-            )}
+          <div className="flex items-start gap-4">
+            <ActionArt actionType={quest.action?.actionType ?? -1} size={64} className="mt-1" />
+            <div className="min-w-0 space-y-1">
+              <h1 className="text-2xl font-semibold md:text-4xl">{title}</h1>
+              {metadata?.projectName && (
+                <p className="text-base font-medium text-zinc-400 md:text-lg">
+                  {metadata.projectName}
+                </p>
+              )}
+            </div>
           </div>
         </section>
 
@@ -274,11 +278,12 @@ export default function QuestDetailPage() {
                     unoptimized={isIpfsBanner}
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-                    <span className="text-4xl font-bold text-zinc-600">
-                      {style.code}
-                    </span>
-                  </div>
+                  // No pinned banner: the action's own artwork, which at least says what the quest
+                  // asks for. A giant letter said nothing.
+                  <ActionBanner
+                    actionType={quest.action?.actionType ?? -1}
+                    className="absolute inset-0 rounded-none border-0"
+                  />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               </div>

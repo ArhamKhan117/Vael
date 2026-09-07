@@ -298,3 +298,23 @@
     animation-duration: 1ms;
   }
 }
+
+/* Action art breathes rather than sitting there. A still image and a transform, no frames: the
+   sprite is 32x32 upscaled, and animating pixels would cost a sheet for no visible gain. */
+@keyframes action-idle-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.03);
+  }
+}
+.action-idle {
+  animation: action-idle-float 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-idle {
+    animation: none;
+  }
+}

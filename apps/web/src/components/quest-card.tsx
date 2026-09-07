@@ -3,7 +3,9 @@
 import Link from "next/link"
 import { MoveRight } from "lucide-react"
 
+import { ActionArt } from "@/components/action-art"
 import { Button } from "@/components/ui/button"
+import { isNativeAction } from "@/lib/attestcoin/types"
 import type { ChainQuest, ProofStage } from "@/lib/api"
 
 /**
@@ -58,23 +60,31 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
       className="flex h-full flex-col justify-between rounded border border-[#1A1A1A] p-6"
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between text-[10px] text-zinc-500">
-          <span
-            className={`flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs ${cadence.chip}`}
-          >
-            {cadence.code}
-          </span>
-          <span className="rounded border border-zinc-700 px-2 py-0.5">ID: {quest.questId}</span>
+        {/* The art says what the action is; the chip says how often it comes round. A letter in a
+            circle said neither, which is why it is gone. */}
+        <div className="flex items-start gap-4">
+          <ActionArt actionType={quest.action.actionType} size={64} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-500">
+              <span className={`rounded-full px-2 py-0.5 text-[10px] ${cadence.chip}`}>
+                {cadence.label}
+              </span>
+              <span className="shrink-0 rounded border border-zinc-700 px-2 py-0.5">
+                ID: {quest.questId}
+              </span>
+            </div>
+            <h3 className="mt-2 text-sm font-semibold text-white">{quest.title}</h3>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-white">{quest.title}</h3>
-          <p className="line-clamp-3 text-xs leading-relaxed text-zinc-400">
-            {/* The fallback names the action the rule checks, not Quest.category, which the
-                agent sets to Swap for every quest and would call a portal check-in a swap. */}
-            {quest.description || `${quest.action.actionName} on Ethereum Sepolia.`}
-          </p>
-        </div>
+        <p className="line-clamp-3 text-xs leading-relaxed text-zinc-400">
+          {/* The fallback names the action the rule checks, not Quest.category, which the
+              agent sets to Swap for every quest and would call a portal check-in a swap. */}
+          {quest.description ||
+            `${quest.action.actionName} on ${
+              isNativeAction(quest.action.actionType) ? "Creditcoin" : "Ethereum Sepolia"
+            }.`}
+        </p>
 
         <div className="space-y-2 border-t border-[#1A1A1A] pt-4 text-[11px]">
           <div className="flex items-center justify-between text-zinc-500">
@@ -96,6 +106,12 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
               <span className="block text-[10px] text-zinc-500">
                 min {quest.action.minAmountLabel} · {short(quest.action.emitter)}
               </span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-zinc-500">
+            <span>SETTLED BY</span>
+            <span className="text-xs text-white">
+              {isNativeAction(quest.action.actionType) ? "NativePortal, in one transaction" : "Attestcoin proof"}
             </span>
           </div>
         </div>
