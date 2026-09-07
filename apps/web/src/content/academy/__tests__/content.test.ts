@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs"
+import { join, resolve } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import { ACADEMY_MODULES, QUIZ_PASS_MARK, academyModule } from ".."
@@ -63,6 +66,18 @@ describe("Academy content", () => {
   it("every module ends in an action that is actually available", () => {
     for (const module of ACADEMY_MODULES) {
       expect(module.doQuest.available).toBe(true)
+    }
+  })
+
+  // Lesson images are named by convention rather than listed in the JSON, which means a new lesson
+  // cannot point at a stale path and can very easily point at nothing at all. This is that check.
+  it("every lesson has an illustration on disk", () => {
+    const dir = resolve(__dirname, "../../../../public/academy")
+    for (const module of ACADEMY_MODULES) {
+      for (let index = 0; index < module.lessons.length; index++) {
+        const file = join(dir, `${module.slug}-${index}.png`)
+        expect(existsSync(file), `missing ${module.slug}-${index}.png`).toBe(true)
+      }
     }
   })
 

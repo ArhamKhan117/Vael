@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { BookOpen, Check, ShieldCheck } from "lucide-react"
 
@@ -41,9 +42,18 @@ export default function AcademyPage() {
               <Link
                 key={module.slug}
                 href={`/academy/${module.slug}`}
-                className="flex flex-col justify-between rounded border border-[#1A1A1A] bg-black p-5 transition hover:border-zinc-700"
+                className="flex flex-col justify-between overflow-hidden rounded border border-[#1A1A1A] bg-black transition hover:border-zinc-700"
               >
-                <div>
+                {/* The module's first lesson diagram, as its cover. */}
+                <Image
+                  src={`/academy/${module.slug}-0.png`}
+                  alt=""
+                  width={960}
+                  height={360}
+                  className="h-24 w-full border-b border-[#1A1A1A] object-cover [image-rendering:pixelated]"
+                  unoptimized
+                />
+                <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="text-sm font-semibold text-white">{module.title}</h2>
                     {progress?.quizPassed && (
@@ -55,7 +65,7 @@ export default function AcademyPage() {
                   <p className="mt-2 text-xs leading-relaxed text-zinc-500">{module.summary}</p>
                 </div>
 
-                <div className="mt-4 flex items-center gap-4 text-[11px] text-zinc-600">
+                <div className="flex items-center gap-4 px-5 pb-5 text-[11px] text-zinc-600">
                   <span className="inline-flex items-center gap-1.5">
                     <BookOpen className="h-3.5 w-3.5" />
                     {read} of {module.lessons.length} lessons

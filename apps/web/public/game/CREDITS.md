@@ -38,6 +38,13 @@ is actually being asked to do, and the protocol is named in text beside it. Ethe
 a grey chain mark in the corner and Creditcoin actions a gold one, so the two swap icons, which are
 the same action on different chains, are never ambiguous.
 
+## Academy lesson diagrams
+
+`apps/web/public/academy/*.png` are original, drawn by `apps/web/scripts/make-lesson-art.mjs` on a
+96x36 pixel grid. One per lesson, each drawing the thing its lesson is about rather than decorating
+it: the gap between two chains, a Merkle tree beside a run of headers, a constant-product curve with
+a trade sliding down it, a supply cap as a red line across a filling vault.
+
 ## Not included
 
 **0x72 Dungeon Tileset II** is listed in `docs/SPEC.md` §8.6 but is not committed here. It is hosted

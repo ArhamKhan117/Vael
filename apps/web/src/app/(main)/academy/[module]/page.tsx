@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { notFound, useParams } from "next/navigation"
 import { useMemo, useState } from "react"
@@ -91,7 +92,19 @@ export default function AcademyModulePage() {
                     </button>
                   )}
                 </div>
-                <div className="mt-3 space-y-3">
+                {/* One diagram per lesson, drawn by apps/web/scripts/make-lesson-art.mjs and named
+                    by convention rather than listed in the JSON, so a new lesson cannot ship with a
+                    stale image path pointing at the one before it. */}
+                <Image
+                  src={`/academy/${slug}-${index}.png`}
+                  alt=""
+                  width={960}
+                  height={360}
+                  className="mt-4 w-full rounded border border-[#1A1A1A] [image-rendering:pixelated]"
+                  unoptimized
+                />
+
+                <div className="mt-4 space-y-3">
                   {lesson.body.map((paragraph) => (
                     <p key={paragraph.slice(0, 32)} className="text-xs leading-relaxed text-zinc-400">
                       {paragraph}
