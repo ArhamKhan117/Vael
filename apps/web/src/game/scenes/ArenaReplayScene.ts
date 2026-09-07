@@ -30,14 +30,12 @@ const SWING_MS = 620
 export class ArenaReplayScene extends Phaser.Scene {
   private replay?: ArenaReplayPayload
   private fighters: (Phaser.GameObjects.Image | undefined)[] = []
-  private hpBars: (Phaser.GameObjects.Graphics | undefined)[] = []
   private hp: number[] = [0, 0]
   private maxHp: number[] = [1, 1]
-  private nameText: (Phaser.GameObjects.Text | undefined)[] = []
-  private statusText?: Phaser.GameObjects.Text
-  private hintText?: Phaser.GameObjects.Text
+  private names: string[] = ["", ""]
   private timer?: Phaser.Time.TimerEvent
   private step = 0
+  private hitId = 0
 
   constructor() {
     super("ArenaReplayScene")
@@ -62,22 +60,6 @@ export class ArenaReplayScene extends Phaser.Scene {
         .setAlpha(0.5)
     }
 
-    this.statusText = this.add
-      .text(width / 2, 24, "No duel selected", {
-        fontFamily: "monospace",
-        fontSize: "13px",
-        color: "#a1a1aa",
-      })
-      .setOrigin(0.5, 0)
-
-    this.hintText = this.add
-      .text(width / 2, height / 2, "Pick a finished duel below to watch it replay", {
-        fontFamily: "monospace",
-        fontSize: "12px",
-        color: "#3f3f46",
-      })
-      .setOrigin(0.5)
-
     EventBus.on(GameEvents.ArenaReplay, this.onReplay, this)
     this.events.once("shutdown", () => {
       EventBus.off(GameEvents.ArenaReplay, this.onReplay, this)
@@ -94,18 +76,12 @@ export class ArenaReplayScene extends Phaser.Scene {
     this.replay = payload ?? undefined
 
     this.fighters.forEach((f) => f?.destroy())
-    this.hpBars.forEach((b) => b?.destroy())
-    this.nameText.forEach((t) => t?.destroy())
     this.fighters = []
-    this.hpBars = []
-    this.nameText = []
 
     if (!payload) {
-      this.statusText?.setText("No duel selected")
-      this.hintText?.setVisible(true)
+      this.emitFrame("No duel selected", true)
       return
     }
-    this.hintText?.setVisible(false)
 
     const { width, height } = this.scale
     const sides = [payload.challenger, payload.opponent]
@@ -119,25 +95,15 @@ export class ArenaReplayScene extends Phaser.Scene {
         .setScale(5)
       if (slot === 1) sprite.setFlipX(true)
       this.fighters[slot] = sprite
-
-      this.nameText[slot] = this.add
-        .text(x, height / 2 + 62, short(side.address), {
-          fontFamily: "monospace",
-          fontSize: "11px",
-          color: "#71717a",
-        })
-        .setOrigin(0.5, 0)
-
-      this.hpBars[slot] = this.add.graphics()
     })
 
-    this.drawHp()
-    this.statusText?.setText(`Duel #${payload.challengeId}`)
+    this.names = [short(payload.challenger.address), short(payload.opponent.address)]
 
     if (payload.swings.length === 0) {
-      this.statusText?.setText(`Duel #${payload.challengeId}: neither fighter could land a hit`)
+      this.emitFrame(`Duel #${payload.challengeId}: neither fighter could land a hit`)
       return
     }
+    this.emitFrame(`Duel #${payload.challengeId}`)
 
     this.timer = this.time.addEvent({
       delay: SWING_MS,
@@ -168,26 +134,20 @@ export class ArenaReplayScene extends Phaser.Scene {
     })
 
     this.hp[defender] = Math.max(0, this.hp[defender]! - swing.damage)
-    this.drawHp()
 
     defenderSprite.setTintFill(swing.crit ? 0xffdd55 : 0xffffff)
     this.time.delayedCall(110, () => defenderSprite.clearTint())
     this.cameras.main.shake(swing.crit ? 160 : 80, swing.crit ? 0.006 : 0.003)
 
-    const label = this.add
-      .text(defenderSprite.x, defenderSprite.y - 44, `${swing.crit ? "CRIT " : ""}${swing.damage}`, {
-        fontFamily: "monospace",
-        fontSize: swing.crit ? "18px" : "14px",
-        color: swing.crit ? "#fbbf24" : "#f4f4f5",
-      })
-      .setOrigin(0.5)
-    this.tweens.add({
-      targets: label,
-      y: label.y - 26,
-      alpha: 0,
-      duration: SWING_MS * 0.8,
-      onComplete: () => label.destroy(),
+    // The damage number is DOM. It floats and fades in CSS over the fighter that took it.
+    this.hitId += 1
+    EventBus.emit(GameEvents.ArenaHit, {
+      slot: defender as 0 | 1,
+      damage: swing.damage,
+      crit: swing.crit,
+      id: this.hitId,
     })
+    this.emitFrame(`Duel #${payload.challengeId}`)
 
     if (this.hp[defender] === 0) {
       this.timer?.remove()
@@ -199,14 +159,14 @@ export class ArenaReplayScene extends Phaser.Scene {
         ease: "Bounce.easeOut",
       })
       const winner = payload.winner
-      this.statusText?.setText(
+      this.emitFrame(
         winner ? `Duel #${payload.challengeId}: ${short(winner)} wins` : `Duel #${payload.challengeId}`
       )
       return
     }
 
     if (this.step >= payload.swings.length) {
-      this.statusText?.setText(
+      this.emitFrame(
         payload.winner
           ? `Duel #${payload.challengeId}: ${short(payload.winner)} wins`
           : `Duel #${payload.challengeId}: a draw after twenty rounds`
@@ -214,17 +174,18 @@ export class ArenaReplayScene extends Phaser.Scene {
     }
   }
 
-  private drawHp() {
-    const { width } = this.scale
-    const barWidth = width * 0.3
-    ;[0, 1].forEach((slot) => {
-      const bar = this.hpBars[slot]
-      if (!bar) return
-      const x = slot === 0 ? width * 0.05 : width * 0.65
-      const ratio = Math.max(0, Math.min(1, this.hp[slot]! / this.maxHp[slot]!))
-      bar.clear()
-      bar.fillStyle(0x1a1a1a, 1).fillRect(x, 54, barWidth, 10)
-      bar.fillStyle(slot === 0 ? 0x60a5fa : 0xf87171, 1).fillRect(x, 54, barWidth * ratio, 10)
+  /** Hand the overlay everything readable. The scene keeps the pixels and none of the glyphs. */
+  private emitFrame(status: string, hint = false) {
+    EventBus.emit(GameEvents.ArenaFrame, {
+      status,
+      hint,
+      fighters: hint
+        ? []
+        : [0, 1].map((slot) => ({
+            name: this.names[slot] ?? "",
+            hp: this.hp[slot] ?? 0,
+            maxHp: this.maxHp[slot] ?? 1,
+          })),
     })
   }
 }

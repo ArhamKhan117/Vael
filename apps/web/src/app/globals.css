@@ -277,3 +277,24 @@
   max-width: 100%;
   height: auto;
 }
+
+/* A landed hit in the arena replay: it rises and fades, then React removes it. Kept in CSS so the
+   number is DOM text rather than a Phaser glyph, which the scaled-up pixel-art canvas would blur. */
+@keyframes arena-hit-float {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -26px);
+  }
+}
+.arena-hit {
+  animation: arena-hit-float 700ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arena-hit {
+    animation-duration: 1ms;
+  }
+}

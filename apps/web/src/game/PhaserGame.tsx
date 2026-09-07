@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { ReactNode, useEffect, useRef } from "react"
 // Phaser ships no ESM default export, so it is imported as a namespace.
 import * as Phaser from "phaser"
 
@@ -11,6 +11,17 @@ interface PhaserGameProps {
   width?: number
   height?: number
   onReady?: (sceneKey: string) => void
+  /**
+   * DOM drawn over the canvas, in the canvas's own coordinate space.
+   *
+   * Every piece of text in these scenes lives here rather than in Phaser. The canvas is a fixed
+   * low resolution scaled up to fit the page, and `pixelArt: true` turns off smoothing, which is
+   * right for a 16x16 sprite and ruinous for a glyph: at 1.9x the letters came out soft, and at
+   * 2x device pixel ratio they came out soft and doubled. DOM text is rendered by the browser at
+   * the device's real resolution, so it is sharp at any scale, selectable, and readable by a
+   * screen reader.
+   */
+  overlay?: ReactNode
 }
 
 /**
@@ -20,7 +31,13 @@ interface PhaserGameProps {
  * `window` at import time. The game is created once and destroyed on unmount; React never reaches
  * into a scene directly, it only speaks through the EventBus.
  */
-export default function PhaserGame({ scene, width = 640, height = 360, onReady }: PhaserGameProps) {
+export default function PhaserGame({
+  scene,
+  width = 640,
+  height = 360,
+  onReady,
+  overlay,
+}: PhaserGameProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
 
@@ -60,9 +77,15 @@ export default function PhaserGame({ scene, width = 640, height = 360, onReady }
 
   return (
     <div
-      ref={containerRef}
-      className="w-full overflow-hidden rounded border border-[#1A1A1A] bg-black"
+      className="relative w-full overflow-hidden rounded border border-[#1A1A1A] bg-black"
       style={{ aspectRatio: `${width} / ${height}` }}
-    />
+    >
+      <div ref={containerRef} className="absolute inset-0" />
+      {overlay && (
+        // The layer itself ignores the pointer so the canvas keeps receiving events. Anything in
+        // here that is meant to be clicked opts back in with `pointer-events-auto`.
+        <div className="pointer-events-none absolute inset-0">{overlay}</div>
+      )}
+    </div>
   )
 }

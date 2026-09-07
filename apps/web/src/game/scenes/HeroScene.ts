@@ -20,14 +20,6 @@ const AFFINITY_FRAMES = {
   mage: 84, // purple robe, pointed hat, white beard
 } as const
 
-/** Names as the page says them, so a label never reads "novice" in lower case. */
-const AFFINITY_LABELS = {
-  novice: "Novice",
-  warrior: "Warrior",
-  rogue: "Rogue",
-  mage: "Mage",
-} as const
-
 /** Plain stone floor tile. */
 /**
  * Frame 49 is sandy floor with visible grit. Frame 40, which this used, is a grey brick *wall*, and
@@ -38,19 +30,19 @@ const AFFINITY_LABELS = {
 const FLOOR_FRAME = 49
 
 /**
- * The hero card.
+ * The hero card, pixels only.
  *
- * Renders whatever React hands it and nothing else. There is no fetch here and no wallet: the mint
- * button emits a request and React decides what to do about it.
+ * Every label, the XP bar and the mint button used to be Phaser objects and are now DOM, drawn
+ * over this canvas by HeroCanvas. The canvas is 640x360 scaled up to whatever the page gives it,
+ * with `pixelArt: true` turning off smoothing, which is exactly right for a 16x16 sprite and
+ * exactly wrong for a glyph. What is left here is the art: the floor, the hero, and the idle bob.
+ *
+ * Renders whatever React hands it and nothing else. There is no fetch here and no wallet.
  */
 export class HeroScene extends Phaser.Scene {
   private state?: HeroStatePayload
   private sprite?: Phaser.GameObjects.Image
-  private levelText?: Phaser.GameObjects.Text
-  private statsText?: Phaser.GameObjects.Text
-  private xpBar?: Phaser.GameObjects.Graphics
-  private xpLabel?: Phaser.GameObjects.Text
-  private mintButton?: Phaser.GameObjects.Container
+  private idleTween?: Phaser.Tweens.Tween
 
   constructor() {
     super("HeroScene")
@@ -71,28 +63,6 @@ export class HeroScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, width, height, 0x07070a).setOrigin(0)
     this.drawFloor()
-
-    this.levelText = this.add
-      .text(width / 2, 24, "", { fontFamily: "monospace", fontSize: "18px", color: "#ffffff" })
-      .setOrigin(0.5)
-
-    this.statsText = this.add
-      .text(width / 2, height - 100, "", {
-        fontFamily: "monospace",
-        fontSize: "12px",
-        color: "#a1a1aa",
-        align: "center",
-      })
-      .setOrigin(0.5)
-
-    this.xpBar = this.add.graphics()
-    this.xpLabel = this.add
-      .text(width / 2, height - 62, "", {
-        fontFamily: "monospace",
-        fontSize: "10px",
-        color: "#71717a",
-      })
-      .setOrigin(0.5)
 
     EventBus.on(GameEvents.HeroState, this.onHeroState, this)
     EventBus.emit(GameEvents.SceneReady, "HeroScene")
@@ -126,21 +96,13 @@ export class HeroScene extends Phaser.Scene {
     if (!state) return
     const { width, height } = this.scale
 
+    this.idleTween?.remove()
+    this.idleTween = undefined
     this.sprite?.destroy()
-    this.mintButton?.destroy()
-    this.xpBar?.clear()
+    this.sprite = undefined
 
-    if (!state.hasHero) {
-      this.levelText?.setText("No hero yet")
-      this.xpLabel?.setText("")
-      if (state.readOnly) {
-        this.statsText?.setText("This address has not minted a hero.")
-      } else {
-        this.statsText?.setText("Mint one. It is free, soul-bound, and one per wallet.")
-        this.mintButton = this.buildMintButton(width / 2, height / 2)
-      }
-      return
-    }
+    // No hero is an empty stage. The copy explaining that, and the mint button, are DOM.
+    if (!state.hasHero) return
 
     // The sprite is chosen by dominant affinity, which is itself a record of what the player did.
     // A hero with no stats has done nothing yet, so it is a novice rather than a warrior by
@@ -150,30 +112,15 @@ export class HeroScene extends Phaser.Scene {
       .image(width / 2, height / 2 - 10, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
       .setScale(4)
 
-    this.levelText?.setText(`Level ${state.level}  ${AFFINITY_LABELS[state.affinity]}`)
-    this.statsText?.setText(
-      `STR ${state.strength}   AGI ${state.agility}   INT ${state.intellect}   streak ${state.streak}`
-    )
-
-    const barWidth = Math.min(320, width - 64)
-    const barX = (width - barWidth) / 2
-    const barY = height - 82
-    const ratio = state.xpToNext > 0 ? Math.min(1, state.xp / state.xpToNext) : 0
-
-    this.xpBar?.fillStyle(0x1a1a1a).fillRect(barX, barY, barWidth, 8)
-    this.xpBar?.fillStyle(0x38bdf8).fillRect(barX, barY, barWidth * ratio, 8)
-    this.xpLabel?.setText(`${state.xp} / ${state.xpToNext} XP`)
-  }
-
-  private buildMintButton(x: number, y: number) {
-    const container = this.add.container(x, y)
-    const bg = this.add.rectangle(0, 0, 180, 40, 0xffffff).setInteractive({ useHandCursor: true })
-    const label = this.add
-      .text(0, 0, "Mint hero", { fontFamily: "monospace", fontSize: "14px", color: "#000000" })
-      .setOrigin(0.5)
-    container.add([bg, label])
-    // The scene asks; React signs. Phaser never touches a wallet.
-    bg.on("pointerup", () => EventBus.emit(GameEvents.RequestMintHero))
-    return container
+    // A gentle breathing bob so the hero reads as alive rather than as a screenshot.
+    // Yoyo rather than a loop back to the start, so there is no jump at the seam.
+    this.idleTween = this.tweens.add({
+      targets: this.sprite,
+      y: this.sprite.y - 6,
+      duration: 1400,
+      ease: "Sine.easeInOut",
+      yoyo: true,
+      repeat: -1,
+    })
   }
 }

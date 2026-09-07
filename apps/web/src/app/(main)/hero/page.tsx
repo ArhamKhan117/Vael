@@ -72,14 +72,6 @@ function HeroPageInner() {
     }
   }, [isCreditcoinNetwork, isPreview, mint, refetch, switchToCreditcoin])
 
-  // The mint button inside the canvas asks React to sign.
-  useEffect(() => {
-    EventBus.on(GameEvents.RequestMintHero, handleMint)
-    return () => {
-      EventBus.off(GameEvents.RequestMintHero, handleMint)
-    }
-  }, [handleMint])
-
   return (
     <main className="mx-auto w-full max-w-4xl px-5 pb-20 pt-24 md:px-10">
       {isPreview && (
@@ -104,7 +96,12 @@ function HeroPageInner() {
         </p>
       </header>
 
-      <HeroCanvas onReady={() => EventBus.emit(GameEvents.HeroState, payload)} />
+      <HeroCanvas
+        state={payload}
+        minting={pending}
+        onMint={handleMint}
+        onReady={() => EventBus.emit(GameEvents.HeroState, payload)}
+      />
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded border border-[#1A1A1A] bg-black p-4">

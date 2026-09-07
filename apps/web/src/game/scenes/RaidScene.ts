@@ -28,7 +28,11 @@ function pick<T>(list: readonly T[], seasonId: number, salt: number): T {
 }
 
 /**
- * The boss, its HP, and the damage feed.
+ * The boss, as pixels.
+ *
+ * The season heading, the HP bar and the damage feed used to be Phaser text and are now DOM, drawn
+ * over this canvas by RaidCanvas: the canvas is a fixed size scaled up with smoothing off, which
+ * suits a sprite and blurs a glyph.
  *
  * The boss is assembled from Monster Builder parts rather than drawn as one sprite: a lone
  * `body_redE` is 132x250 px, which at any readable scale is a capsule filling the canvas. Parts are
@@ -42,10 +46,6 @@ export class RaidScene extends Phaser.Scene {
   private boss?: Phaser.GameObjects.Container
   private bodyImage?: Phaser.GameObjects.Image
   private builtForSeason = -1
-  private hpBar?: Phaser.GameObjects.Graphics
-  private hpLabel?: Phaser.GameObjects.Text
-  private feed?: Phaser.GameObjects.Text
-  private title?: Phaser.GameObjects.Text
   private idleTween?: Phaser.Tweens.Tween
 
   constructor() {
@@ -63,22 +63,6 @@ export class RaidScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale
     this.add.rectangle(0, 0, width, height, 0x07070a).setOrigin(0)
-
-    this.title = this.add
-      .text(width / 2, 18, "", { fontFamily: "monospace", fontSize: "14px", color: "#ffffff" })
-      .setOrigin(0.5)
-
-    this.hpBar = this.add.graphics()
-    this.hpLabel = this.add
-      .text(width / 2, 58, "", { fontFamily: "monospace", fontSize: "11px", color: "#a1a1aa" })
-      .setOrigin(0.5)
-
-    this.feed = this.add.text(12, height - 96, "", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#71717a",
-      lineSpacing: 3,
-    })
 
     EventBus.on(GameEvents.RaidState, this.onRaidState, this)
     EventBus.emit(GameEvents.SceneReady, "RaidScene")
@@ -153,41 +137,16 @@ export class RaidScene extends Phaser.Scene {
   private render() {
     const state = this.state
     if (!state) return
-    const { width } = this.scale
 
     if (state.seasonId > 0 && this.builtForSeason !== state.seasonId) {
       this.buildBoss(state.seasonId)
     }
-
-    this.title?.setText(
-      state.seasonId === 0
-        ? "No season yet"
-        : state.defeated
-          ? `Season ${state.seasonId} — defeated`
-          : `Season ${state.seasonId}`
-    )
-
-    const barWidth = Math.min(360, width - 48)
-    const barX = (width - barWidth) / 2
-    const ratio = state.maxHp > 0 ? Math.max(0, state.hp / state.maxHp) : 0
-
-    this.hpBar?.clear()
-    this.hpBar?.fillStyle(0x1a1a1a).fillRect(barX, 42, barWidth, 10)
-    if (state.maxHp > 0) {
-      this.hpBar?.fillStyle(state.defeated ? 0x52525b : 0xef4444).fillRect(barX, 42, barWidth * ratio, 10)
-    }
-    this.hpLabel?.setText(state.maxHp > 0 ? `${state.hp} / ${state.maxHp} HP` : "")
 
     if (state.defeated && this.boss) {
       this.boss.setAlpha(0.4)
       this.boss.setAngle(12)
       this.idleTween?.remove()
     }
-
-    const lines = state.recentHits
-      .slice(0, 7)
-      .map((hit) => `${hit.player.slice(0, 6)}…${hit.player.slice(-4)}  -${hit.damage}`)
-    this.feed?.setText(lines.length > 0 ? lines.join("\n") : "No hits yet this season.")
   }
 
   /** A short white flash and shake when the chain reports the boss took a hit. */

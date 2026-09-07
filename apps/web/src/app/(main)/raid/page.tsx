@@ -76,13 +76,6 @@ export default function RaidPage() {
     }
   }, [claim, isCreditcoinNetwork, raid?.seasonId, refetch, switchToCreditcoin])
 
-  useEffect(() => {
-    EventBus.on(GameEvents.RequestClaimLoot, handleClaim)
-    return () => {
-      EventBus.off(GameEvents.RequestClaimLoot, handleClaim)
-    }
-  }, [handleClaim])
-
   const canClaim = Boolean(raid?.defeated && mine && BigInt(mine.pendingLoot) > 0n)
 
   return (
@@ -95,7 +88,7 @@ export default function RaidPage() {
         </p>
       </header>
 
-      <RaidCanvas onReady={() => EventBus.emit(GameEvents.RaidState, payload)} />
+      <RaidCanvas state={payload} onReady={() => EventBus.emit(GameEvents.RaidState, payload)} />
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded border border-[#1A1A1A] bg-black p-4">

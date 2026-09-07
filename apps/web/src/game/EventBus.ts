@@ -76,12 +76,31 @@ export const GameEvents = {
   HeroState: "hero-state",
   /** React to Phaser: new raid state. */
   RaidState: "raid-state",
-  /** Phaser to React: the player pressed something that needs a wallet. */
-  RequestMintHero: "request-mint-hero",
-  RequestClaimLoot: "request-claim-loot",
+  // There is deliberately no "Phaser asked React to sign" event any more. Every control that needs
+  // a wallet is a real DOM button in the overlay, which is crisper, reachable by keyboard, and one
+  // fewer indirection between a click and a signature.
   /** React to Phaser: a duel to replay, or null to clear the canvas. */
   ArenaReplay: "arena-replay",
+  /**
+   * Phaser to React: the replay's readable state, so the DOM overlay can draw it.
+   *
+   * The scene owns the timing of a replay, because it owns the tweens and the camera shake, but
+   * every glyph belongs in DOM. So the scene says what the numbers are and React draws them.
+   */
+  ArenaFrame: "arena-frame",
+  /** Phaser to React: one landed hit, to float above the fighter that took it. */
+  ArenaHit: "arena-hit",
 } as const
+
+export type Affinity = "novice" | "warrior" | "rogue" | "mage"
+
+/** Names as the page says them, so a label never reads "novice" in lower case. */
+export const AFFINITY_LABELS: Record<Affinity, string> = {
+  novice: "Novice",
+  warrior: "Warrior",
+  rogue: "Rogue",
+  mage: "Mage",
+}
 
 /** One swing, decoded from the three bytes the chain emitted for it. */
 export interface ArenaSwing {
@@ -93,11 +112,29 @@ export interface ArenaSwing {
 
 export interface ArenaReplayPayload {
   challengeId: number
-  challenger: { address: string; affinity: "novice" | "warrior" | "rogue" | "mage"; hp: number }
-  opponent: { address: string; affinity: "novice" | "warrior" | "rogue" | "mage"; hp: number }
+  challenger: { address: string; affinity: Affinity; hp: number }
+  opponent: { address: string; affinity: Affinity; hp: number }
   swings: ArenaSwing[]
   /** Empty for a draw. */
   winner: string
+}
+
+/** Everything readable about a replay in progress. Drawn as DOM over the canvas. */
+export interface ArenaFramePayload {
+  status: string
+  /** True before a duel is picked, when the canvas is an empty arena. */
+  hint: boolean
+  fighters: { name: string; hp: number; maxHp: number }[]
+}
+
+/** One landed hit, floated above the fighter that took it and then forgotten. */
+export interface ArenaHitPayload {
+  /** 0 is the challenger, 1 the opponent. The one that *took* the hit. */
+  slot: 0 | 1
+  damage: number
+  crit: boolean
+  /** Unique per hit, so React can key a list of them without two colliding. */
+  id: number
 }
 
 export interface HeroStatePayload {
@@ -109,8 +146,8 @@ export interface HeroStatePayload {
   agility: number
   intellect: number
   streak: number
-  affinity: "novice" | "warrior" | "rogue" | "mage"
-  /** True when the page is showing somebody else's hero, so the canvas offers no mint button. */
+  affinity: Affinity
+  /** True when the page is showing somebody else's hero, so the overlay offers no mint button. */
   readOnly: boolean
 }
 
