@@ -15,9 +15,12 @@ import "dotenv/config"
 
 import { parseEther, parseUnits } from "ethers"
 
-import { ACTION_TYPES, createQuests, readQuest } from "../src/services/campaignQuests"
+import { ACTION_TYPES, createQuests, isNativeAction, readQuest } from "../src/services/campaignQuests"
 
-const ACTIONS: Record<string, { actionType: number; token: string; decimals: number; emitterEnv: string }> = {
+const ACTIONS: Record<
+  string,
+  { actionType: number; token: string; decimals: number; emitterEnv: string; tokenEnv?: string }
+> = {
   portal: {
     actionType: ACTION_TYPES.portal,
     token: "0x0000000000000000000000000000000000000000",
@@ -29,6 +32,22 @@ const ACTIONS: Record<string, { actionType: number; token: string; decimals: num
     token: "",
     decimals: 6,
     emitterEnv: "SEPOLIA_POOL_USDC_WETH_500",
+  },
+  // Native actions. There is no emitter to allowlist and no log to decode, because the action
+  // happens inside the completing transaction rather than being reported to it. The emitter field
+  // is still stored, so it names the contract that will perform the action.
+  penguinswap: {
+    actionType: ACTION_TYPES.penguinSwapSwap,
+    token: "",
+    decimals: 18,
+    emitterEnv: "NATIVE_PORTAL_ADDRESS",
+    tokenEnv: "PENGUINSWAP_WCTC_ADDRESS",
+  },
+  wrap: {
+    actionType: ACTION_TYPES.wrapNative,
+    token: "0x0000000000000000000000000000000000000000",
+    decimals: 18,
+    emitterEnv: "NATIVE_PORTAL_ADDRESS",
   },
 }
 
@@ -42,10 +61,10 @@ async function main() {
   const participant = need("PARTICIPANT")
   const actionName = process.env.ACTION ?? "portal"
   const action = ACTIONS[actionName]
-  if (!action) throw new Error(`unknown ACTION ${actionName}; try portal or swap`)
+  if (!action) throw new Error(`unknown ACTION ${actionName}; try ${Object.keys(ACTIONS).join(", ")}`)
 
   const emitter = need(action.emitterEnv)
-  const token = action.token || need("SEPOLIA_USDC")
+  const token = action.token || need(action.tokenEnv ?? "SEPOLIA_USDC")
   const min = process.env.MIN ?? "0.001"
   const reward = process.env.REWARD ?? "75"
   const minAmount =
@@ -62,7 +81,9 @@ async function main() {
       playerMustMatch: true,
       category: 0,
       metadataURI: process.env.METADATA_URI ?? "ipfs://placeholder",
-      sourceChainKey: 1,
+      // A native action has no source chain: it happens on Creditcoin, in the transaction that
+      // completes the quest. Zero says that, rather than naming a chain the rule never reads.
+      sourceChainKey: isNativeAction(action.actionType) ? 0 : 1,
     },
   ])
   if (!created) throw new Error("createQuest returned nothing")
@@ -71,7 +92,10 @@ async function main() {
   console.log(`quest ${created.questId} created for ${participant}`)
   console.log(`  tx        ${created.txHash}`)
   console.log(`  block     ${created.blockNumber}  gas ${created.gasUsed}`)
-  console.log(`  action    ${actionName}, emitter ${emitter}, min ${min}`)
+  console.log(
+    `  action    ${actionName}, emitter ${emitter}, min ${min}` +
+      `, path ${isNativeAction(action.actionType) ? "NativePortal" : "QuestASC"}`
+  )
   console.log(`  reward    ${reward} VAEL`)
   console.log(`  read back assigned ${back.assignedParticipant}, status ${back.status}, campaignId ${back.campaignId}`)
 }

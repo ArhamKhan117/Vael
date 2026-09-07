@@ -7,6 +7,9 @@ export const INDEXER_ABI = [
   // QuestASC
   "event RuleRegistered(uint256 indexed questId, uint64 sourceChainKey, uint8 actionType)",
   "event QuestProofApplied(uint256 indexed questId, address indexed player, uint8 indexed actionType, bytes32 replayKey, uint64 sourceBlock, uint256 amount)",
+  // NativePortal. Deliberately not named QuestProofApplied: it carries no proof, and an indexer
+  // that reported it as one would be reporting something false.
+  "event NativeActionApplied(uint256 indexed questId, address indexed player, uint8 indexed actionType, address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut)",
   // VaelHero
   "event HeroMinted(address indexed player, uint256 indexed tokenId)",
   "event HeroXPGranted(address indexed player, uint256 indexed tokenId, uint8 actionType, uint8 tier, uint64 xpGained, bytes32 replayKey)",

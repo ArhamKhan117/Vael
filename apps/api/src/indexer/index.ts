@@ -1,7 +1,7 @@
-import { Contract, Interface, JsonRpcProvider, Log } from "ethers"
+import { AbiCoder, Contract, Interface, JsonRpcProvider, Log, keccak256 } from "ethers"
 
 import { env } from "../config/env"
-import { creditcoinProvider } from "../attestcoin/config"
+import { CREDITCOIN_CHAIN_ID, creditcoinProvider } from "../attestcoin/config"
 import {
   IndexedChallenge,
   IndexedListing,
@@ -90,6 +90,7 @@ export class CreditcoinIndexer {
     this.addresses = [
       env.QUEST_MANAGER_ADDRESS,
       process.env.QUEST_ASC_ADDRESS,
+      process.env.NATIVE_PORTAL_ADDRESS,
       process.env.VAEL_HERO_ADDRESS,
       process.env.RAID_BOSS_ADDRESS,
       process.env.REWARD_VAULT_ADDRESS,
@@ -294,6 +295,34 @@ export class CreditcoinIndexer {
           actionType: Number(parsed.args.actionType),
           sourceBlock: Number(parsed.args.sourceBlock),
           amount: parsed.args.amount.toString(),
+          creditcoinBlock: log.blockNumber,
+          createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+        })
+        outcome.actions += 1
+        break
+      }
+      case "NativeActionApplied": {
+        // The same action history, from the other completion path. It is written to the same table
+        // because a player's history is a list of things they did, not a list of proofs; what
+        // separates the two is `sourceBlock`, which is 0 here because there is no source chain.
+        //
+        // The replay key is the completion's own position and NativePortal derives it the same way
+        // every time, so it is recomputed here rather than guessed at. It matches the key
+        // QuestManager stored, which is what makes this row joinable with the completion.
+        const block = await this.provider.getBlock(log.blockNumber)
+        const replayKey = keccak256(
+          AbiCoder.defaultAbiCoder().encode(
+            ["uint256", "uint256", "uint256", "address"],
+            [CREDITCOIN_CHAIN_ID, log.blockNumber, parsed.args.questId, parsed.args.player]
+          )
+        )
+        await this.store.addAction({
+          replayKey,
+          questId: Number(parsed.args.questId),
+          player: String(parsed.args.player).toLowerCase(),
+          actionType: Number(parsed.args.actionType),
+          sourceBlock: 0,
+          amount: parsed.args.amountIn.toString(),
           creditcoinBlock: log.blockNumber,
           createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
         })

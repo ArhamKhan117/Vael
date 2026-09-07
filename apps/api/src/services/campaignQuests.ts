@@ -28,7 +28,23 @@ export const ACTION_TYPES = {
   erc20Transfer: 2,
   aaveSupply: 3,
   aaveBorrow: 4,
+  penguinSwapSwap: 5,
+  wrapNative: 6,
 } as const
+
+/**
+ * Mirrors VaelTypes.FIRST_NATIVE_ACTION.
+ *
+ * QuestManager reads the action type at creation and files the quest to one completion path
+ * permanently: below this, a rule is registered on QuestASC and the quest is settled against an
+ * Attestcoin proof; at or above it, the quest is settled by NativePortal, which performs the action
+ * itself. Nothing downstream may treat the two as interchangeable.
+ */
+export const FIRST_NATIVE_ACTION = ACTION_TYPES.penguinSwapSwap
+
+export function isNativeAction(actionType: number): boolean {
+  return actionType >= FIRST_NATIVE_ACTION
+}
 
 /** Mirrors QuestManager.QuestCategory, which is display only. */
 export const CATEGORIES = { swap: 0, liquidity: 1, stake: 2, lend: 3, other: 4 } as const
