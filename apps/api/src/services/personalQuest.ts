@@ -6,6 +6,7 @@ import { creditcoinProvider } from "../attestcoin/config"
 import { createWorkerStore } from "../attestcoin/store"
 import { serviceEnv } from "../config/env"
 import { VAEL_HERO_READ_ABI } from "../indexer/abi"
+import { pinActionBanner } from "./actionArt"
 import { uploadQuestMetadata } from "./ipfsService"
 import { QuestTemplate, createQuests } from "./campaignQuests"
 
@@ -252,9 +253,14 @@ export async function generatePersonalQuest(
   const minAmount = base * BigInt(Math.round(draft.difficulty))
   const reward = BigInt(Math.round(draft.rewardVael)) * 10n ** 18n
 
+  // The artwork for the action the model chose. Pinned, so the quest carries its own picture
+  // wherever the metadata is read, rather than only where this site happens to be serving files.
+  const banner = await pinActionBanner(actionType)
+
   const metadata = {
     name: draft.title,
     description: draft.summary,
+    ...(banner ? { banner, image: banner } : {}),
     attributes: [
       { trait_type: "Action", value: draft.action },
       { trait_type: "Cadence", value: cadence },

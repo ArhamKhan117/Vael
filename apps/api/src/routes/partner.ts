@@ -8,8 +8,16 @@ import {
   QuestTemplate,
   campaignIdToUint,
   createCampaignQuests,
+  isNativeAction,
   readQuest,
 } from "../services/campaignQuests"
+import {
+  ImageRejected,
+  MAX_IMAGE_BYTES,
+  decodeDataUrl,
+  uploadImage,
+  uploadQuestMetadata,
+} from "../services/ipfsService"
 
 export const partnerRouter: Router = Router()
 
@@ -19,7 +27,7 @@ const ESCROW_ABI = [
 ]
 
 const templateSchema = z.object({
-  actionType: z.number().int().min(0).max(4),
+  actionType: z.number().int().min(0).max(6),
   emitter: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   token: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x0000000000000000000000000000000000000000"),
   minAmount: z.string().regex(/^\d+$/),
@@ -35,6 +43,69 @@ const publishSchema = z.object({
   campaignId: z.string().min(1),
   participant: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   templates: z.array(templateSchema).min(1).max(10),
+})
+
+/**
+ * What a partner writes about a quest before it exists on chain.
+ *
+ * The image is a base64 data URL because everything else the API takes is JSON, and adding a
+ * multipart path for one field means two body parsers to keep in step. It is capped at
+ * MAX_IMAGE_BYTES and its type is checked before anything reaches Pinata.
+ */
+const metadataSchema = z.object({
+  title: z.string().min(3).max(120),
+  summary: z.string().min(10).max(600),
+  actionType: z.number().int().min(0).max(6),
+  cadence: z.enum(["daily", "weekly", "campaign", "open"]).default("campaign"),
+  difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+  projectName: z.string().max(80).optional(),
+  /** A `data:image/...;base64,...` URL, or absent for no banner. */
+  image: z.string().max(Math.ceil(MAX_IMAGE_BYTES * 1.4)).optional(),
+})
+
+/**
+ * POST /partner/metadata
+ *
+ * Pin what a partner wrote, and its banner, and hand back the URI to publish with.
+ *
+ * This exists because the Studio published every quest with one hardcoded metadata CID, so every
+ * partner quest carried the same title, the same summary and no image at all. The quest was real
+ * and everything a player read about it was somebody else's.
+ */
+partnerRouter.post("/metadata", async (req, res, next) => {
+  try {
+    const parsed = metadataSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid input", errors: parsed.error.issues })
+    }
+    const draft = parsed.data
+
+    let banner: string | undefined
+    if (draft.image) {
+      const { bytes, contentType } = decodeDataUrl(draft.image)
+      banner = await uploadImage(bytes, contentType, `vael-quest-banner-${Date.now()}`)
+    }
+
+    const metadata = {
+      name: draft.title,
+      description: draft.summary,
+      ...(banner ? { banner, image: banner } : {}),
+      attributes: [
+        { trait_type: "Cadence", value: draft.cadence },
+        { trait_type: "Difficulty", value: draft.difficulty },
+        { trait_type: "Chain", value: isNativeAction(draft.actionType) ? "Creditcoin" : "Ethereum Sepolia" },
+        ...(draft.projectName ? [{ trait_type: "Project", value: draft.projectName }] : []),
+      ],
+    }
+
+    const metadataURI = await uploadQuestMetadata(metadata, `vael-quest-${Date.now()}`)
+    return res.json({ metadataURI, banner: banner ?? null })
+  } catch (error) {
+    if (error instanceof ImageRejected) {
+      return res.status(400).json({ message: error.message })
+    }
+    next(error)
+  }
 })
 
 function escrowAddress(): string | undefined {

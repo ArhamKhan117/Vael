@@ -9,9 +9,13 @@ import { useAccount, useWriteContract } from "wagmi"
 import { Button } from "@/components/ui/button"
 import { CREDITCOIN_CHAIN_ID, CREDITCOIN_EXPLORER_URL } from "@/lib/chains"
 import { CONTRACT_ADDRESSES } from "@/lib/contracts"
+import { FIRST_NATIVE_ACTION } from "@/lib/attestcoin/types"
 import { waitForReceipt } from "@/lib/reader"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+
+/** Kept under the API's own cap so a picked file is refused here rather than after a round trip. */
+const MAX_IMAGE_BYTES = 1024 * 1024
 
 const ERC20_ABI = [
   {
@@ -46,6 +50,8 @@ const ACTIONS = [
   { value: 2, label: "ERC-20 transfer" },
   { value: 3, label: "Aave v3 supply" },
   { value: 4, label: "Aave v3 borrow" },
+  { value: 5, label: "PenguinSwap swap, on Creditcoin" },
+  { value: 6, label: "Wrap CTC, on Creditcoin" },
 ]
 
 interface CampaignQuest {
@@ -115,6 +121,11 @@ function PartnerCampaignPageInner() {
   const [actionType, setActionType] = useState(0)
   const [minAmount, setMinAmount] = useState("0.0005")
   const [reward, setReward] = useState("250")
+  const [title, setTitle] = useState("")
+  const [summary, setSummary] = useState("")
+  // The picked banner as a data URL. Held here rather than as a File so a re-render cannot lose it.
+  const [image, setImage] = useState<string | null>(null)
+  const [imageName, setImageName] = useState<string | null>(null)
 
   const [view, setView] = useState<CampaignView | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -189,11 +200,57 @@ function PartnerCampaignPageInner() {
     }
   }
 
+  const nativeAction = actionType >= FIRST_NATIVE_ACTION
+
+  /**
+   * Read the picked file into a data URL.
+   *
+   * Capped here as well as at the API. Refusing a 4 MB photo before it is read and base64-encoded
+   * in the browser is faster than refusing it after a round trip, and the API still refuses it if
+   * this check is ever bypassed.
+   */
+  const onPickImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError(`That image is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB.`)
+      event.target.value = ""
+      return
+    }
+    setError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImage(String(reader.result))
+      setImageName(file.name)
+    }
+    reader.readAsDataURL(file)
+  }
+
   const publish = async () => {
     setError(null)
     setNotice(null)
     setBusy("publish")
     try {
+      // Pin what the partner wrote, and its banner, first. Every quest published here used to
+      // carry one hardcoded metadata CID, so they all had the same title and no picture: the quest
+      // was real and everything a player read about it belonged to somebody else.
+      const pinned = await fetch(`${API_BASE_URL}/partner/metadata`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          summary,
+          actionType,
+          cadence: "campaign",
+          ...(image ? { image } : {}),
+        }),
+      })
+      const pinnedBody = (await pinned.json()) as { metadataURI?: string; message?: string }
+      if (!pinned.ok || !pinnedBody.metadataURI) {
+        setError(pinnedBody.message ?? "could not pin the quest metadata")
+        return
+      }
+
       const response = await fetch(`${API_BASE_URL}/partner/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -203,15 +260,19 @@ function PartnerCampaignPageInner() {
           templates: [
             {
               actionType,
-              emitter: CONTRACT_ADDRESSES.QUEST_PORTAL,
+              emitter: nativeAction
+                ? CONTRACT_ADDRESSES.NATIVE_PORTAL
+                : CONTRACT_ADDRESSES.QUEST_PORTAL,
               token: "0x0000000000000000000000000000000000000000",
               minAmount: parseUnits(minAmount || "0", 18).toString(),
               rewardPerParticipant: parseUnits(reward || "0", 18).toString(),
               badgeLevel: 1,
               playerMustMatch: true,
               category: 0,
-              metadataURI: "ipfs://QmfDNGL7khGCv8yd1zzNN93oVmp9YcSbPcndrY8obY82qb",
-              sourceChainKey: 1,
+              metadataURI: pinnedBody.metadataURI,
+              // A native action has no source chain: it happens on Creditcoin, inside the
+              // transaction that completes the quest.
+              sourceChainKey: nativeAction ? 0 : 1,
             },
           ],
         }),
@@ -373,10 +434,86 @@ function PartnerCampaignPageInner() {
             </label>
           </div>
 
+          <div className="mt-4 space-y-3">
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Title</span>
+              <input
+                data-testid="quest-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Swap on Uniswap v3"
+                className="mt-1 w-full rounded border border-[#1A1A1A] bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-200 outline-none focus:border-zinc-600"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Summary</span>
+              <textarea
+                data-testid="quest-summary"
+                value={summary}
+                onChange={(event) => setSummary(event.target.value)}
+                rows={3}
+                placeholder="What the player is being asked to do, and why it is worth doing."
+                className="mt-1 w-full rounded border border-[#1A1A1A] bg-[#0A0A0A] px-3 py-2 text-xs leading-relaxed text-zinc-200 outline-none focus:border-zinc-600"
+              />
+            </label>
+
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                Banner image, optional
+              </span>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <input
+                  data-testid="quest-image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={onPickImage}
+                  className="max-w-full text-[11px] text-zinc-400 file:mr-3 file:rounded file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-[11px] file:text-zinc-200"
+                />
+                {image && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImage(null)
+                      setImageName(null)
+                    }}
+                    className="text-[11px] text-zinc-500 underline hover:text-zinc-300"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {image ? (
+                <div className="mt-3 flex items-center gap-3">
+                  {/* A local preview of the picked file. next/image cannot help with a data URL and
+                      would only add a loader in front of bytes already in memory. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image}
+                    alt="The banner as it will be pinned"
+                    className="h-16 w-32 rounded border border-[#1A1A1A] object-cover"
+                  />
+                  <span className="min-w-0 break-all text-[11px] text-zinc-500">{imageName}</span>
+                </div>
+              ) : (
+                <p className="mt-2 text-[11px] leading-relaxed text-zinc-600">
+                  Pinned to IPFS on publish and written into the quest metadata, so the picture
+                  travels with the quest. Without one, the quest shows the artwork for its action
+                  type. Up to 1 MB, PNG, JPEG, WebP or GIF.
+                </p>
+              )}
+            </div>
+          </div>
+
           <Button
             data-testid="publish"
             onClick={publish}
-            disabled={!campaignId || !/^0x[a-fA-F0-9]{40}$/.test(player) || busy !== null}
+            disabled={
+              !campaignId ||
+              !/^0x[a-fA-F0-9]{40}$/.test(player) ||
+              title.trim().length < 3 ||
+              summary.trim().length < 10 ||
+              busy !== null
+            }
             className="mt-3 rounded bg-white text-black hover:bg-white/90"
           >
             {busy === "publish" ? "Publishing…" : "Publish on chain"}

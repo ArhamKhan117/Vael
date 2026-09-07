@@ -29,7 +29,19 @@ if (hasServiceEnv()) {
 const app = express()
 
 app.use(cors())
-app.use(express.json({ limit: "1mb" }))
+
+/**
+ * One route takes an image, and only one.
+ *
+ * A quest banner arrives as a base64 data URL, which is about a third larger than the file, so
+ * 1mb would refuse a 900 KB picture. Raising the limit globally would widen the body every route
+ * accepts to suit a single one of them, so the larger limit is named where it is needed and
+ * everything else keeps the tight default.
+ */
+const LARGE_BODY_PATHS = new Set(["/partner/metadata"])
+app.use((req, res, next) =>
+  express.json({ limit: LARGE_BODY_PATHS.has(req.path) ? "4mb" : "1mb" })(req, res, next)
+)
 
 app.get("/health", (_, res) => {
   res.json({ status: "ok", network: "Creditcoin testnet" })
