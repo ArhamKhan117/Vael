@@ -31,7 +31,11 @@ export default function NavbarDashboard() {
 
     return (
         <header className="fixed inset-x-0 top-0 z-50 border-b border-[#1A1A1A] bg-black">
-            <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-5 md:px-10">
+            {/* No max-width, and the same padding as the main header: max-w-7xl centred this row
+                on a wide screen, so the Studio logo floated inward while the logo on every other
+                page sat in the corner, and the two headers did not line up when moving between
+                them. */}
+            <div className="flex items-center gap-3 px-5 py-5 md:px-10">
                 <Link href="/dashboard/studio" className="flex shrink-0 items-center gap-2">
                     <Image src="/logo/vael.svg" alt="Vael" width={24} height={24} />
                     <span className="text-xl font-medium tracking-tighter text-white">

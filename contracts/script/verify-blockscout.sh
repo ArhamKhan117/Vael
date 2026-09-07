@@ -37,6 +37,7 @@ LOOT="$(lookup LOOT_ADDRESS)"
 EQUIPMENT="$(lookup EQUIPMENT_ADDRESS)"
 MARKET="$(lookup MARKETPLACE_ADDRESS)"
 ASC="$(lookup QUEST_ASC_ADDRESS)"
+NATIVE="$(lookup NATIVE_PORTAL_ADDRESS)"
 A_PORTAL="$(lookup PORTAL_ADAPTER_ADDRESS)"
 A_ERC20="$(lookup ERC20_TRANSFER_ADAPTER_ADDRESS)"
 A_UNI="$(lookup UNISWAP_V3_ADAPTER_ADDRESS)"
@@ -84,6 +85,9 @@ submit "$ESCROW"     src/CampaignEscrow.sol:CampaignEscrow \
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 
 [ -n "$ASC" ] && submit "$ASC" src/QuestASC.sol:QuestASC \
+  "$(cast abi-encode 'constructor(address,address)' "$DEPLOYER_ADDRESS" "$MANAGER")"
+
+[ -n "$NATIVE" ] && submit "$NATIVE" src/source/NativePortal.sol:NativePortal \
   "$(cast abi-encode 'constructor(address,address)' "$DEPLOYER_ADDRESS" "$MANAGER")"
 
 [ -n "$RAID" ] && submit "$RAID" src/game/RaidBoss.sol:RaidBoss \

@@ -142,3 +142,138 @@
     font-family: var(--font-matemasie), system-ui, sans-serif;
   }
 }
+/*
+ * Reading styles for the two repository documents rendered at /readme and /whitepaper.
+ *
+ * Scoped to .doc-prose rather than applied globally: these are the only two pages on the site made
+ * of long-form markdown, and every other page styles its own elements.
+ */
+.doc-prose {
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  line-height: 1.75;
+}
+.doc-prose > * + * {
+  margin-top: 1rem;
+}
+.doc-prose h1,
+.doc-prose h2,
+.doc-prose h3,
+.doc-prose h4 {
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.3;
+  scroll-margin-top: 6rem;
+}
+.doc-prose h1 {
+  font-size: 1.5rem;
+  margin-top: 3rem;
+}
+.doc-prose h2 {
+  font-size: 1.125rem;
+  margin-top: 2.5rem;
+  border-top: 1px solid #1a1a1a;
+  padding-top: 1.75rem;
+}
+.doc-prose h3 {
+  font-size: 0.9375rem;
+  margin-top: 2rem;
+}
+.doc-prose h4 {
+  font-size: 0.875rem;
+  margin-top: 1.5rem;
+}
+.doc-prose > h1:first-child,
+.doc-prose > h2:first-child {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+.doc-prose strong {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+.doc-prose a {
+  color: #7dd3fc;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.doc-prose a:hover {
+  color: #bae6fd;
+}
+.doc-prose ul,
+.doc-prose ol {
+  padding-left: 1.25rem;
+}
+.doc-prose ul {
+  list-style: disc;
+}
+.doc-prose ol {
+  list-style: decimal;
+}
+.doc-prose li + li {
+  margin-top: 0.375rem;
+}
+.doc-prose li::marker {
+  color: #52525b;
+}
+.doc-prose code {
+  background: #111;
+  border: 1px solid #1f1f1f;
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.8125rem;
+  color: #e4e4e7;
+  overflow-wrap: anywhere;
+}
+.doc-prose pre {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.doc-prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  overflow-wrap: normal;
+}
+.doc-prose blockquote {
+  border-left: 2px solid #27272a;
+  padding-left: 1rem;
+  color: #71717a;
+}
+.doc-prose hr {
+  border-color: #1a1a1a;
+  margin: 2rem 0;
+}
+/* Tables are the one thing here that cannot always fit a phone, so they get their own scroller
+   rather than making the whole page scroll sideways. */
+.doc-prose table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.doc-prose th,
+.doc-prose td {
+  border: 1px solid #1a1a1a;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.doc-prose th {
+  color: #e4e4e7;
+  font-weight: 600;
+  background: #0a0a0a;
+}
+.doc-prose img {
+  max-width: 100%;
+  height: auto;
+}

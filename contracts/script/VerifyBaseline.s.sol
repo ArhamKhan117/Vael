@@ -272,11 +272,14 @@ contract VerifyBaseline is Script {
         console.log("ok   Arena.RESOLVE_WINDOW_BLOCKS", arena.RESOLVE_WINDOW_BLOCKS());
 
         // Loot.arena is both the address Loot trusts and the arena minter role, so a superseded
-        // Arena keeping it would keep the ability to mint drops.
-        address supersededArena = vm.envOr("ARENA_V2_ADDRESS", address(0));
-        if (supersededArena != address(0)) {
+        // Arena keeping it would keep the ability to mint drops. Every superseded Arena is checked,
+        // not just the most recent: this used to name one version-numbered key and needed editing
+        // after every cascade, which is exactly how a revocation gets forgotten.
+        address[] memory supersededArenas = vm.envOr("SUPERSEDED_ARENAS", ",", new address[](0));
+        for (uint256 i = 0; i < supersededArenas.length; i++) {
+            address supersededArena = supersededArenas[i];
             _isTrue(
-                "Loot no longer lets the superseded Arena mint",
+                "Loot no longer lets a superseded Arena mint",
                 loot.arena() != supersededArena
             );
         }
@@ -370,13 +373,19 @@ contract VerifyBaseline is Script {
             "BadgeNFT no longer lets the deployer mint",
             !badge.minters(deployer)
         );
-        // The superseded QuestManager keeps no reviewer privilege on the reputation registry.
-        address supersededManager = vm.envOr("SUPERSEDED_QUEST_MANAGER_ADDRESS", address(0));
-        if (supersededManager != address(0)) {
+        // No superseded QuestManager keeps a reviewer privilege on the reputation registry, and no
+        // superseded RaidBoss keeps the right to mint a badge. BadgeNFT survives cascades, so a
+        // forgotten RaidBoss would still be able to mint on it.
+        address[] memory supersededManagers = vm.envOr("SUPERSEDED_QUEST_MANAGERS", ",", new address[](0));
+        for (uint256 i = 0; i < supersededManagers.length; i++) {
             _isTrue(
-                "ReputationRegistry no longer authorizes the superseded QuestManager",
-                !reputation.isReviewerAuthorized(supersededManager)
+                "ReputationRegistry no longer authorizes a superseded QuestManager",
+                !reputation.isReviewerAuthorized(supersededManagers[i])
             );
+        }
+        address[] memory supersededBosses = vm.envOr("SUPERSEDED_RAID_BOSSES", ",", new address[](0));
+        for (uint256 i = 0; i < supersededBosses.length; i++) {
+            _isTrue("BadgeNFT no longer lets a superseded RaidBoss mint", !badge.minters(supersededBosses[i]));
         }
 
         console.log("=== loot registry ===");
