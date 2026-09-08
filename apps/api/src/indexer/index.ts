@@ -635,9 +635,40 @@ export class CreditcoinIndexer {
         creditcoinBlock,
       }
       await this.store.upsertQuestCatalog(questId, fields)
+
+      // A native quest never emits RuleRegistered, because its rule is filed on QuestManager rather
+      // than registered on QuestASC. Without this the rule half of the row stayed at its defaults
+      // and every PenguinSwap swap and every CTC wrap was displayed as a Portal check-in on
+      // Ethereum Sepolia, which is wrong about the action, the chain and the completion path.
+      if (await manager.getFunction("isNativeQuest").staticCall(questId)) {
+        await this.indexNativeRule(manager, questId)
+      }
     } catch (error) {
       console.warn(`[indexer] could not catalogue quest ${questId}: ${error}`)
     }
+  }
+
+  /** Write the rule half of a native quest, read off QuestManager. */
+  private async indexNativeRule(manager: Contract, questId: number): Promise<void> {
+    const rule = await manager.getFunction("nativeRule").staticCall(questId)
+    const existing = await this.store.getQuest(questId)
+    await this.store.upsertQuest({
+      questId,
+      participant: existing?.participant ?? "",
+      // Zero, and deliberately so: a native action has no source chain. It happens on Creditcoin,
+      // inside the transaction that completes the quest.
+      sourceChainKey: 0,
+      actionType: Number(rule[0]),
+      emitter: String(rule[1]).toLowerCase(),
+      token: String(rule[2]).toLowerCase(),
+      minAmount: rule[3].toString(),
+      ...(existing?.acceptedAtSourceHeight !== undefined
+        ? { acceptedAtSourceHeight: existing.acceptedAtSourceHeight }
+        : {}),
+      accepted: existing?.accepted ?? false,
+      completed: existing?.completed ?? false,
+      updatedAt: new Date().toISOString(),
+    })
   }
 
   /**

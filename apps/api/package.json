@@ -27,7 +27,8 @@
     "spike:mainnet": "tsx scripts/spike-mainnet.ts",
     "seed-wallets": "tsx scripts/seed-wallets.ts",
     "seed-content": "tsx scripts/seed-content.ts",
-    "write-seed-log": "tsx scripts/write-seed-log.ts"
+    "write-seed-log": "tsx scripts/write-seed-log.ts",
+    "audit-seed": "tsx scripts/audit-seed.ts"
   },
   "keywords": [
     "vael",

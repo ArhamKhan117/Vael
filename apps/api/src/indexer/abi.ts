@@ -79,6 +79,10 @@ export const QUEST_MANAGER_READ_ABI = [
   // reports a timestamp as a chain key and answers nonsense without failing.
   "function getQuest(uint256 questId) view returns ((uint256 agentId,address agentController,uint8 category,address protocol,bytes32 parametersHash,string metadataURI,address rewardToken,uint256 rewardPerParticipant,uint256 badgeLevel,address assignedParticipant,uint32 acceptedCount,uint32 completedCount,uint64 expiry,uint8 status,uint64 createdAt,uint64 sourceChainKey,uint256 campaignId))",
   "function verificationContext(uint256 questId) view returns (bool exists, bool active, address assignedParticipant, uint64 expiry, uint64 sourceChainKey, uint256 campaignId)",
+  // A native quest's rule lives here rather than on QuestASC: createQuest files it into
+  // _nativeRules and never calls setRule, so there is no RuleRegistered event to read it from.
+  "function isNativeQuest(uint256 questId) view returns (bool)",
+  "function nativeRule(uint256 questId) view returns ((uint8 actionType,address emitter,address token,uint256 minAmount,uint64 minSourceBlock,uint64 maxSourceBlock,bool playerMustMatch))",
 ] as const
 
 export const VAEL_HERO_READ_ABI = [
