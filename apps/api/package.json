@@ -26,7 +26,8 @@
     "e2e:ai-quest": "tsx scripts/e2e-ai-quest.ts",
     "spike:mainnet": "tsx scripts/spike-mainnet.ts",
     "seed-wallets": "tsx scripts/seed-wallets.ts",
-    "seed-content": "tsx scripts/seed-content.ts"
+    "seed-content": "tsx scripts/seed-content.ts",
+    "write-seed-log": "tsx scripts/write-seed-log.ts"
   },
   "keywords": [
     "vael",
