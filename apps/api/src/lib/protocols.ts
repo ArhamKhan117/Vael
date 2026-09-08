@@ -67,6 +67,14 @@ export const TOKEN_INFO: Record<string, { symbol: string; decimals: number }> = 
   [SEPOLIA_TOKENS.AAVE_DAI.toLowerCase()]: { symbol: "aDAI", decimals: 18 },
   [SEPOLIA_TOKENS.AAVE_WETH.toLowerCase()]: { symbol: "aWETH", decimals: 18 },
   [SEPOLIA_TOKENS.AAVE_LINK.toLowerCase()]: { symbol: "aLINK", decimals: 18 },
+  // Creditcoin, for the native actions. A native rule names one of these or no token at all, and
+  // without them a rule minimum was printed as its raw 18-decimal integer followed by "units".
+  ...(process.env.PENGUINSWAP_WCTC_ADDRESS
+    ? { [process.env.PENGUINSWAP_WCTC_ADDRESS.toLowerCase()]: { symbol: "WCTC", decimals: 18 } }
+    : {}),
+  ...(process.env.PENGUINSWAP_USD1_ADDRESS
+    ? { [process.env.PENGUINSWAP_USD1_ADDRESS.toLowerCase()]: { symbol: "USD1", decimals: 18 } }
+    : {}),
 }
 
 /** What a token is called and how it is scaled, or nothing when the address is unknown. */

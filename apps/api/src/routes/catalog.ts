@@ -25,9 +25,21 @@ export const catalogRouter: Router = Router()
 
 const CATEGORY_LABELS = ["Swap", "Liquidity", "Stake", "Lend", "Other"] as const
 const STATUS_LABELS = ["Inactive", "Active", "Completed", "Cancelled"] as const
-/** Mirrors VaelTypes.ActionType. */
-const ACTION_LABELS = ["Portal", "Uniswap swap", "ERC-20 transfer", "Aave supply", "Aave borrow"] as const
+/** Mirrors VaelTypes.ActionType, all seven of them. */
+const ACTION_LABELS = [
+  "Portal check-in",
+  "Uniswap swap",
+  "ERC-20 transfer",
+  "Aave supply",
+  "Aave borrow",
+  "PenguinSwap swap",
+  "Wrap CTC",
+] as const
 const ACTION_PORTAL = 0
+/** Mirrors VaelTypes.FIRST_NATIVE_ACTION. At or above this, the action happens on Creditcoin. */
+const FIRST_NATIVE_ACTION = 5
+/** The action that spends the native coin itself, so its minimum is denominated in CTC. */
+const ACTION_WRAP_NATIVE = 6
 
 /**
  * The rule's minimum, in units a player recognises.
@@ -43,6 +55,8 @@ function minAmountLabel(minAmount: string, token: string, actionType: number): s
   const info = tokenInfo(token)
   if (info) return `${formatUnits(minAmount, info.decimals)} ${info.symbol}`
   if (actionType === ACTION_PORTAL) return `${formatUnits(minAmount, 18)} ETH`
+  // Wrapping names no token because the thing it spends is the native coin.
+  if (actionType === ACTION_WRAP_NATIVE) return `${formatUnits(minAmount, 18)} CTC`
   return `${minAmount} units`
 }
 
@@ -130,7 +144,7 @@ function serialize(quest: CataloguedQuest, proof: ProofState) {
     completed: quest.completed,
     acceptedCount: quest.acceptedCount ?? 0,
     completedCount: quest.completedCount ?? 0,
-    /** What the player has to do on the source chain for this quest to pay. */
+    /** What the player has to do for this quest to pay, and where. */
     action: {
       actionType: quest.actionType,
       actionName: ACTION_LABELS[quest.actionType] ?? `Action ${quest.actionType}`,
@@ -139,6 +153,10 @@ function serialize(quest: CataloguedQuest, proof: ProofState) {
       tokenSymbol: tokenInfo(quest.token)?.symbol ?? null,
       minAmount: quest.minAmount,
       minAmountLabel: minAmountLabel(quest.minAmount, quest.token, quest.actionType),
+      // Which chain the action happens on, and which contract can therefore complete the quest.
+      // Both follow from the action type, which the chain fixed at creation.
+      chain: quest.actionType >= FIRST_NATIVE_ACTION ? "Creditcoin" : "Ethereum Sepolia",
+      settledBy: quest.actionType >= FIRST_NATIVE_ACTION ? "NativePortal" : "QuestASC",
     },
     proof,
   }

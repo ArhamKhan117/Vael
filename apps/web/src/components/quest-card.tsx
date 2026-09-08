@@ -80,10 +80,7 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
         <p className="line-clamp-3 text-xs leading-relaxed text-zinc-400">
           {/* The fallback names the action the rule checks, not Quest.category, which the
               agent sets to Swap for every quest and would call a portal check-in a swap. */}
-          {quest.description ||
-            `${quest.action.actionName} on ${
-              isNativeAction(quest.action.actionType) ? "Creditcoin" : "Ethereum Sepolia"
-            }.`}
+          {quest.description || `${quest.action.actionName} on ${quest.action.chain}.`}
         </p>
 
         <div className="space-y-2 border-t border-[#1A1A1A] pt-4 text-[11px]">
@@ -111,7 +108,9 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
           <div className="flex items-center justify-between text-zinc-500">
             <span>SETTLED BY</span>
             <span className="text-xs text-white">
-              {isNativeAction(quest.action.actionType) ? "NativePortal, in one transaction" : "Attestcoin proof"}
+              {isNativeAction(quest.action.actionType)
+                ? "NativePortal, in one transaction"
+                : "QuestASC, against an Attestcoin proof"}
             </span>
           </div>
         </div>

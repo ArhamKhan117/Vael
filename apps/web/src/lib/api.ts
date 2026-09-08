@@ -320,6 +320,10 @@ export interface ChainQuest {
     minAmount: string
     /** The minimum in the token's own units, or "any amount" when the rule sets none. */
     minAmountLabel: string
+    /** Where the action happens: "Ethereum Sepolia" or "Creditcoin". */
+    chain: string
+    /** The only contract that can complete this quest: "QuestASC" or "NativePortal". */
+    settledBy: string
   }
   proof: QuestProof
 }
