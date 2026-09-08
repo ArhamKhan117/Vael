@@ -383,9 +383,22 @@ contract Arena is Ownable {
         return 100 + 10 * uint256(level) + 3 * uint256(intellect);
     }
 
-    /// @notice Damage one hit lands before a critical is applied.
-    function baseDamage(uint16 strength, uint16 agility) public pure returns (uint256) {
-        return 2 * uint256(strength) + uint256(agility);
+    /**
+     * @notice Damage one hit lands before a critical is applied.
+     *
+     * @dev Level is in here, and it has to be. Without it a new hero had 110 hit points and dealt
+     * two damage a swing, so twenty rounds of forty swings came to eighty: two new players could
+     * not finish a duel however the seed fell, and every duel between them was a guaranteed draw.
+     * That is not a rare outcome, it is arithmetic, and it made the arena unusable for exactly the
+     * people most likely to try it first.
+     *
+     * The two now grow together. Hit points are `100 + 10L + 3I` and damage is `2 + 2L + 2S + A`,
+     * so a level-1 duel lands around round ten and a level-7 duel around round three. A draw is
+     * still reachable, but it now takes a hero tanky enough to outlast forty swings rather than an
+     * opponent too weak to land one.
+     */
+    function baseDamage(uint32 level, uint16 strength, uint16 agility) public pure returns (uint256) {
+        return 2 + 2 * uint256(level) + 2 * uint256(strength) + uint256(agility);
     }
 
     /// @dev The duel itself. Pure with respect to the chain apart from reading hero stats, so
@@ -405,7 +418,7 @@ contract Arena is Ownable {
         (uint32 oLevel, uint16 oStr, uint16 oAgi, uint16 oInt) = statsOf(opponent);
 
         uint256[2] memory hp = [hitPoints(cLevel, cInt), hitPoints(oLevel, oInt)];
-        uint256[2] memory dmg = [baseDamage(cStr, cAgi), baseDamage(oStr, oAgi)];
+        uint256[2] memory dmg = [baseDamage(cLevel, cStr, cAgi), baseDamage(oLevel, oStr, oAgi)];
         uint16[2] memory agi = [cAgi, oAgi];
 
         // Slot 0 is the challenger, slot 1 the opponent. `first` is whichever swings first.

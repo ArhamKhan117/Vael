@@ -256,9 +256,37 @@ contract ArenaTest is Test {
         // hp = 100 + 10*level + 3*intellect
         assertEq(arena.hitPoints(1, 0), 110);
         assertEq(arena.hitPoints(3, 10), 160);
-        // damage = 2*strength + agility
-        assertEq(arena.baseDamage(0, 0), 0);
-        assertEq(arena.baseDamage(5, 3), 13);
+        // damage = 2 + 2*level + 2*strength + agility
+        assertEq(arena.baseDamage(1, 0, 0), 4);
+        assertEq(arena.baseDamage(4, 5, 3), 23);
+    }
+
+    /**
+     * Two brand new heroes can actually finish a duel.
+     *
+     * This is the assertion the arena needed and did not have. Damage used to be `2*S + A` with no
+     * level in it, so a level-1 hero had 110 hit points and dealt two a swing: forty swings came to
+     * eighty, and two new players drew every time however the seed fell. Three duels between seeded
+     * level-1 wallets drew three times before anybody noticed it was arithmetic rather than luck.
+     */
+    function test_TwoNewHeroesCanFinishADuel() public view {
+        uint256 hp = arena.hitPoints(1, 0);
+        uint256 perSwing = arena.baseDamage(1, 1, 0);
+        uint256 swings = arena.MAX_ROUNDS() * 2;
+        assertGt(perSwing * swings, hp, "a new hero must be able to run another one out of hit points");
+    }
+
+    /// @dev And the same holds all the way up, so no level is a dead zone where duels cannot end.
+    function test_NoLevelIsADeadZoneWhereDuelsCannotEnd() public view {
+        uint256 swings = arena.MAX_ROUNDS() * 2;
+        for (uint32 level = 1; level <= 30; level++) {
+            // The tankiest hero at this level puts every stat point into intellect, and the
+            // weakest attacker has none at all: the worst case for finishing a fight.
+            uint16 intellect = uint16(level) * 3;
+            uint256 hp = arena.hitPoints(level, intellect);
+            uint256 perSwing = arena.baseDamage(level, 0, 0);
+            assertGt(perSwing * swings, hp, "a duel at this level could never end");
+        }
     }
 
     function test_ResolutionIsDeterministic() public {
@@ -272,11 +300,24 @@ contract ArenaTest is Test {
         assertEq(logA, logB, "same inputs, same fight, byte for byte");
     }
 
+    /**
+     * The seed changes the fight.
+     *
+     * Checked across several seeds rather than two. The only thing a seed decides is which swings
+     * crit, and a crit roll lands under the attacker's agility, so two seeds producing the same log
+     * is a legitimate outcome for a short fight between low-agility heroes: it means neither seed
+     * happened to crit. Asserting on one pair would be asserting that a coin lands differently
+     * twice. What must be true is that the seed matters at all, and this is that.
+     */
     function test_TheSameFightFromADifferentSeedCanDiffer() public {
         _fighters();
-        (, bytes memory one) = arena.preview(alice, bob, keccak256("seed one"));
-        (, bytes memory two) = arena.preview(alice, bob, keccak256("seed two"));
-        assertTrue(keccak256(one) != keccak256(two), "the seed has to matter");
+        (, bytes memory firstLog) = arena.preview(alice, bob, keccak256("seed 0"));
+        bytes32 first = keccak256(firstLog);
+        for (uint256 i = 1; i < 12; i++) {
+            (, bytes memory log) = arena.preview(alice, bob, keccak256(abi.encodePacked("seed ", i)));
+            if (keccak256(log) != first) return;
+        }
+        fail("twelve different seeds produced the same fight; the seed is being ignored");
     }
 
     function test_ResolveMatchesPreviewForTheSameSeed() public {
@@ -321,9 +362,9 @@ contract ArenaTest is Test {
         stub.set(0, 100, 0);
         arena.setEquipment(address(stub));
 
-        (, uint16 aliceStrength, uint16 aliceAgility,) = arena.statsOf(alice);
+        (uint32 aliceLevel, uint16 aliceStrength, uint16 aliceAgility,) = arena.statsOf(alice);
         assertGe(aliceAgility, 100, "alice is fast enough to always crit");
-        uint256 expected = arena.baseDamage(aliceStrength, aliceAgility) * 2;
+        uint256 expected = arena.baseDamage(aliceLevel, aliceStrength, aliceAgility) * 2;
 
         (, bytes memory log) = arena.preview(alice, bob, keccak256("crit"));
         uint8 header = uint8(log[0]);

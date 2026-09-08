@@ -28,9 +28,14 @@ export function hitPoints(level: number, intellect: number): number {
   return 100 + 10 * level + 3 * intellect
 }
 
-/** Mirrors Arena.baseDamage. */
-export function baseDamage(strength: number, agility: number): number {
-  return 2 * strength + agility
+/**
+ * Mirrors Arena.baseDamage.
+ *
+ * Level is in here because it is in the contract: without it a level-1 hero had 110 hit points and
+ * dealt two damage a swing, so forty swings came to eighty and two new players drew every duel.
+ */
+export function baseDamage(level: number, strength: number, agility: number): number {
+  return 2 + 2 * level + 2 * strength + agility
 }
 
 /** Affinity names as a page should print them. "novice" means no verified action yet. */
