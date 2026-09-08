@@ -170,7 +170,13 @@ export interface Challenge {
   challenger: string
   opponent: string
   stake: string
-  status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled"
+  /**
+   * Mirrors Arena.Status, including `voided`.
+   *
+   * The web type was missing that one member, so a voided duel could not be rendered and TypeScript
+   * called every check for it a mistake. The chain has had the status since milestone 9.
+   */
+  status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled" | "voided"
   winner?: string
   payout?: string
   burned?: string

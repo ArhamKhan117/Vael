@@ -127,7 +127,11 @@ modulesRouter.get("/arena/history", async (req, res, next) => {
     const store = createWorkerStore()
     await store.init()
     const all = await store.challenges(address ? { address } : undefined)
-    const finished = all.filter((c) => c.status === "resolved" || c.status === "drawn")
+    // A voided duel is finished too. It was left over the resolve window, both stakes came back and
+    // nothing was burned, and that is a thing the arena page should say rather than hide: leaving
+    // it out made the timeout path invisible everywhere except the chain.
+    const FINISHED = new Set(["resolved", "drawn", "voided"])
+    const finished = all.filter((c) => FINISHED.has(c.status))
 
     return res.json({ challenges: finished.slice(0, limit) })
   } catch (error) {

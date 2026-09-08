@@ -356,19 +356,30 @@ export default function ArenaPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => setSelected(challenge)}
+                    onClick={() => challenge.status !== "voided" && setSelected(challenge)}
                     className="text-left"
+                    // A voided duel was never fought, so there is no round log to replay.
+                    disabled={challenge.status === "voided"}
                   >
                     <p className="text-zinc-200">
                       #{challenge.challengeId} {shortAddress(challenge.challenger)} v{" "}
                       {shortAddress(challenge.opponent)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-zinc-600">
-                      {challenge.status === "drawn"
-                        ? "A draw, both stakes returned"
-                        : `${shortAddress(challenge.winner ?? "")} took ${vael(challenge.payout ?? "0")} VAEL`}
-                      {" · "}
-                      {decodeRounds(challenge.rounds).length} swings
+                      {challenge.status === "voided" ? (
+                        <>
+                          Voided: nobody resolved it inside the window, both stakes returned and
+                          nothing was burned
+                        </>
+                      ) : (
+                        <>
+                          {challenge.status === "drawn"
+                            ? "A draw, both stakes returned"
+                            : `${shortAddress(challenge.winner ?? "")} took ${vael(challenge.payout ?? "0")} VAEL`}
+                          {" · "}
+                          {decodeRounds(challenge.rounds).length} swings
+                        </>
+                      )}
                     </p>
                   </button>
                   {challenge.resolvedAtBlock ? (
