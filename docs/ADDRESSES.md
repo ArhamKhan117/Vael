@@ -33,15 +33,15 @@ this redeploy: the previous cascade needed one to re-mint badges, and this one d
 | `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455360 | Mints and releases VAEL for non-campaign quests. Callable only by QuestManager |
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | Partner-funded campaign pools. Releases and refunds only through QuestASC |
 | `BadgeNFT` | [`0x6b57F8a913FBC175ff46B53542F23D362e46d8f2`](https://creditcoin-testnet.blockscout.com/address/0x6b57F8a913FBC175ff46B53542F23D362e46d8f2) | [`0x3c8142f3…8b99d2`](https://creditcoin-testnet.blockscout.com/tx/0x3c8142f338968e7d28568a6586aca97c4de44df777be85f9100b4bb4f08b99d2) | 5463522 | Soul-bound ERC-721 quest badges with a rarity and on-chain metadata. Mintable only by QuestManager and RaidBoss |
-| `VaelHero` | [`0x6Da74d3F37973FA99eDF8153D2155a9F70235b77`](https://creditcoin-testnet.blockscout.com/address/0x6Da74d3F37973FA99eDF8153D2155a9F70235b77) | [`0x2af9339d…f3db02`](https://creditcoin-testnet.blockscout.com/tx/0x2af9339d50ef3918966b97fb811b885e4c674933cacf929b1a84f353a8f3db02) | 5465160 | Soul-bound hero, one per wallet. XP arrives only as a hook from a completion path; the import window is closed and the completer set is timelocked |
+| `VaelHero` | [`0x74befcC907073f5F0125813FEF3A2A22406d3024`](https://creditcoin-testnet.blockscout.com/address/0x74befcC907073f5F0125813FEF3A2A22406d3024) | [`0xbaf58563…aa117b`](https://creditcoin-testnet.blockscout.com/tx/0xbaf585631f6561f09208b8ed34dc0784ad856a02284998acfdf7c12113aa117b) | 5465437 | Soul-bound hero, one per wallet. XP arrives only as a hook from a completion path; the import window is closed and the completer set is timelocked |
 | `QuestManager` | [`0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7`](https://creditcoin-testnet.blockscout.com/address/0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7) | [`0x4dd8faf8…c9bcaa`](https://creditcoin-testnet.blockscout.com/tx/0x4dd8faf8c3e157745a8a4ebb0744e7720657be79d80e9934decb6bad51c9bcaa) | 5465161 | Quest lifecycle. `recordCompletion` dispatches on the quest's action type to QuestASC or NativePortal and accepts nobody else. Pays from the vault only when a quest has no campaign |
 | `QuestASC` | [`0x05958dD789EaC1de84e864d6b3956C90d3e90d0f`](https://creditcoin-testnet.blockscout.com/address/0x05958dD789EaC1de84e864d6b3956C90d3e90d0f) | [`0xd12cc7c9…cbee36`](https://creditcoin-testnet.blockscout.com/tx/0xd12cc7c9a2e807da9c4a881d4d913c8930667e1a3f4345f9abe6982e71cbee36) | 5465162 | Verifies Attestcoin proofs and applies them. The only contract that can complete a quest whose action was on Ethereum |
 | `NativePortal` | [`0xa512544f721230Fa04560078D0dC214423FE2970`](https://creditcoin-testnet.blockscout.com/address/0xa512544f721230Fa04560078D0dC214423FE2970) | [`0x9a9a4287…d2b51a`](https://creditcoin-testnet.blockscout.com/tx/0x9a9a428778c6962ff5d3204d76559416cfc9879abe4f826f0ab630e481d2b51a) | 5465163 | Performs a Creditcoin action and records the completion in the same transaction. The only contract that can complete a native quest |
-| `RaidBoss` | [`0x201Fe44a8E26Ce866A5DB807b29b90710b527c41`](https://creditcoin-testnet.blockscout.com/address/0x201Fe44a8E26Ce866A5DB807b29b90710b527c41) | [`0x62de89a3…147774`](https://creditcoin-testnet.blockscout.com/tx/0x62de89a336ac9d0c50894d38dc65af1deb50abcdba941959d0065f799b147774) | 5465164 | Season boss. Damage arrives only as a hook from a completion path |
-| `Arena` | [`0x72A9a0eB023A4a903bB541202448919F81E61185`](https://creditcoin-testnet.blockscout.com/address/0x72A9a0eB023A4a903bB541202448919F81E61185) | [`0x49e8003e…0682e9`](https://creditcoin-testnet.blockscout.com/tx/0x49e8003e8b62ac6ddaca3fde255277da4f109215050493fe94bfd63b4d0682e9) | 5465165 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
-| `Loot` | [`0x2810313DA39b9b8C33a9bc9d4C3bC65AdD8a9072`](https://creditcoin-testnet.blockscout.com/address/0x2810313DA39b9b8C33a9bc9d4C3bC65AdD8a9072) | [`0x143919a1…ef8048`](https://creditcoin-testnet.blockscout.com/tx/0x143919a140732a0d5c9fbd13afb32097d25864a2e6c4d742fd3152f47fef8048) | 5465166 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
-| `Equipment` | [`0xe3F4DD0A6FbB5E8888a32bE57dC03394cC8302C8`](https://creditcoin-testnet.blockscout.com/address/0xe3F4DD0A6FbB5E8888a32bE57dC03394cC8302C8) | [`0x30e28824…87662e`](https://creditcoin-testnet.blockscout.com/tx/0x30e28824e6776ae62118dbe3c86ea11af342e251dd834a387213978ce187662e) | 5465167 | Four slots per hero, items escrowed while equipped |
-| `Marketplace` | [`0x64B80FfE7d54167ACB90D75b73A5459Ea168AbDB`](https://creditcoin-testnet.blockscout.com/address/0x64B80FfE7d54167ACB90D75b73A5459Ea168AbDB) | [`0x2d75a937…39350e`](https://creditcoin-testnet.blockscout.com/tx/0x2d75a9378306ccc9573099fd31314bbe153dd273ecd62d932f3ae5a5fb39350e) | 5465168 | Fixed-price loot sales for VAEL, 2% to the treasury |
+| `RaidBoss` | [`0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B`](https://creditcoin-testnet.blockscout.com/address/0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B) | [`0x7fa0fffe…d52192`](https://creditcoin-testnet.blockscout.com/tx/0x7fa0fffe28f8b2ee69b8dc9d908578ea5c9ddfc46649989fd877ab0bcdd52192) | 5465438 | Season boss. Damage arrives only as a hook from a completion path |
+| `Arena` | [`0xCC29353505b1a8F88FC313ffb22926925198d59b`](https://creditcoin-testnet.blockscout.com/address/0xCC29353505b1a8F88FC313ffb22926925198d59b) | [`0xf71f4ecd…0dd452`](https://creditcoin-testnet.blockscout.com/tx/0xf71f4ecd057bfcbd62dbd106d5e3783f034fcb36891d51c493df25098f0dd452) | 5465439 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
+| `Loot` | [`0xFf0271fb151F25cf909d1d8b16017Af54FBb9938`](https://creditcoin-testnet.blockscout.com/address/0xFf0271fb151F25cf909d1d8b16017Af54FBb9938) | [`0x94af1c37…87fb6b`](https://creditcoin-testnet.blockscout.com/tx/0x94af1c37fd9b383e76f27d1c34fcb856ec9b7de25e21ec5e1b81359a5487fb6b) | 5465440 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
+| `Equipment` | [`0xa04EDa9C22f10960Df6f470e143f7f6a195Dcba6`](https://creditcoin-testnet.blockscout.com/address/0xa04EDa9C22f10960Df6f470e143f7f6a195Dcba6) | [`0xc8c08391…dab131`](https://creditcoin-testnet.blockscout.com/tx/0xc8c08391fb0b239004d5d73e4e7082861a7d916984524bf7759932f387dab131) | 5465441 | Four slots per hero, items escrowed while equipped |
+| `Marketplace` | [`0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374`](https://creditcoin-testnet.blockscout.com/address/0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374) | [`0x9d5935b3…cb45c4`](https://creditcoin-testnet.blockscout.com/tx/0x9d5935b310c25fd7fee6085d5c48e60b9a8cd8b72ffac3f880ca89ad23cb45c4) | 5465442 | Fixed-price loot sales for VAEL, 2% to the treasury |
 | `PortalAdapter` | [`0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F`](https://creditcoin-testnet.blockscout.com/address/0x06A1A66Fa571Da7CbaE184Bd5A3f4680Ee5c6f6F) | [`0xf9596fbd…fe7c94`](https://creditcoin-testnet.blockscout.com/tx/0xf9596fbdf6e1aa693d251cbe6bc5f24294683992c4d5cef596a78ee828fe7c94) | — | Decodes `QuestActionPerformed` |
 | `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) | [`0xef8b6a28…b0df12`](https://creditcoin-testnet.blockscout.com/tx/0xef8b6a28941cd98ca273add4a12180558bdaca6d60e63a645d99235aabb0df12) | — | Decodes `Transfer` |
 | `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) | [`0xcf9eb35e…c05952`](https://creditcoin-testnet.blockscout.com/tx/0xcf9eb35e244a609eabe19340ced2d592c926a83160b5c27ec5c67810dbc05952) | — | Decodes `Swap`, holds the pool token pairs |
@@ -183,6 +183,36 @@ the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
 
 
 ## Superseded deployments
+
+### Superseded in the milestone 10b reward-table fix, 2026-09-11
+
+Extending `ActionType` with the two Creditcoin actions left both reward tables ending in a bare
+`else`, so wrapping CTC paid 150 XP and hit the raid boss for 300: more than a proved Uniswap swap,
+for one local transaction and no wait. The tables live inside `VaelHero` and `RaidBoss`, and four
+modules hold one of those immutably, so six contracts moved.
+
+| Contract | Superseded address | Replaced by |
+|---|---|---|
+| `VaelHero` | `0x6Da74d3F37973FA99eDF8153D2155a9F70235b77` | `0x74befcC907073f5F0125813FEF3A2A22406d3024` |
+| `RaidBoss` | `0x201Fe44a8E26Ce866A5DB807b29b90710b527c41` | `0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B` |
+| `Arena` | `0x72A9a0eB023A4a903bB541202448919F81E61185` | `0xCC29353505b1a8F88FC313ffb22926925198d59b` |
+| `Loot` | `0x2810313DA39b9b8C33a9bc9d4C3bC65AdD8a9072` | `0xFf0271fb151F25cf909d1d8b16017Af54FBb9938` |
+| `Equipment` | `0xe3F4DD0A6FbB5E8888a32bE57dC03394cC8302C8` | `0xa04EDa9C22f10960Df6f470e143f7f6a195Dcba6` |
+| `Marketplace` | `0x64B80FfE7d54167ACB90D75b73A5459Ea168AbDB` | `0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374` |
+
+**`QuestManager`, `QuestASC`, `NativePortal` and `BadgeNFT` did not move.** That is the timelocked
+completer set and the mutable hook list doing their job: the hooks on both completion paths were
+re-pointed with four transactions each, and the two new modules were added to their own completer
+sets, so a change to a game module no longer drags the core through a cascade. The previous design
+would have made this nine deployments instead of six.
+
+Both heroes were imported again with level, XP, stats and streak intact, and the import window was
+closed in the next transaction. All eleven loot item definitions were re-registered, and the
+superseded `RaidBoss` was revoked as a `BadgeNFT` minter.
+
+`RaidBoss` keeps its season counter in storage, so this deployment starts at season 1 again. The
+season seeded afterwards is the second Vael has run and the first on this contract, and it is
+recorded as season 1 because that is what the chain says.
 
 ### Superseded in the milestone 10 consolidated redeploy, 2026-09-11
 

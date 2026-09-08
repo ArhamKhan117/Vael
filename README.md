@@ -51,7 +51,7 @@ That address is the deployer, which owns every contract in the system, and the s
 
 ```bash
 # VaelHero__OnlyQuestASC(0x017DFB92…) — hero XP arrives only as a hook from QuestASC
-cast call 0x6Da74d3F37973FA99eDF8153D2155a9F70235b77 \
+cast call 0x74befcC907073f5F0125813FEF3A2A22406d3024 \
   'onQuestCompleted(uint64,uint256,address,uint8,address,uint256,uint8,uint64,bytes32)' \
   1 1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 0 \
   0x0000000000000000000000000000000000000000 0 1 0 \
@@ -324,11 +324,11 @@ wiring, and every superseded deployment with the reason it was replaced is in
 | `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) |
 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) |
 | `BadgeNFT` | [`0x6b57F8a913FBC175ff46B53542F23D362e46d8f2`](https://creditcoin-testnet.blockscout.com/address/0x6b57F8a913FBC175ff46B53542F23D362e46d8f2) |
-| `VaelHero` | [`0x6Da74d3F37973FA99eDF8153D2155a9F70235b77`](https://creditcoin-testnet.blockscout.com/address/0x6Da74d3F37973FA99eDF8153D2155a9F70235b77) |
-| `RaidBoss` | [`0x201Fe44a8E26Ce866A5DB807b29b90710b527c41`](https://creditcoin-testnet.blockscout.com/address/0x201Fe44a8E26Ce866A5DB807b29b90710b527c41) |
+| `VaelHero` | [`0x74befcC907073f5F0125813FEF3A2A22406d3024`](https://creditcoin-testnet.blockscout.com/address/0x74befcC907073f5F0125813FEF3A2A22406d3024) |
+| `RaidBoss` | [`0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B`](https://creditcoin-testnet.blockscout.com/address/0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B) |
 | `Arena` | [`0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B`](https://creditcoin-testnet.blockscout.com/address/0xA8db5D09d539fDa7Cf29707866a72d4B69Cf813B) |
-| `Loot` | [`0x2810313DA39b9b8C33a9bc9d4C3bC65AdD8a9072`](https://creditcoin-testnet.blockscout.com/address/0x2810313DA39b9b8C33a9bc9d4C3bC65AdD8a9072) |
-| `Marketplace` | [`0x64B80FfE7d54167ACB90D75b73A5459Ea168AbDB`](https://creditcoin-testnet.blockscout.com/address/0x64B80FfE7d54167ACB90D75b73A5459Ea168AbDB) |
+| `Loot` | [`0xFf0271fb151F25cf909d1d8b16017Af54FBb9938`](https://creditcoin-testnet.blockscout.com/address/0xFf0271fb151F25cf909d1d8b16017Af54FBb9938) |
+| `Marketplace` | [`0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374`](https://creditcoin-testnet.blockscout.com/address/0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374) |
 | `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) |
 | `QuestPortal` (Sepolia) | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 

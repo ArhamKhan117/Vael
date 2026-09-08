@@ -58,8 +58,8 @@ cast call $QUEST_MANAGER_ADDRESS \
 | Creditcoin 102031 | `Erc20TransferAdapter` | [`0x3832FEA301b9206F4415409636cf2A08B68aE2aE`](https://creditcoin-testnet.blockscout.com/address/0x3832FEA301b9206F4415409636cf2A08B68aE2aE) |
 | Creditcoin 102031 | `UniswapV3SwapAdapter` | [`0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7`](https://creditcoin-testnet.blockscout.com/address/0xb18dFE3CC5255068217bc85B1672C8D36A90a1b7) |
 | Creditcoin 102031 | `AaveV3Adapter` | [`0xFD1fafD1BAa976D67373F745F8c46287b5D6692B`](https://creditcoin-testnet.blockscout.com/address/0xFD1fafD1BAa976D67373F745F8c46287b5D6692B) |
-| Creditcoin 102031 | `VaelHero` | [`0x6Da74d3F37973FA99eDF8153D2155a9F70235b77`](https://creditcoin-testnet.blockscout.com/address/0x6Da74d3F37973FA99eDF8153D2155a9F70235b77) |
-| Creditcoin 102031 | `RaidBoss` | [`0x201Fe44a8E26Ce866A5DB807b29b90710b527c41`](https://creditcoin-testnet.blockscout.com/address/0x201Fe44a8E26Ce866A5DB807b29b90710b527c41) |
+| Creditcoin 102031 | `VaelHero` | [`0x74befcC907073f5F0125813FEF3A2A22406d3024`](https://creditcoin-testnet.blockscout.com/address/0x74befcC907073f5F0125813FEF3A2A22406d3024) |
+| Creditcoin 102031 | `RaidBoss` | [`0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B`](https://creditcoin-testnet.blockscout.com/address/0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B) |
 | Creditcoin 102031 | `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) |
 | Sepolia 11155111 | `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 
