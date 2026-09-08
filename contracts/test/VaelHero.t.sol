@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {CompleterSet} from "../src/access/CompleterSet.sol";
-import {Test} from "forge-std/Test.sol";
+import {Test, stdError} from "forge-std/Test.sol";
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 import {VaelHero} from "../src/game/VaelHero.sol";
@@ -22,6 +22,8 @@ contract VaelHeroTest is Test {
     uint8 internal constant SWAP = uint8(VaelTypes.ActionType.UniswapSwap);
     uint8 internal constant SUPPLY = uint8(VaelTypes.ActionType.AaveSupply);
     uint8 internal constant BORROW = uint8(VaelTypes.ActionType.AaveBorrow);
+    uint8 internal constant PENGUIN = uint8(VaelTypes.ActionType.PenguinSwapSwap);
+    uint8 internal constant WRAP = uint8(VaelTypes.ActionType.WrapNative);
 
     function setUp() public {
         hero = new VaelHero(owner);
@@ -59,6 +61,45 @@ contract VaelHeroTest is Test {
         assertEq(hero.xpFor(SWAP, 1), 100);
         assertEq(hero.xpFor(SUPPLY, 1), 120);
         assertEq(hero.xpFor(BORROW, 1), 150);
+        assertEq(hero.xpFor(PENGUIN, 1), 70);
+        assertEq(hero.xpFor(WRAP, 1), 40);
+    }
+
+    /**
+     * A Creditcoin action is worth less than the Ethereum action it mirrors.
+     *
+     * `_baseXP` ended in a bare `return XP_AAVE_BORROW`, so the moment the enum grew, wrapping CTC
+     * paid 150 XP: more than a proved Uniswap swap, for one local transaction and no wait. The
+     * ordering is the design, so the ordering is what is asserted.
+     */
+    function test_NativeActionsPayLessThanProvedOnes() public view {
+        assertLt(hero.xpFor(PENGUIN, 1), hero.xpFor(SWAP, 1), "a native swap must not beat a proved one");
+        assertLt(hero.xpFor(WRAP, 1), hero.xpFor(PORTAL, 1), "wrapping is the easiest action there is");
+        assertLt(hero.xpFor(WRAP, 1), hero.xpFor(PENGUIN, 1));
+    }
+
+    /// @dev An action type this deployment has never heard of is refused, not priced: Solidity
+    ///      panics on a cast past the end of the enum. That is the right failure, and the opposite
+    ///      of the trailing `else` that silently paid the highest rate in the table.
+    function test_AnUnknownActionIsRefusedRatherThanPriced() public {
+        vm.expectRevert(stdError.enumConversionError);
+        hero.xpFor(200, 1);
+    }
+
+    /// @dev A swap trains agility on either chain, and wrapping is value movement, so strength.
+    ///      Both used to fall through to intellect, which is the lending stat.
+    function test_NativeActionsTrainTheRightStat() public {
+        vm.prank(player);
+        hero.mintHero();
+        _complete(player, PENGUIN, 1, 0);
+        assertEq(hero.heroByAddress(player).agility, 1, "a swap is timing, wherever it happens");
+        assertEq(hero.heroByAddress(player).intellect, 0);
+
+        vm.prank(other);
+        hero.mintHero();
+        _complete(other, WRAP, 1, 0);
+        assertEq(hero.heroByAddress(other).strength, 1, "wrapping is direct value movement");
+        assertEq(hero.heroByAddress(other).intellect, 0);
     }
 
     function test_TierMultipliers() public view {

@@ -44,6 +44,10 @@ contract RaidBoss is Ownable, CompleterSet, ICompletionHook {
     uint256 internal constant DMG_UNISWAP_SWAP = 200;
     uint256 internal constant DMG_AAVE_SUPPLY = 240;
     uint256 internal constant DMG_AAVE_BORROW = 300;
+    /// @dev Creditcoin-native actions, at 70% of the same action proved across a chain boundary.
+    /// See VaelHero for why the easier path is worth less rather than more.
+    uint256 internal constant DMG_PENGUINSWAP_SWAP = 140;
+    uint256 internal constant DMG_WRAP_NATIVE = 80;
 
     /// @notice Share of the loot pool reserved for whoever lands the killing blow, in percent.
     uint256 public constant LAST_HIT_BONUS_PERCENT = 5;
@@ -175,13 +179,20 @@ contract RaidBoss is Ownable, CompleterSet, ICompletionHook {
         return scaled;
     }
 
+    /// @dev Every action type is named, and the default is zero. See VaelHero._baseXP: a trailing
+    /// `else` gave the two Creditcoin actions the Aave borrow rate the moment the enum grew, so
+    /// wrapping CTC hit the boss harder than a proved Uniswap swap. `onQuestCompleted` returns
+    /// early on zero damage, so an unknown action contributes nothing rather than the maximum.
     function _baseDamage(uint8 actionType) private pure returns (uint256) {
         VaelTypes.ActionType action = VaelTypes.ActionType(actionType);
         if (action == VaelTypes.ActionType.Portal) return DMG_PORTAL;
         if (action == VaelTypes.ActionType.Erc20Transfer) return DMG_ERC20_TRANSFER;
         if (action == VaelTypes.ActionType.UniswapSwap) return DMG_UNISWAP_SWAP;
         if (action == VaelTypes.ActionType.AaveSupply) return DMG_AAVE_SUPPLY;
-        return DMG_AAVE_BORROW;
+        if (action == VaelTypes.ActionType.AaveBorrow) return DMG_AAVE_BORROW;
+        if (action == VaelTypes.ActionType.PenguinSwapSwap) return DMG_PENGUINSWAP_SWAP;
+        if (action == VaelTypes.ActionType.WrapNative) return DMG_WRAP_NATIVE;
+        return 0;
     }
 
     // ---------------------------------------------------------------- loot

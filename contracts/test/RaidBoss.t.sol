@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {CompleterSet} from "../src/access/CompleterSet.sol";
-import {Test} from "forge-std/Test.sol";
+import {Test, stdError} from "forge-std/Test.sol";
 
 import {RaidBoss, IVaelHeroLevels, IBadgeMinter} from "../src/game/RaidBoss.sol";
 import {VaelHero} from "../src/game/VaelHero.sol";
@@ -26,6 +26,8 @@ contract RaidBossTest is Test {
     uint8 internal constant PORTAL = uint8(VaelTypes.ActionType.Portal);
     uint8 internal constant SWAP = uint8(VaelTypes.ActionType.UniswapSwap);
     uint8 internal constant BORROW = uint8(VaelTypes.ActionType.AaveBorrow);
+    uint8 internal constant PENGUIN = uint8(VaelTypes.ActionType.PenguinSwapSwap);
+    uint8 internal constant WRAP = uint8(VaelTypes.ActionType.WrapNative);
 
     uint256 internal constant LOOT = 1000 ether;
 
@@ -68,6 +70,40 @@ contract RaidBossTest is Test {
         assertEq(raid.damageFor(SWAP, 2, 0), 300, "tier 2 is x1.5");
         assertEq(raid.damageFor(SWAP, 3, 0), 400, "tier 3 is x2");
         assertEq(raid.damageFor(SWAP, 3, 5), 600, "level and tier compound");
+    }
+
+    /**
+     * The two Creditcoin actions are worth less than the Ethereum action they mirror.
+     *
+     * This is the assertion that would have caught the bug it exists for. `_baseDamage` ended in a
+     * bare `return DMG_AAVE_BORROW`, so the moment the enum grew, wrapping CTC hit the boss for 300
+     * and out-damaged every proved cross-chain action in the game. The ordering is the design, so
+     * the ordering is what is asserted, not just the numbers.
+     */
+    function test_NativeActionsAreWorthLessThanProvedOnes() public view {
+        assertEq(raid.damageFor(PENGUIN, 1, 0), 140);
+        assertEq(raid.damageFor(WRAP, 1, 0), 80);
+        assertLt(
+            raid.damageFor(PENGUIN, 1, 0),
+            raid.damageFor(SWAP, 1, 0),
+            "a native swap must not beat the same swap proved across a chain boundary"
+        );
+        assertLt(raid.damageFor(WRAP, 1, 0), raid.damageFor(PORTAL, 1, 0), "wrapping is the easiest action there is");
+        assertLt(raid.damageFor(WRAP, 1, 0), raid.damageFor(PENGUIN, 1, 0));
+    }
+
+    /**
+     * An action type this deployment has never heard of is refused, not priced.
+     *
+     * Solidity panics on a cast past the end of the enum, so the `return 0` at the bottom of
+     * `_baseDamage` is unreachable from outside and is there to state the intent. That panic is the
+     * right failure: an action a future enum adds costs nothing here until this contract is
+     * redeployed knowing about it. The old trailing `else` did the opposite, silently pricing
+     * anything unknown at the highest rate in the table.
+     */
+    function test_AnUnknownActionIsRefusedRatherThanPriced() public {
+        vm.expectRevert(stdError.enumConversionError);
+        raid.damageFor(200, 1, 0);
     }
 
     function test_HeroLevelScalesDamage() public {

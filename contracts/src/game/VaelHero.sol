@@ -47,6 +47,12 @@ contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
     uint64 internal constant XP_UNISWAP_SWAP = 100;
     uint64 internal constant XP_AAVE_SUPPLY = 120;
     uint64 internal constant XP_AAVE_BORROW = 150;
+    /// @dev Creditcoin-native actions. Worth less than the same action proved across a chain
+    /// boundary, deliberately: a native quest is one transaction and no wait, and the cross-chain
+    /// proof is the thing this project exists to make possible. Paying more for the easier path
+    /// would say the opposite.
+    uint64 internal constant XP_PENGUINSWAP_SWAP = 70;
+    uint64 internal constant XP_WRAP_NATIVE = 40;
 
     /// @notice Sepolia blocks within which a further action continues a streak.
     /// @dev 7200 blocks is roughly a day at 12 second blocks.
@@ -260,22 +266,35 @@ contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
         return base;
     }
 
+    /// @dev Every action type is named. The default is zero rather than the largest value: an
+    /// action this table has not been taught about should be worth nothing until somebody decides
+    /// what it is worth, not silently worth the most. A trailing `else` handed the two Creditcoin
+    /// actions the Aave borrow rate the moment the enum grew, which is exactly that mistake.
     function _baseXP(uint8 actionType) private pure returns (uint64) {
         VaelTypes.ActionType action = VaelTypes.ActionType(actionType);
         if (action == VaelTypes.ActionType.Portal) return XP_PORTAL;
         if (action == VaelTypes.ActionType.Erc20Transfer) return XP_ERC20_TRANSFER;
         if (action == VaelTypes.ActionType.UniswapSwap) return XP_UNISWAP_SWAP;
         if (action == VaelTypes.ActionType.AaveSupply) return XP_AAVE_SUPPLY;
-        return XP_AAVE_BORROW;
+        if (action == VaelTypes.ActionType.AaveBorrow) return XP_AAVE_BORROW;
+        if (action == VaelTypes.ActionType.PenguinSwapSwap) return XP_PENGUINSWAP_SWAP;
+        if (action == VaelTypes.ActionType.WrapNative) return XP_WRAP_NATIVE;
+        return 0;
     }
 
-    /// @dev One point to the stat the action exercises. Portal and transfers are direct value
-    /// movement, so strength; a swap is timing, so agility; lending is planning, so intellect.
+    /// @dev One point to the stat the action exercises. Portal check-ins, transfers and wrapping
+    /// are direct value movement, so strength; a swap is timing, so agility, on either chain;
+    /// lending is planning, so intellect.
     function _applyAffinity(Hero storage hero, uint8 actionType) private {
         VaelTypes.ActionType action = VaelTypes.ActionType(actionType);
-        if (action == VaelTypes.ActionType.Portal || action == VaelTypes.ActionType.Erc20Transfer) {
+        if (
+            action == VaelTypes.ActionType.Portal || action == VaelTypes.ActionType.Erc20Transfer
+                || action == VaelTypes.ActionType.WrapNative
+        ) {
             hero.strength += 1;
-        } else if (action == VaelTypes.ActionType.UniswapSwap) {
+        } else if (
+            action == VaelTypes.ActionType.UniswapSwap || action == VaelTypes.ActionType.PenguinSwapSwap
+        ) {
             hero.agility += 1;
         } else {
             hero.intellect += 1;
