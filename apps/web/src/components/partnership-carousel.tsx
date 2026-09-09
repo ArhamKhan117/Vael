@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, MoveRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { useIsTablet } from "@/hooks/breakpoint";
-import { Button } from "./ui/button";
+import { CampaignCard } from "./campaign-card";
 import { useCampaigns } from "@/hooks/useCampaigns";
-import type { ChainCampaign } from "@/lib/api";
 
 /**
  * Partner campaigns, straight off CampaignEscrow.
@@ -17,27 +16,17 @@ import type { ChainCampaign } from "@/lib/api";
  * left. There is no artwork and no promised reward, because the escrow holds neither.
  */
 
-const DEFAULT_THUMBNAIL_GRADIENTS = [
-  "from-sky-500/25 via-sky-500/5 to-transparent",
-  "from-amber-500/25 via-amber-500/5 to-transparent",
-  "from-emerald-500/25 via-emerald-500/5 to-transparent",
-  "from-indigo-500/25 via-indigo-500/5 to-transparent",
-];
-
 interface PartnershipCarouselProps {
   /** When false, hide the "Partnership Quests" heading (e.g. when nested under another section) */
   showHeading?: boolean
-}
-
-function label(campaign: ChainCampaign) {
-  return campaign.title ?? campaign.campaignId ?? `Pool ${campaign.campaignKey.slice(0, 10)}…`
 }
 
 export default function PartnershipCarousel({ showHeading = true }: PartnershipCarouselProps) {
   const isTablet = useIsTablet();
   const { campaigns, loading } = useCampaigns({ status: "funded" });
 
-  const CARDS_PER_SLIDE = showHeading ? (isTablet ? 1 : 3) : (isTablet ? 1 : 2);
+  // The card is about half its old height, so a row holds more of them without crowding.
+  const CARDS_PER_SLIDE = showHeading ? (isTablet ? 1 : 4) : (isTablet ? 1 : 3);
 
   const totalSlides = Math.max(1, campaigns.length - CARDS_PER_SLIDE + 1);
   const [index, setIndex] = useState(0);
@@ -74,62 +63,9 @@ export default function PartnershipCarousel({ showHeading = true }: PartnershipC
               {campaigns.map((campaign, i) => (
                 <article
                   key={campaign.campaignKey}
-                  className={`w-full shrink-0 px-2 ${showHeading ? "lg:w-1/3" : "lg:w-1/2"}`}
+                  className={`w-full shrink-0 px-2 ${showHeading ? "lg:w-1/4" : "lg:w-1/3"}`}
                 >
-                  <div
-                    data-testid={`campaign-card-${campaign.campaignKey}`}
-                    className="flex h-full flex-col justify-between rounded border border-[#1A1A1A] bg-[#18181B] px-6 py-6"
-                  >
-                    <div
-                      className={`relative flex h-40 w-full flex-col items-center justify-center rounded bg-linear-to-b ${
-                        DEFAULT_THUMBNAIL_GRADIENTS[i % DEFAULT_THUMBNAIL_GRADIENTS.length]
-                      }`}
-                    >
-                      <p className="text-3xl font-semibold text-white">
-                        {Number(campaign.balanceVael).toLocaleString(undefined, {
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-400">
-                        VAEL in escrow
-                      </p>
-                    </div>
-
-                    <div className="mt-6 space-y-3">
-                      <div className="flex items-center justify-between text-[11px] font-medium text-zinc-400">
-                        <span className="rounded bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.14em]">
-                          Partner
-                        </span>
-                        <span className="rounded bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-300">
-                          Funded
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-                          Campaign
-                        </p>
-                        <p className="truncate text-xl font-semibold text-sky-300 md:text-2xl">
-                          {label(campaign)}
-                        </p>
-                        <p className="text-xs text-zinc-400">
-                          {campaign.questCount} quest{campaign.questCount === 1 ? "" : "s"} on chain,{" "}
-                          {campaign.completedCount} completed. Every payout needs an Attestcoin proof.
-                        </p>
-                      </div>
-                    </div>
-
-                    <Button
-                      asChild
-                      variant="default"
-                      className="mt-6 rounded bg-sky-500 font-semibold text-black hover:bg-sky-400"
-                    >
-                      <Link href={`/campaigns/${campaign.campaignKey}`}>
-                        View campaign
-                        <MoveRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
+                  <CampaignCard campaign={campaign} />
                 </article>
               ))}
             </div>

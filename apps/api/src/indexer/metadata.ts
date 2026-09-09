@@ -17,6 +17,8 @@ export interface QuestMetadata {
   description: string
   /** From the Cadence attribute the generator pins. Absent for anything else. */
   cadence?: QuestCadence
+  /** The pinned banner, as an `ipfs://` URI. Absent when the quest was published without one. */
+  image?: string
 }
 
 function cadenceOf(attributes: unknown): QuestCadence | undefined {
@@ -50,6 +52,10 @@ export async function fetchQuestMetadata(metadataURI: string): Promise<QuestMeta
     }
     const cadence = cadenceOf(body.attributes)
     if (cadence) metadata.cadence = cadence
+    // `banner` is what the Studio writes and `image` is the ERC-721 convention; both are accepted
+    // so a quest pinned by either path shows its picture.
+    const image = body.banner ?? body.image
+    if (typeof image === "string" && image) metadata.image = image
     return metadata
   } catch {
     return undefined

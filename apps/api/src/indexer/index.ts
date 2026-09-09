@@ -633,6 +633,7 @@ export class CreditcoinIndexer {
         description: metadata?.description ?? "",
         cadence,
         creditcoinBlock,
+        ...(metadata?.image ? { image: metadata.image } : {}),
       }
       await this.store.upsertQuestCatalog(questId, fields)
 

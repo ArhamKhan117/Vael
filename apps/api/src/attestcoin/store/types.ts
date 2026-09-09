@@ -270,6 +270,8 @@ export interface QuestCatalogFields {
   description: string
   cadence: QuestCadence
   creditcoinBlock: number
+  /** The pinned banner as an `ipfs://` URI, copied out of the metadata document at index time. */
+  image?: string
 }
 
 /**

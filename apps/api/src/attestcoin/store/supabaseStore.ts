@@ -267,6 +267,7 @@ export class SupabaseWorkerStore implements WorkerStore {
         description: fields.description,
         cadence: fields.cadence,
         creditcoin_block: fields.creditcoinBlock,
+        image: fields.image ?? null,
         catalogued: true,
         updated_at: new Date().toISOString(),
       },
@@ -733,6 +734,7 @@ function catalogFromRow(row: any): CataloguedQuest {
   quest.description = row.description ?? ""
   quest.cadence = (row.cadence ?? "open") as QuestCadence
   quest.creditcoinBlock = Number(row.creditcoin_block ?? 0)
+  if (row.image) quest.image = String(row.image)
   return quest
 }
 

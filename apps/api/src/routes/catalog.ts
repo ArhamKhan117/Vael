@@ -3,6 +3,7 @@ import { Contract, formatUnits } from "ethers"
 
 import { creditcoinProvider } from "../attestcoin/config"
 import { createWorkerStore } from "../attestcoin/store"
+import { verifiedProtocolFor } from "../lib/verifiedProtocol"
 import { tokenInfo } from "../lib/protocols"
 import type {
   CataloguedQuest,
@@ -144,6 +145,9 @@ function serialize(quest: CataloguedQuest, proof: ProofState) {
     completed: quest.completed,
     acceptedCount: quest.acceptedCount ?? 0,
     completedCount: quest.completedCount ?? 0,
+    // Copied out of the pinned metadata at index time, so a card does not fetch an IPFS gateway
+    // per quest to find out whether it has a picture.
+    ...(quest.image ? { image: quest.image } : {}),
     /** What the player has to do for this quest to pay, and where. */
     action: {
       actionType: quest.actionType,
@@ -254,8 +258,9 @@ async function summarize(
     })
   )
 
-  return campaigns.map((campaign, i) => {
-    const balance = balances[i] ?? "0"
+  return Promise.all(
+    campaigns.map(async (campaign, i) => {
+      const balance = balances[i] ?? "0"
     const mine = quests.filter(
       (quest) => quest.campaignId && campaignKeyOf(quest.campaignId) === campaign.campaignKey
     )
@@ -278,9 +283,28 @@ async function summarize(
     const questTitles = new Set(mine.map((quest) => quest.title).filter((t): t is string => !!t))
     const title = campaign.title ?? (questTitles.size === 1 ? [...questTitles][0] : undefined)
 
+      // Which protocol this pool's quests target, and whether the chain's own allowlist agrees it
+      // is that protocol's contract. Claimed only when every quest in the pool points at the same
+      // one: a pool whose quests target three protocols is not one protocol's campaign.
+      const protocols = await Promise.all(
+        mine.map((quest) =>
+          verifiedProtocolFor(quest.emitter, quest.actionType, quest.sourceChainKey)
+        )
+      )
+      const named = protocols.filter((p): p is NonNullable<typeof p> => !!p)
+      const slugs = new Set(named.map((p) => p.slug))
+      const protocol =
+        named.length === protocols.length && slugs.size === 1 && named.length > 0
+          ? { name: named[0]!.name, slug: named[0]!.slug, verified: named.every((p) => p.verified) }
+          : undefined
+
     return {
       ...campaign,
       ...(title ? { title } : {}),
+      ...(protocol ? { protocol } : {}),
+      // A pool has no picture of its own; its quests do, and they share one when published
+      // together. Borrowing it is how a partner card gets a background without inventing one.
+      ...(mine.find((quest) => quest.image) ? { image: mine.find((quest) => quest.image)!.image } : {}),
       deposited,
       balance,
       balanceVael: formatUnits(balance, 18),
@@ -288,7 +312,8 @@ async function summarize(
       completedCount: mine.filter((quest) => quest.completed).length,
       status: BigInt(balance) > 0n ? "funded" : refunded ? "refunded" : "drained",
     }
-  })
+    })
+  )
 }
 
 /**

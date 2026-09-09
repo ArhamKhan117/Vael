@@ -311,6 +311,8 @@ export interface ChainQuest {
   completed: boolean
   acceptedCount: number
   completedCount: number
+  /** The pinned banner as an `ipfs://` URI, when the quest was published with one. */
+  image?: string
   action: {
     actionType: number
     actionName: string
@@ -344,6 +346,15 @@ export interface ChainCampaign {
   questCount: number
   completedCount: number
   status: CampaignStatus
+  /**
+   * The protocol every quest in this pool targets, when they all target one.
+   *
+   * `verified` is not a label anybody can set: it is true only when QuestASC's own allowlist
+   * accepts that contract for that action type, so a campaign cannot call itself official.
+   */
+  protocol?: { name: string; slug: string; verified: boolean }
+  /** Banner pinned with the campaign's quests, if one was. */
+  image?: string
 }
 
 export const api = new APIClient()
