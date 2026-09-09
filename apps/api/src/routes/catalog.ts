@@ -270,8 +270,17 @@ async function summarize(
     const deposited =
       accountedFor > BigInt(campaign.deposited) ? accountedFor.toString() : campaign.deposited
 
+    // CampaignEscrow stores a bytes32 key and no name, so a pool has nothing to call itself and
+    // every partner card read "Pool 0x6fa8f505…". Its quests do have a name: they carry the
+    // metadata the partner pinned when they published. Where every quest in a pool agrees on a
+    // title, that is the pool's name. Where they disagree, or there are none, the key stands,
+    // because inventing a name for a pool is worse than showing the identifier it actually has.
+    const questTitles = new Set(mine.map((quest) => quest.title).filter((t): t is string => !!t))
+    const title = campaign.title ?? (questTitles.size === 1 ? [...questTitles][0] : undefined)
+
     return {
       ...campaign,
+      ...(title ? { title } : {}),
       deposited,
       balance,
       balanceVael: formatUnits(balance, 18),
