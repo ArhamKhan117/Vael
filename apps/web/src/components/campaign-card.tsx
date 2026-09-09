@@ -49,8 +49,10 @@ export function CampaignCard({ campaign }: { campaign: ChainCampaign }) {
       <div className="relative flex h-full flex-col justify-between gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate text-sm font-semibold text-sky-200">{name}</h3>
+            {/* The chip sits under the title rather than beside it. Inline, a long name pushed it
+                onto a second line and that card grew taller than its neighbours in the same row. */}
+            <h3 className="truncate text-sm font-semibold text-sky-200">{name}</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 empty:hidden">
               {campaign.protocol?.verified && (
                 // Shown only when QuestASC's allowlist accepts the contract these quests read, so
                 // the chip is a statement about the chain rather than about the partner.
