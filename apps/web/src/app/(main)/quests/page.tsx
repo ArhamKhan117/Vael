@@ -12,9 +12,14 @@ import type { ChainQuest } from "@/lib/api";
 /**
  * The quest board.
  *
- * Every quest here exists because QuestManager emitted QuestCreated on Creditcoin. Connecting a
- * wallet filters the board to the quests assigned to that address; without one it shows the whole
- * board, because a player deciding whether to play should be able to see what there is to play.
+ * Every quest here exists because QuestManager emitted QuestCreated on Creditcoin, and every one of
+ * them is on this page whether a wallet is connected or not. Connecting does not filter the board;
+ * it sorts it, putting your own assignments first and marking them.
+ *
+ * That is deliberate. The board is the argument: a visitor should be able to see that real quests
+ * exist, who they are assigned to and which have been proved, before deciding to connect anything.
+ * The one thing a wallet is needed for is accepting, and a quest is assigned to an address at
+ * creation, so somebody else's quest is readable by everyone and acceptable by nobody else.
  */
 
 const PERSONAL: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] = [
@@ -57,8 +62,13 @@ function SectionHeading({ title, count, blurb }: { title: string; count: number;
 
 export default function QuestsPage() {
   const { address, isConnected } = useWallet();
-  const { quests, loading, error } = useAllQuests(
-    isConnected && address ? { participant: address } : undefined
+  // Never filtered by participant. The whole board, always.
+  const { quests, loading, error } = useAllQuests();
+  const viewer = isConnected && address ? address.toLowerCase() : undefined;
+
+  const mineCount = useMemo(
+    () => (viewer ? quests.filter((q) => q.participant?.toLowerCase() === viewer).length : 0),
+    [quests, viewer]
   );
 
   const byCadence = useMemo(() => {
@@ -67,6 +77,17 @@ export default function QuestsPage() {
       const list = map.get(quest.cadence) ?? [];
       list.push(quest);
       map.set(quest.cadence, list);
+    }
+    // Your own assignments first inside each section, then the rest. Sorting rather than hiding is
+    // the whole difference between a board and a private list.
+    if (viewer) {
+      for (const list of map.values()) {
+        list.sort((a, b) => {
+          const mineA = a.participant?.toLowerCase() === viewer ? 0 : 1;
+          const mineB = b.participant?.toLowerCase() === viewer ? 0 : 1;
+          return mineA - mineB || b.questId - a.questId;
+        });
+      }
     }
     return map;
   }, [quests]);
@@ -83,9 +104,7 @@ export default function QuestsPage() {
         </>
       );
     }
-    return isConnected
-      ? "Nothing assigned to this wallet yet."
-      : "Nothing on chain in this category yet.";
+    return "Nothing on chain in this category yet.";
   };
 
   return (
@@ -97,9 +116,9 @@ export default function QuestsPage() {
           <div>
             <h2 className="text-xl font-semibold md:text-2xl">Quest board</h2>
             <p className="mt-1 text-xs text-zinc-500">
-              {isConnected
-                ? "Quests assigned to your wallet, read from QuestManager on Creditcoin."
-                : "Every quest on chain. Connect a wallet to see the ones assigned to you."}
+              {viewer
+                ? `Every quest on chain, read from QuestManager. ${mineCount} assigned to your wallet, shown first.`
+                : "Every quest on chain, read from QuestManager. Connect a wallet to accept the ones assigned to you."}
             </p>
           </div>
           <p className="text-xs text-zinc-500" data-testid="quest-count">
@@ -127,7 +146,9 @@ export default function QuestsPage() {
                   ) : list.length === 0 ? (
                     <QuestGridEmpty>{emptyMessage(section.cadence)}</QuestGridEmpty>
                   ) : (
-                    list.map((quest) => <QuestCard key={quest.questId} quest={quest} />)
+                    list.map((quest) => (
+                      <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
+                    ))
                   )}
                 </div>
               </section>
@@ -146,7 +167,9 @@ export default function QuestsPage() {
                 ) : list.length === 0 ? (
                   <QuestGridEmpty>{emptyMessage(section.cadence)}</QuestGridEmpty>
                 ) : (
-                  list.map((quest) => <QuestCard key={quest.questId} quest={quest} />)
+                  list.map((quest) => (
+                    <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
+                  ))
                 )}
               </div>
             </section>

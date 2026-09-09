@@ -50,14 +50,25 @@ function short(address: string) {
   return address && address.length > 10 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address
 }
 
-export function QuestCard({ quest }: { quest: ChainQuest }) {
+export function QuestCard({
+  quest,
+  /** The connected wallet, so a quest assigned to it can say so. Absent when nobody is connected. */
+  viewer,
+}: {
+  quest: ChainQuest
+  viewer?: string | null
+}) {
   const cadence = CADENCE_STYLE[quest.cadence] ?? CADENCE_STYLE.open
   const stage = quest.proof.state
+  const mine =
+    !!viewer && !!quest.participant && quest.participant.toLowerCase() === viewer.toLowerCase()
 
   return (
     <div
       data-testid={`quest-card-${quest.questId}`}
-      className="flex h-full flex-col justify-between rounded border border-[#1A1A1A] p-6"
+      className={`flex h-full flex-col justify-between rounded border p-6 ${
+        mine ? "border-sky-500/40 bg-sky-500/[0.03]" : "border-[#1A1A1A]"
+      }`}
     >
       <div className="space-y-4">
         {/* The art says what the action is; the chip says how often it comes round. A letter in a
@@ -66,8 +77,15 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
           <ActionArt actionType={quest.action.actionType} size={64} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-500">
-              <span className={`rounded-full px-2 py-0.5 text-[10px] ${cadence.chip}`}>
-                {cadence.label}
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] ${cadence.chip}`}>
+                  {cadence.label}
+                </span>
+                {mine && (
+                  <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] text-sky-300">
+                    Yours
+                  </span>
+                )}
               </span>
               <span className="shrink-0 rounded border border-zinc-700 px-2 py-0.5">
                 ID: {quest.questId}
@@ -132,13 +150,28 @@ export function QuestCard({ quest }: { quest: ChainQuest }) {
         </div>
       </div>
 
+      {/* The board is public, so the button says what this visitor can actually do. Accepting is
+          the one thing that needs a wallet, and it needs *this* quest's wallet: a quest is assigned
+          to an address at creation, so somebody else's quest is readable but never acceptable. */}
       <Button
         asChild
         variant="default"
-        className="mt-5 rounded bg-white font-semibold text-black hover:bg-white/80"
+        className={`mt-5 rounded font-semibold ${
+          mine || quest.completed
+            ? "bg-white text-black hover:bg-white/80"
+            : "border border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-900"
+        }`}
       >
         <Link href={`/quests/${quest.questId}`}>
-          {quest.completed ? "View proof" : quest.accepted ? "Continue quest" : "Accept quest"}
+          {quest.completed
+            ? "View proof"
+            : mine
+              ? quest.accepted
+                ? "Continue quest"
+                : "Accept quest"
+              : viewer
+                ? "View quest"
+                : "Connect to accept"}
           <MoveRight className="ml-2 h-4 w-4" />
         </Link>
       </Button>
