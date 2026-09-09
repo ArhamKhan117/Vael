@@ -74,9 +74,19 @@ CREATE INDEX IF NOT EXISTS idx_raid_damage_season_player ON raid_damage(season_i
 -- The single declaration now lives in add_indexer_actions_and_rewards.sql.
 
 -- Existing submissions predate the proof pipeline; bring them onto the same shape.
-ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS source_chain_key BIGINT NOT NULL DEFAULT 1;
-ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS query_id TEXT;
-ALTER TABLE quest_submissions DROP COLUMN IF EXISTS mirror_node_payload;
+--
+-- Guarded, because `quest_submissions` is from the database-first design and was dropped by
+-- `drop_database_first_tables.sql`. On a fresh database it never exists, and three bare ALTERs
+-- would fail the whole migration set on the one path nobody runs often enough to notice.
+DO $$
+BEGIN
+  IF to_regclass('public.quest_submissions') IS NOT NULL THEN
+    ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS source_chain_key BIGINT NOT NULL DEFAULT 1;
+    ALTER TABLE quest_submissions ADD COLUMN IF NOT EXISTS query_id TEXT;
+    ALTER TABLE quest_submissions DROP COLUMN IF EXISTS mirror_node_payload;
+  END IF;
+END
+$$;
 
 -- Chain-derived quest index. Everything here comes from Creditcoin events, so it is a cache the
 -- indexer can rebuild; it exists so the worker can answer "which quest does this Sepolia log
