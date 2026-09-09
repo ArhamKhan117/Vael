@@ -3,19 +3,23 @@ import Image from "next/image"
 import { ActionType, isNativeAction } from "@/lib/attestcoin/types"
 
 /**
- * The artwork for one action type, drawn by `apps/web/scripts/make-action-art.mjs`.
+ * The artwork for one action type, drawn by `apps/api/scripts/generate-art.ts` and credited in
+ * `apps/web/public/game/CREDITS.md` with the prompt and the model that drew it.
  *
  * Keyed by the on-chain `VaelTypes.ActionType`, not by `Quest.category`: the agent sets the category
  * to Swap for everything, so a card keyed on it would put swap art on an Aave supply.
+ *
+ * The alt text describes the picture rather than restating the action name, which is already beside
+ * it in the markup: a screen reader reading "Uniswap swap, Uniswap swap" is worse than no alt at all.
  */
 const ART: Record<number, { slug: string; alt: string }> = {
-  [ActionType.Portal]: { slug: "portal", alt: "A portal on a plinth" },
-  [ActionType.UniswapSwap]: { slug: "uniswap-swap", alt: "Two arrows passing, one token for another" },
-  [ActionType.Erc20Transfer]: { slug: "erc20-transfer", alt: "A coin in motion" },
-  [ActionType.AaveSupply]: { slug: "aave-supply", alt: "A coin going into a vault" },
-  [ActionType.AaveBorrow]: { slug: "aave-borrow", alt: "A coin coming out of a vault" },
-  [ActionType.PenguinSwapSwap]: { slug: "penguinswap-swap", alt: "Two arrows passing, on Creditcoin" },
-  [ActionType.WrapNative]: { slug: "wrap-native", alt: "A coin inside a box" },
+  [ActionType.Portal]: { slug: "portal", alt: "A glowing portal archway on a stone plinth" },
+  [ActionType.UniswapSwap]: { slug: "uniswap-swap", alt: "Two blue coins arcing past each other" },
+  [ActionType.Erc20Transfer]: { slug: "erc20-transfer", alt: "A green coin streaking through the dark" },
+  [ActionType.AaveSupply]: { slug: "aave-supply", alt: "Coins pouring down into an open vault" },
+  [ActionType.AaveBorrow]: { slug: "aave-borrow", alt: "Coins rising out of an open vault" },
+  [ActionType.PenguinSwapSwap]: { slug: "penguinswap-swap", alt: "Two cyan coins trading above blue ice" },
+  [ActionType.WrapNative]: { slug: "wrap-native", alt: "A violet coin inside an open glass cube" },
 }
 
 const FALLBACK = { slug: "portal", alt: "A quest action" }
@@ -52,9 +56,10 @@ export function ActionArt({
         alt={art.alt}
         width={size}
         height={size}
-        // Nearest-neighbour, or a 32px grid upscaled by the browser turns to mush.
-        className={`h-full w-full [image-rendering:pixelated] ${idle ? "action-idle" : ""}`}
-        unoptimized
+        // Served down from 1024px, so next/image does the resizing rather than the browser
+        // shipping a megabyte to draw a 64px square.
+        className={`h-full w-full object-cover ${idle ? "action-idle" : ""}`}
+        sizes="128px"
       />
     </span>
   )
@@ -70,9 +75,9 @@ export function ActionBanner({ actionType, className = "" }: { actionType: numbe
         alt={art.alt}
         width={1024}
         height={384}
-        className="h-full w-full object-cover [image-rendering:pixelated]"
+        className="h-full w-full object-cover"
         priority
-        unoptimized
+        sizes="(max-width: 768px) 100vw, 768px"
       />
       <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-300">
         {isNativeAction(actionType) ? "Creditcoin" : "Ethereum Sepolia"}

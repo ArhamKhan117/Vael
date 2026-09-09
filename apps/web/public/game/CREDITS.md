@@ -26,24 +26,12 @@ but no weapons at all, so the weapons come from Tiny Dungeon.
 
 CC0 permits both without condition; the packs are credited above regardless.
 
-## Quest action artwork
+## Superseded pixel-art generators
 
-`apps/web/public/actions/*.png` are original, drawn by `apps/web/scripts/make-action-art.mjs` from
-integer primitives on a 32x32 grid. Nothing is traced, downscaled, or derived from anything.
-
-They deliberately are **not** each protocol's own brand mark. A logo is somebody else's trademark
-and the rule above is that every committed asset is CC0 or ours; drawing an imitation of a logo
-would be worse than either choice. So the art says what the *action* is, which is what the player
-is actually being asked to do, and the protocol is named in text beside it. Ethereum actions carry
-a grey chain mark in the corner and Creditcoin actions a gold one, so the two swap icons, which are
-the same action on different chains, are never ambiguous.
-
-## Academy lesson diagrams
-
-`apps/web/public/academy/*.png` are original, drawn by `apps/web/scripts/make-lesson-art.mjs` on a
-96x36 pixel grid. One per lesson, each drawing the thing its lesson is about rather than decorating
-it: the gap between two chains, a Merkle tree beside a run of headers, a constant-product curve with
-a trade sliding down it, a supply cap as a red line across a filling vault.
+milestone 10 drew the action icons and the Academy diagrams from integer primitives on a small pixel
+grid, by `apps/web/scripts/make-action-art.mjs` and `make-lesson-art.mjs`. Both are replaced by the
+generated artwork below and the scripts are removed; the commits are in the history if the schematic
+style is ever wanted back.
 
 ## Not included
 
@@ -56,3 +44,27 @@ and serves the same purpose.
 
 Press Start 2P and Pixelify Sans are OFL and are loaded from Google Fonts at runtime rather than
 committed, so there is nothing to redistribute here.
+
+## Generated artwork
+
+Drawn by `apps/api/scripts/generate-art.ts`. Every image below is original: nothing is traced, sampled, or derived from an existing work, and no prompt names a brand or asks for a logo. The prompt, the model that answered, and the file are recorded so any of it can be regenerated or challenged.
+
+<!-- generated-art:start -->
+
+| File | Model | Prompt |
+|---|---|---|
+| `apps/web/public/actions/portal.png` | gpt-image-2.5-flare | A glowing arcane stone portal archway on a raised plinth in a dark chamber, violet energy swirling inside the ring, a small lantern burning on each side. Centred, symmetrical, seen straight on. |
+| `apps/web/public/actions/uniswap-swap.png` | gpt-image-2.5-flare | Two luminous sky-blue coins arcing past each other in a figure-of-eight trade, trailing light, exchanging places above a dark polished floor. Clean, centred, no faces or figures. |
+| `apps/web/public/actions/erc20-transfer.png` | gpt-image-2.5-flare | A single glowing emerald-green coin in flight, streaking left to right with a comet trail of light, against a very dark green-black background. Clean, centred, no faces or figures. |
+| `apps/web/public/actions/aave-supply.png` | gpt-image-2.5-flare | Indigo coins raining down into the open mouth of a heavy stone vault that glows from within, the vault lit from inside by cool blue light. Seen straight on, centred, no faces or figures. |
+| `apps/web/public/actions/aave-borrow.png` | gpt-image-2.5-flare | A heavy stone vault standing open with a stream of warm amber coins rising out of it into the dark air above. Seen straight on, centred, no faces or figures. |
+| `apps/web/public/actions/penguinswap-swap.png` | gpt-image-2.5-flare | Two luminous cyan coins arcing past each other in a trade above a cracked sheet of glowing blue ice, cold mist drifting low. Clean, centred, no animals, no faces or figures. |
+| `apps/web/public/actions/wrap-native.png` | gpt-image-2.5-flare | A single bright violet coin suspended inside an open crystalline cube of glass, the cube's lid lifted and floating just above, soft violet light from within. Centred, no faces or figures. |
+| `apps/web/public/actions/portal-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a vast dark stone hall, a glowing violet arcane portal archway standing on a plinth at the centre, lanterns burning along the walls, a lone cloaked traveller walking towards it. Subject centred with deep empty space either side. |
+| `apps/web/public/actions/uniswap-swap-banner.png` | gpt-image-2.5-flare | Wide cinematic view of two enormous luminous sky-blue coins arcing past each other in a trade high above a dark mirrored floor, long light trails crossing, faint blue mist below. No figures, no faces. |
+| `apps/web/public/actions/erc20-transfer-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a single glowing emerald-green coin streaking across a dark valley at speed, a long comet trail of green light behind it. No figures, no faces. |
+| `apps/web/public/actions/aave-supply-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a monumental stone vault in a dark hall, its round door open, a broad waterfall of indigo coins pouring down into it from above, cool blue light spilling out. No figures. |
+| `apps/web/public/actions/aave-borrow-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a monumental stone vault standing open in a dark hall, a rising column of warm amber coins streaming up out of it into the darkness above, golden light spilling across the floor. No figures. |
+| `apps/web/public/actions/penguinswap-swap-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a dark frozen cavern, a floor of glowing blue ice, two enormous luminous cyan coins arcing past one another in a trade above it, long light trails crossing, cold mist drifting low, icicles catching the light overhead. Fills the frame edge to edge. No animals, no figures, no faces. |
+| `apps/web/public/actions/wrap-native-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a huge crystalline glass cube standing in a dark chamber with a bright violet coin suspended at its centre, the cube's lid floating just above it, violet light radiating outward across the floor. No figures. |
+<!-- generated-art:end -->

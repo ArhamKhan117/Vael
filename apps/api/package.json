@@ -28,7 +28,8 @@
     "seed-wallets": "tsx scripts/seed-wallets.ts",
     "seed-content": "tsx scripts/seed-content.ts",
     "write-seed-log": "tsx scripts/write-seed-log.ts",
-    "audit-seed": "tsx scripts/audit-seed.ts"
+    "audit-seed": "tsx scripts/audit-seed.ts",
+    "generate-art": "tsx scripts/generate-art.ts"
   },
   "keywords": [
     "vael",
