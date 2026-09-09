@@ -38,7 +38,7 @@ this redeploy: the previous cascade needed one to re-mint badges, and this one d
 | `QuestASC` | [`0x05958dD789EaC1de84e864d6b3956C90d3e90d0f`](https://creditcoin-testnet.blockscout.com/address/0x05958dD789EaC1de84e864d6b3956C90d3e90d0f) | [`0xd12cc7c9…cbee36`](https://creditcoin-testnet.blockscout.com/tx/0xd12cc7c9a2e807da9c4a881d4d913c8930667e1a3f4345f9abe6982e71cbee36) | 5465162 | Verifies Attestcoin proofs and applies them. The only contract that can complete a quest whose action was on Ethereum |
 | `NativePortal` | [`0xa512544f721230Fa04560078D0dC214423FE2970`](https://creditcoin-testnet.blockscout.com/address/0xa512544f721230Fa04560078D0dC214423FE2970) | [`0x9a9a4287…d2b51a`](https://creditcoin-testnet.blockscout.com/tx/0x9a9a428778c6962ff5d3204d76559416cfc9879abe4f826f0ab630e481d2b51a) | 5465163 | Performs a Creditcoin action and records the completion in the same transaction. The only contract that can complete a native quest |
 | `RaidBoss` | [`0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B`](https://creditcoin-testnet.blockscout.com/address/0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B) | [`0x7fa0fffe…d52192`](https://creditcoin-testnet.blockscout.com/tx/0x7fa0fffe28f8b2ee69b8dc9d908578ea5c9ddfc46649989fd877ab0bcdd52192) | 5465438 | Season boss. Damage arrives only as a hook from a completion path |
-| `Arena` | [`0xCC29353505b1a8F88FC313ffb22926925198d59b`](https://creditcoin-testnet.blockscout.com/address/0xCC29353505b1a8F88FC313ffb22926925198d59b) | [`0xf71f4ecd…0dd452`](https://creditcoin-testnet.blockscout.com/tx/0xf71f4ecd057bfcbd62dbd106d5e3783f034fcb36891d51c493df25098f0dd452) | 5465439 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
+| `Arena` | [`0xa98672b481c35f76d09612849E75A2c7A1a976d9`](https://creditcoin-testnet.blockscout.com/address/0xa98672b481c35f76d09612849E75A2c7A1a976d9) | [`0xf71f4ecd…0dd452`](https://creditcoin-testnet.blockscout.com/tx/0xf71f4ecd057bfcbd62dbd106d5e3783f034fcb36891d51c493df25098f0dd452) | 5465439 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
 | `Loot` | [`0xFf0271fb151F25cf909d1d8b16017Af54FBb9938`](https://creditcoin-testnet.blockscout.com/address/0xFf0271fb151F25cf909d1d8b16017Af54FBb9938) | [`0x94af1c37…87fb6b`](https://creditcoin-testnet.blockscout.com/tx/0x94af1c37fd9b383e76f27d1c34fcb856ec9b7de25e21ec5e1b81359a5487fb6b) | 5465440 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
 | `Equipment` | [`0xa04EDa9C22f10960Df6f470e143f7f6a195Dcba6`](https://creditcoin-testnet.blockscout.com/address/0xa04EDa9C22f10960Df6f470e143f7f6a195Dcba6) | [`0xc8c08391…dab131`](https://creditcoin-testnet.blockscout.com/tx/0xc8c08391fb0b239004d5d73e4e7082861a7d916984524bf7759932f387dab131) | 5465441 | Four slots per hero, items escrowed while equipped |
 | `Marketplace` | [`0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374`](https://creditcoin-testnet.blockscout.com/address/0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374) | [`0x9d5935b3…cb45c4`](https://creditcoin-testnet.blockscout.com/tx/0x9d5935b310c25fd7fee6085d5c48e60b9a8cd8b72ffac3f880ca89ad23cb45c4) | 5465442 | Fixed-price loot sales for VAEL, 2% to the treasury |
@@ -183,6 +183,26 @@ the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
 
 
 ## Superseded deployments
+
+### Superseded in the Phase 10c arena fix, 2026-09-11
+
+Arena damage was `2*strength + agility`, with no level in it. A level-1 hero has 110 hit points and
+one point of strength, so it dealt two damage a swing: twenty rounds is forty swings, which comes to
+eighty. Two new players could not finish a duel however the seed fell, and every duel between them
+was a guaranteed draw. Not an unlucky outcome, arithmetic, and it made the arena unusable for
+exactly the people most likely to try it first.
+
+| Contract | Superseded address | Replaced by |
+|---|---|---|
+| `Arena` | `0xCC29353505b1a8F88FC313ffb22926925198d59b` | `0xa98672b481c35f76d09612849E75A2c7A1a976d9` |
+
+**One deployment and three wiring transactions.** `Loot.setArena` is a setter and `Arena.setRewards`
+and `Arena.setEquipment` are too, so nothing else moved: not `VaelHero`, which `Arena` holds
+immutably and did not need to change, and not the core. The three duels already fought were refought
+on the new contract and produced three winners.
+
+Damage is now `2 + 2*level + 2*strength + agility`, so hit points and damage grow together. A test
+walks every level to thirty and asserts no level is a dead zone where a duel cannot end.
 
 ### Superseded in the milestone 10b reward-table fix, 2026-09-11
 
