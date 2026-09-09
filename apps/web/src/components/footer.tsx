@@ -26,8 +26,11 @@ const MENU: { label: string; path: string }[] = [
 export default function Footer() {
   return (
     <footer className="border-t border-[#1A1A1A] bg-black px-5 py-10 md:px-10">
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,20rem)_1fr]">
-        <div>
+      {/* The two blocks are pushed apart rather than merely placed side by side: the menu sits
+          against the right edge and the gap between it and the wordmark is the widest thing on the
+          row, so the eye reads them as two separate things instead of one long line of text. */}
+      <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between md:gap-24">
+        <div className="md:max-w-xs">
           <Link href="/" className="mb-4 flex items-center gap-2">
             <Image src="/logo/vael.svg" alt="Vael" width={24} height={24} />
             <span className="font-matemasie mb-1 text-xl text-white">VAEL</span>
@@ -38,18 +41,19 @@ export default function Footer() {
           </p>
         </div>
 
-        <nav aria-labelledby="footer-menu">
+        <nav aria-labelledby="footer-menu" className="md:shrink-0">
           <h2 id="footer-menu" className="mb-4 text-sm font-semibold text-white">
             Menu
           </h2>
           {/* Two columns on a phone, four from `sm` up: twelve links in one column is a scroll,
-              and in four columns at 390 px the labels wrap mid-word. */}
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-4">
+              and in four columns at 390 px the labels wrap mid-word. The rows are tighter than the
+              columns are wide, so the block reads as a grid rather than as four lists. */}
+          <ul className="grid grid-cols-2 gap-x-10 gap-y-1.5 sm:grid-cols-4 lg:gap-x-14">
             {MENU.map((link) => (
               <li key={link.path}>
                 <Link
                   href={link.path}
-                  className="text-sm text-muted-foreground transition hover:text-white"
+                  className="block py-0.5 text-sm text-muted-foreground transition hover:text-white"
                 >
                   {link.label}
                 </Link>
