@@ -355,6 +355,14 @@ export interface ChainCampaign {
   protocol?: { name: string; slug: string; verified: boolean }
   /** Banner pinned with the campaign's quests, if one was. */
   image?: string
+  /**
+   * True when Vael's own deployer funded the pool.
+   *
+   * Such a campaign demonstrates the mechanism rather than representing a third party who paid for
+   * it, and the card says so: implying a partnership that does not exist would be the one dishonest
+   * thing a partner card could do.
+   */
+  selfFunded?: boolean
 }
 
 export const api = new APIClient()

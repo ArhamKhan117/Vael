@@ -302,6 +302,12 @@ async function summarize(
       ...campaign,
       ...(title ? { title } : {}),
       ...(protocol ? { protocol } : {}),
+      // Who put the money in. A pool funded by Vael's own deployer is a demonstration of the
+      // mechanism, not a third party paying for attention, and a card that did not say so would be
+      // implying a partnership that does not exist.
+      selfFunded:
+        !!process.env.DEPLOYER_ADDRESS &&
+        campaign.partner.toLowerCase() === process.env.DEPLOYER_ADDRESS.toLowerCase(),
       // A pool has no picture of its own; its quests do, and they share one when published
       // together. Borrowing it is how a partner card gets a background without inventing one.
       ...(mine.find((quest) => quest.image) ? { image: mine.find((quest) => quest.image)!.image } : {}),

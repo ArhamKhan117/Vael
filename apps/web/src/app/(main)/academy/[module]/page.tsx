@@ -92,16 +92,17 @@ export default function AcademyModulePage() {
                     </button>
                   )}
                 </div>
-                {/* One diagram per lesson, drawn by apps/web/scripts/make-lesson-art.mjs and named
-                    by convention rather than listed in the JSON, so a new lesson cannot ship with a
-                    stale image path pointing at the one before it. */}
+                {/* One image per lesson, named by convention rather than listed in the JSON, so a
+                    new lesson cannot ship with a stale path pointing at the one before it. Alt is
+                    empty on purpose: it illustrates the prose directly beneath it and has nothing
+                    to add to a screen reader that the prose does not already say. */}
                 <Image
                   src={`/academy/${slug}-${index}.png`}
                   alt=""
-                  width={960}
-                  height={360}
-                  className="mt-4 w-full rounded border border-[#1A1A1A] [image-rendering:pixelated]"
-                  unoptimized
+                  width={1536}
+                  height={864}
+                  className="mt-4 aspect-video w-full rounded border border-[#1A1A1A] object-cover"
+                  sizes="(max-width: 768px) 100vw, 768px"
                 />
 
                 <div className="mt-4 space-y-3">

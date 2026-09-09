@@ -33,6 +33,22 @@ grid, by `apps/web/scripts/make-action-art.mjs` and `make-lesson-art.mjs`. Both 
 generated artwork below and the scripts are removed; the commits are in the history if the schematic
 style is ever wanted back.
 
+## Third-party brand assets
+
+**None are committed here, and none are used.** milestone 11 set out to build demo campaigns for
+PenguinSwap and Creditcoin using their own brand marks, with attribution. Neither could be obtained:
+Creditcoin's brand kit at `https://docs.creditcoin.org/brand-kit` serves its files through signed
+URLs that resolve to 404 without a session, and PenguinSwap has no reachable site at any of the
+domains tried. The remaining sources were third-party logo aggregators, whose provenance is worse
+than no logo at all, and redistributing a trademark this repository has no licence to redistribute
+is a different question from using one.
+
+What the demo campaigns carry instead is stronger than a logo. Each says in its own summary that it
+is a demo created by Vael rather than by the protocol; each card shows "demo, funded by Vael",
+derived from the address that actually funded the pool; and the "Verified protocol" chip is true
+only when `QuestASC.allowedEmitters` accepts the contract those quests read. A logo asserts a
+relationship. The chip asserts a fact about the chain.
+
 ## Not included
 
 **0x72 Dungeon Tileset II** is listed in `docs/SPEC.md` §8.6 but is not committed here. It is hosted
@@ -67,4 +83,18 @@ Drawn by `apps/api/scripts/generate-art.ts`. Every image below is original: noth
 | `apps/web/public/actions/aave-borrow-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a monumental stone vault standing open in a dark hall, a rising column of warm amber coins streaming up out of it into the darkness above, golden light spilling across the floor. No figures. |
 | `apps/web/public/actions/penguinswap-swap-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a dark frozen cavern, a floor of glowing blue ice, two enormous luminous cyan coins arcing past one another in a trade above it, long light trails crossing, cold mist drifting low, icicles catching the light overhead. Fills the frame edge to edge. No animals, no figures, no faces. |
 | `apps/web/public/actions/wrap-native-banner.png` | gpt-image-2.5-flare | Wide cinematic view of a huge crystalline glass cube standing in a dark chamber with a bright violet coin suspended at its centre, the cube's lid floating just above it, violet light radiating outward across the floor. No figures. |
+| `apps/web/public/campaigns/penguinswap.png` | gpt-image-2.5-flare| Wide cinematic view of a vast frozen harbour at night under an aurora, cliffs of glowing blue ice, a wide trading plaza carved into the ice with two enormous luminous cyan coins arcing past one another above it, cold mist drifting low, dist |
+| `apps/web/public/campaigns/creditcoin.png` | gpt-image-2.5-flare| Wide cinematic view of a monumental dark hall of polished black stone, a vast ledger of glowing golden lines of light stretching away into the distance like a chain of records, warm amber light pooling on the floor, tall columns either side |
+| `apps/web/public/academy/attestcoin-proofs-0.png` | gpt-image-2.5-flare | Two vast floating islands in a dark starless void, far apart, each with its own glowing city on top, one lit cool blue and one lit warm gold. The gulf between them is empty and impassable, a broken bridge ending in mid air on the blue side. |
+| `apps/web/public/academy/attestcoin-proofs-1.png` | gpt-image-2.5-flare | A dark hall containing two glowing structures side by side: on the left a branching crystal tree of light narrowing to a single point at the top, on the right a chain of identical glowing stone tablets linked end to end receding into the di |
+| `apps/web/public/academy/attestcoin-proofs-2.png` | gpt-image-2.5-flare | A single glowing sealed scroll of light hovering above a dark stone altar, its seal breaking open, and from it a stream of golden coins and a glowing medallion rising into the air. Warm light against a dark hall. No text, no figures. |
+| `apps/web/public/academy/uniswap-swaps-0.png` | gpt-image-2.5-flare | A great circular pool of glowing liquid light set into a dark stone floor, half of it deep sky blue and half of it pale silver, the two halves swirling around each other in balance, seen from a low angle. No text, no figures. |
+| `apps/web/public/academy/uniswap-swaps-1.png` | gpt-image-2.5-flare | A steep glowing blue curve carved as a ramp of light through a dark chasm, a single bright coin sliding down it and throwing sparks where it drags, the curve flattening into the distance. No text, no figures. |
+| `apps/web/public/academy/uniswap-swaps-2.png` | gpt-image-2.5-flare | A dark chamber where a single wide beam of blue light is projected onto a stone wall, forming rows of glowing abstract marks like an inscription of pure light, a magnifying lens of crystal floating in the beam. Abstract marks only, no reada |
+| `apps/web/public/academy/aave-supply-borrow-0.png` | gpt-image-2.5-flare | Many small streams of indigo coins flowing from all directions across a dark floor and pouring together into one enormous glowing reservoir sunk into the ground. Seen from a high angle. No text, no figures. |
+| `apps/web/public/academy/aave-supply-borrow-1.png` | gpt-image-2.5-flare | A dark vault chamber with a huge indigo crystal locked behind a glowing barrier on the left, and on the right a smaller stream of warm amber coins flowing out through an open gate, a glowing chain linking the two. No text, no figures. |
+| `apps/web/public/academy/aave-supply-borrow-2.png` | gpt-image-2.5-flare | An enormous stone reservoir filled almost to the brim with glowing indigo liquid light, a hard red line of light cut across the wall just above the surface marking the limit, the last inch of space empty. No text, no figures. |
+| `apps/web/public/academy/penguinswap-creditcoin-0.png` | gpt-image-2.5-flare | A vast cavern of glowing blue ice enclosing an entire small city of ice terraces and lantern-lit walkways, everything within one cavern, a cyan trading pool at its centre. No animals, no text, no figures. |
+| `apps/web/public/academy/penguinswap-creditcoin-1.png` | gpt-image-2.5-flare | A single glowing cyan coin resting on a pedestal of ice inside a bright enclosed chamber, every wall made of clear ice so the whole room is visible at once, no doors and no gaps, warm lanterns inside. No animals, no text, no figures. |
+| `apps/web/public/academy/penguinswap-creditcoin-2.png` | gpt-image-2.5-flare | Two cyan coins crossing mid trade inside a single glowing ring of light on a floor of blue ice, the ring closing around the moment they cross, cold mist below. No animals, no text, no figures. |
 <!-- generated-art:end -->

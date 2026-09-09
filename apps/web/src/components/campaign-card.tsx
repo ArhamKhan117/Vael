@@ -65,6 +65,14 @@ export function CampaignCard({ campaign }: { campaign: ChainCampaign }) {
             <p className="mt-1 text-[11px] text-zinc-500">
               {campaign.questCount} quest{campaign.questCount === 1 ? "" : "s"},{" "}
               {campaign.completedCount} completed
+              {campaign.selfFunded && (
+                <>
+                  {" · "}
+                  <span className="text-zinc-600" title="Funded by Vael's own deployer, to show how a partner campaign works">
+                    demo, funded by Vael
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <span

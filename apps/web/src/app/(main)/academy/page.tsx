@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { BookOpen, Check, ShieldCheck } from "lucide-react"
 
@@ -42,17 +41,11 @@ export default function AcademyPage() {
               <Link
                 key={module.slug}
                 href={`/academy/${module.slug}`}
-                className="flex flex-col justify-between overflow-hidden rounded border border-[#1A1A1A] bg-black transition hover:border-zinc-700"
+                className="flex flex-col justify-between rounded border border-[#1A1A1A] bg-black transition hover:border-zinc-700"
               >
-                {/* The module's first lesson diagram, as its cover. */}
-                <Image
-                  src={`/academy/${module.slug}-0.png`}
-                  alt=""
-                  width={960}
-                  height={360}
-                  className="h-24 w-full border-b border-[#1A1A1A] object-cover [image-rendering:pixelated]"
-                  unoptimized
-                />
+                {/* No cover image. The list is for choosing a module, and twelve pictures of light
+                    in the dark do not help anybody choose between four titles; the artwork belongs
+                    with the lesson it illustrates. */}
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="text-sm font-semibold text-white">{module.title}</h2>
