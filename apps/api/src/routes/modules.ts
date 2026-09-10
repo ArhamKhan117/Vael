@@ -233,6 +233,123 @@ modulesRouter.get("/inventory/:address", async (req, res, next) => {
 })
 
 /**
+ * GET /market/stats
+ *
+ * The header figures a collection page carries: floor, listing count, volume and owners.
+ *
+ * Every one is computed from indexed events rather than stored, because every one of them is a
+ * consequence of something the chain emitted and a stored total is a second answer that can drift.
+ * Volume counts sales only: an item listed and cancelled moved no money, and counting it would
+ * inflate the one number a reader is most likely to take at face value.
+ *
+ * `owners` counts distinct addresses currently holding at least one item, read from Loot rather
+ * than from listings: somebody who never listed anything still owns what they earned.
+ */
+modulesRouter.get("/market/stats", async (_req, res, next) => {
+  try {
+    const store = createWorkerStore()
+    await store.init()
+    const [listings, items] = await Promise.all([store.listings({}), catalogue()])
+
+    const active = listings.filter((l) => l.status === "active")
+    const sold = listings.filter((l) => l.status === "sold")
+    const floor = active.reduce<bigint | undefined>(
+      (low, l) => (low === undefined || BigInt(l.price) < low ? BigInt(l.price) : low),
+      undefined
+    )
+    const volume = sold.reduce((total, l) => total + BigInt(l.price), 0n)
+
+    // Everyone who has ever held an item, then filtered to who still does.
+    const candidates = [...new Set(listings.flatMap((l) => [l.seller, l.buyer].filter(Boolean)))] as string[]
+    const lootAddress = contractAddress("LOOT_ADDRESS")
+    let owners = 0
+    if (lootAddress && candidates.length > 0 && items.length > 0) {
+      const loot = new Contract(lootAddress, LOOT_READ_ABI, creditcoinProvider())
+      const accounts: string[] = []
+      const ids: number[] = []
+      for (const account of candidates) for (const item of items) {
+        accounts.push(account)
+        ids.push(item.itemId)
+      }
+      const balances: bigint[] = await loot.getFunction("balanceOfBatch").staticCall(accounts, ids)
+      const holding = new Set<string>()
+      balances.forEach((balance, index) => {
+        if (balance > 0n) holding.add(accounts[index]!.toLowerCase())
+      })
+      owners = holding.size
+    }
+
+    return res.json({
+      listed: active.length,
+      sales: sold.length,
+      floor: floor?.toString() ?? null,
+      volume: volume.toString(),
+      owners,
+      kinds: items.length,
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
+ * GET /market/activity?limit=
+ *
+ * Listings, sales and cancellations, newest first, straight out of the index.
+ *
+ * A listing that later sold appears twice, once as each, because they are two events at two block
+ * heights and collapsing them would hide the wait between them, which is the interesting part.
+ */
+modulesRouter.get("/market/activity", async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit ?? 40), 200)
+    const store = createWorkerStore()
+    await store.init()
+    const [listings, items] = await Promise.all([store.listings({}), catalogue()])
+    const byId = new Map(items.map((item) => [item.itemId, item]))
+
+    interface ActivityRow {
+      kind: "listed" | "sold" | "cancelled"
+      listingId: number
+      item: ItemKind | null
+      price: string
+      actor: string
+      block: number
+    }
+
+    const events = listings.flatMap((listing): ActivityRow[] => {
+      const item = byId.get(listing.itemId) ?? null
+      const rows: ActivityRow[] = [
+        {
+          kind: "listed",
+          listingId: listing.listingId,
+          item,
+          price: listing.price,
+          actor: listing.seller,
+          block: listing.listedAtBlock,
+        },
+      ]
+      if (listing.status !== "active" && listing.closedAtBlock) {
+        rows.push({
+          kind: listing.status === "sold" ? "sold" : "cancelled",
+          listingId: listing.listingId,
+          item,
+          price: listing.price,
+          actor: (listing.status === "sold" ? listing.buyer : listing.seller) ?? listing.seller,
+          block: listing.closedAtBlock,
+        })
+      }
+      return rows
+    })
+
+    events.sort((a, b) => b.block - a.block || b.listingId - a.listingId)
+    return res.json({ activity: events.slice(0, limit) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
  * GET /market/listings?status=&seller=
  *
  * Defaults to what is currently for sale. Items are escrowed on listing, so every active row here

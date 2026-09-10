@@ -318,6 +318,58 @@ export function useListings(status = "active", refreshMs = 15_000) {
   return { listings, loading, refetch }
 }
 
+export interface MarketStats {
+  listed: number
+  sales: number
+  /** Lowest active asking price in wei, or null when nothing is for sale. */
+  floor: string | null
+  volume: string
+  owners: number
+  kinds: number
+}
+
+export function useMarketStats(refreshMs = 20_000) {
+  const [stats, setStats] = useState<MarketStats | null>(null)
+
+  const refetch = useCallback(async () => {
+    setStats(await getJson<MarketStats>("/market/stats"))
+  }, [])
+
+  useEffect(() => {
+    void refetch()
+    const timer = setInterval(refetch, refreshMs)
+    return () => clearInterval(timer)
+  }, [refetch, refreshMs])
+
+  return { stats, refetch }
+}
+
+export interface ActivityEvent {
+  kind: "listed" | "sold" | "cancelled"
+  listingId: number
+  item: ItemKind | null
+  price: string
+  actor: string
+  block: number
+}
+
+export function useMarketActivity(limit = 40, refreshMs = 20_000) {
+  const [activity, setActivity] = useState<ActivityEvent[]>([])
+
+  const refetch = useCallback(async () => {
+    const body = await getJson<{ activity: ActivityEvent[] }>(`/market/activity?limit=${limit}`)
+    setActivity(body?.activity ?? [])
+  }, [limit])
+
+  useEffect(() => {
+    void refetch()
+    const timer = setInterval(refetch, refreshMs)
+    return () => clearInterval(timer)
+  }, [refetch, refreshMs])
+
+  return { activity, refetch }
+}
+
 // ---------------------------------------------------------------- writes
 
 /**
