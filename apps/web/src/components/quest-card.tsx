@@ -66,8 +66,11 @@ export function QuestCard({
   return (
     <div
       data-testid={`quest-card-${quest.questId}`}
-      className={`flex h-full flex-col justify-between rounded border p-6 ${
-        mine ? "border-sky-500/40 bg-sky-500/[0.03]" : "border-[#1A1A1A]"
+      // Your own quest is marked by its edge and its chip, never by its ground: every card on the
+      // board sits on the same black, so a marked one reads as marked rather than as a different
+      // kind of card.
+      className={`flex h-full flex-col justify-between rounded border bg-black p-6 ${
+        mine ? "border-sky-500/40" : "border-[#1A1A1A]"
       }`}
     >
       <div className="space-y-4">

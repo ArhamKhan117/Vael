@@ -90,7 +90,7 @@ export default function QuestsPage() {
       }
     }
     return map;
-  }, [quests]);
+  }, [quests, viewer]);
 
   const emptyMessage = (cadence: ChainQuest["cadence"]) => {
     if (cadence === "campaign") {
