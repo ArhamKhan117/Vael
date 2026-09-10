@@ -22,7 +22,7 @@
       "agility": 0,
       "intellect": 0,
       "blurb": "Notched, pitted, and still sharper than nothing.",
-      "image": "/items/rusted-blade.png"
+      "image": "/items/rusted-blade.webp"
     },
     {
       "slug": "padded-vest",
@@ -33,7 +33,7 @@
       "agility": 0,
       "intellect": 1,
       "blurb": "Layered cloth and hope.",
-      "image": "/items/padded-vest.png"
+      "image": "/items/padded-vest.webp"
     },
     {
       "slug": "iron-sword",
@@ -44,7 +44,7 @@
       "agility": 0,
       "intellect": 0,
       "blurb": "Plain, balanced, and honest about what it is.",
-      "image": "/items/iron-sword.png"
+      "image": "/items/iron-sword.webp"
     },
     {
       "slug": "swift-charm",
@@ -55,7 +55,7 @@
       "agility": 3,
       "intellect": 0,
       "blurb": "Light enough to forget you are wearing it.",
-      "image": "/items/swift-charm.png"
+      "image": "/items/swift-charm.webp"
     },
     {
       "slug": "plate-harness",
@@ -66,7 +66,7 @@
       "agility": 0,
       "intellect": 4,
       "blurb": "Fitted steel. Heavy, and worth the weight.",
-      "image": "/items/plate-harness.png"
+      "image": "/items/plate-harness.webp"
     },
     {
       "slug": "scholars-scroll",
@@ -77,7 +77,7 @@
       "agility": 2,
       "intellect": 4,
       "blurb": "Someone else's notes, and better than yours.",
-      "image": "/items/scholars-scroll.png"
+      "image": "/items/scholars-scroll.webp"
     },
     {
       "slug": "arcane-codex",
@@ -88,7 +88,7 @@
       "agility": 0,
       "intellect": 6,
       "blurb": "Half of it is marginalia. That is the useful half.",
-      "image": "/items/arcane-codex.png"
+      "image": "/items/arcane-codex.webp"
     },
     {
       "slug": "warhammer",
@@ -99,7 +99,7 @@
       "agility": 0,
       "intellect": 0,
       "blurb": "No finesse. None needed.",
-      "image": "/items/warhammer.png"
+      "image": "/items/warhammer.webp"
     },
     {
       "slug": "gilded-aegis",
@@ -110,7 +110,7 @@
       "agility": 0,
       "intellect": 7,
       "blurb": "Gold over steel, which is less foolish than it looks.",
-      "image": "/items/gilded-aegis.png"
+      "image": "/items/gilded-aegis.webp"
     },
     {
       "slug": "blessed-blade",
@@ -121,7 +121,7 @@
       "agility": 4,
       "intellect": 0,
       "blurb": "Awarded for carrying a season.",
-      "image": "/items/blessed-blade.png"
+      "image": "/items/blessed-blade.webp"
     },
     {
       "slug": "seers-crystal",
@@ -132,7 +132,7 @@
       "agility": 5,
       "intellect": 10,
       "blurb": "It shows you the next round. Only the next one.",
-      "image": "/items/seers-crystal.png"
+      "image": "/items/seers-crystal.webp"
     }
   ]
 }

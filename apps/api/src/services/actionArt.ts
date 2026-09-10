@@ -39,8 +39,11 @@ export async function pinActionBanner(actionType: number): Promise<string | unde
   if (!slug) return undefined
 
   try {
-    const bytes = await readFile(join(ART_DIR, `${slug}-banner.png`))
-    const uri = await uploadImage(bytes, "image/png", `vael-action-${slug}`)
+    // The packed WebP the site serves, not the PNG master. The master is around 1.5 MB, which is
+    // over the upload cap, so every generated quest was being published without a banner and the
+    // warning below was the only trace of it.
+    const bytes = await readFile(join(ART_DIR, `${slug}-banner.webp`))
+    const uri = await uploadImage(bytes, "image/webp", `vael-action-${slug}`)
     cache.set(actionType, uri)
     return uri
   } catch (error) {

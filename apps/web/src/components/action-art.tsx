@@ -52,14 +52,14 @@ export function ActionArt({
       style={{ width: size, height: size }}
     >
       <Image
-        src={`/actions/${art.slug}.png`}
+        src={`/actions/${art.slug}.webp`}
         alt={art.alt}
         width={size}
         height={size}
-        // Served down from 1024px, so next/image does the resizing rather than the browser
-        // shipping a megabyte to draw a 64px square.
+        // A fixed box, so next/image offers the browser a 1x and a 2x candidate of it and nothing
+        // else. The file is a 128 px master, the 2x of the 64 px slot, packed by
+        // apps/web/scripts/pack-art.mjs.
         className={`h-full w-full object-cover ${idle ? "action-idle" : ""}`}
-        sizes="128px"
       />
     </span>
   )
@@ -71,10 +71,11 @@ export function ActionBanner({ actionType, className = "" }: { actionType: numbe
   return (
     <div className={`relative overflow-hidden rounded border border-[#1A1A1A] ${className}`}>
       <Image
-        src={`/actions/${art.slug}-banner.png`}
+        src={`/actions/${art.slug}-banner.webp`}
         alt={art.alt}
-        width={1024}
-        height={384}
+        // The master's own dimensions, so the box keeps its 16:9 and next/image never upscales.
+        width={1536}
+        height={864}
         className="h-full w-full object-cover"
         priority
         sizes="(max-width: 768px) 100vw, 768px"

@@ -46,8 +46,9 @@ function jwt(): string {
 }
 
 async function pinFile(path: string, name: string): Promise<string> {
+  const type = name.endsWith(".webp") ? "image/webp" : "image/png"
   const body = new FormData()
-  body.append("file", new Blob([new Uint8Array(readFileSync(path))], { type: "image/png" }), name)
+  body.append("file", new Blob([new Uint8Array(readFileSync(path))], { type }), name)
   body.append("pinataMetadata", JSON.stringify({ name }))
 
   const response = await fetch(PIN_FILE, {
@@ -74,7 +75,8 @@ async function main() {
   const records: Record<string, unknown>[] = []
 
   for (const item of catalogue.items) {
-    const imageCid = await pinFile(join(REPO_ROOT, "apps/web/public", item.image), `vael-item-${item.slug}.png`)
+    const extension = item.image.split(".").pop() ?? "webp"
+    const imageCid = await pinFile(join(REPO_ROOT, "apps/web/public", item.image), `vael-item-${item.slug}.${extension}`)
 
     const metadata = {
       name: item.name,

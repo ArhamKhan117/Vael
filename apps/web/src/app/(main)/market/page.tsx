@@ -171,7 +171,7 @@ export default function MarketPage() {
           <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded border border-[#1A1A1A]">
-                <Image src="/items/blessed-blade.png" alt="" fill className="object-cover" sizes="64px" />
+                <Image src="/items/blessed-blade.webp" alt="" fill className="object-cover" sizes="64px" />
               </span>
               <div>
                 <h1 className="text-xl font-semibold text-white md:text-2xl">Vael Loot</h1>

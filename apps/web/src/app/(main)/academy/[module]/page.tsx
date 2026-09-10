@@ -97,7 +97,7 @@ export default function AcademyModulePage() {
                     empty on purpose: it illustrates the prose directly beneath it and has nothing
                     to add to a screen reader that the prose does not already say. */}
                 <Image
-                  src={`/academy/${slug}-${index}.png`}
+                  src={`/academy/${slug}-${index}.webp`}
                   alt=""
                   width={1536}
                   height={864}

@@ -101,3 +101,6 @@ Thumbs.db
 
 # Logs and pid files from local runs.
 .logs/
+
+# Artwork masters: the PNGs the image models drew, packed into public/ by apps/web/scripts/pack-art.mjs
+apps/web/art-src/

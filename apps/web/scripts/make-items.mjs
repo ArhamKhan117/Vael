@@ -172,7 +172,7 @@ async function main() {
   const catalogue = {
     slots: SLOTS,
     rarities: RARITIES.map((r) => r.name),
-    items: ITEMS.map(({ icon, ...rest }) => ({ ...rest, image: `/items/${rest.slug}.png` })),
+    items: ITEMS.map(({ icon, ...rest }) => ({ ...rest, image: `/items/${rest.slug}.webp` })),
   }
   const path = join(repoRoot, "apps/web/src/content/items.json")
   writeFileSync(path, `${JSON.stringify(catalogue, null, 2)}\n`)

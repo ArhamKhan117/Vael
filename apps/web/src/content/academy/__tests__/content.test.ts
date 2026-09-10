@@ -75,8 +75,8 @@ describe("Academy content", () => {
     const dir = resolve(__dirname, "../../../../public/academy")
     for (const module of ACADEMY_MODULES) {
       for (let index = 0; index < module.lessons.length; index++) {
-        const file = join(dir, `${module.slug}-${index}.png`)
-        expect(existsSync(file), `missing ${module.slug}-${index}.png`).toBe(true)
+        const file = join(dir, `${module.slug}-${index}.webp`)
+        expect(existsSync(file), `missing ${module.slug}-${index}.webp`).toBe(true)
       }
     }
   })
