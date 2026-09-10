@@ -88,6 +88,10 @@ export default function QuestDetailPage() {
   const [metadata, setMetadata] = useState<QuestMetadata | null>(null)
   const [metadataLoading, setMetadataLoading] = useState(false)
   const [hasAccepted, setHasAccepted] = useState(false)
+  // Declared here with the rest, not beside the markup that uses it: there are two early returns
+  // between, and a hook after one of them changes the hook count between renders. React calls that
+  // error #310, which is what the screenshot sweep caught.
+  const [bannerFailed, setBannerFailed] = useState(false)
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean
     message: string
@@ -188,9 +192,6 @@ export default function QuestDetailPage() {
   const bannerUrl = bannerUri.startsWith("ipfs://")
     ? ipfsToHttp(bannerUri)
     : bannerUri || ""
-  // As on a campaign card: a gateway that rate-limits or has not propagated must fall back to the
-  // action's own artwork rather than leaving an empty frame where the picture should be.
-  const [bannerFailed, setBannerFailed] = useState(false)
   const hasBanner = !!bannerUrl && !bannerFailed
   const isIpfsBanner = bannerUrl.includes("ipfs.io") || bannerUrl.includes("ipfs/")
 
