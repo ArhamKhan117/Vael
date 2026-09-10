@@ -188,7 +188,10 @@ export default function QuestDetailPage() {
   const bannerUrl = bannerUri.startsWith("ipfs://")
     ? ipfsToHttp(bannerUri)
     : bannerUri || ""
-  const hasBanner = !!bannerUrl
+  // As on a campaign card: a gateway that rate-limits or has not propagated must fall back to the
+  // action's own artwork rather than leaving an empty frame where the picture should be.
+  const [bannerFailed, setBannerFailed] = useState(false)
+  const hasBanner = !!bannerUrl && !bannerFailed
   const isIpfsBanner = bannerUrl.includes("ipfs.io") || bannerUrl.includes("ipfs/")
 
   const acceptedCount = quest.acceptedCount ?? 0
@@ -275,6 +278,7 @@ export default function QuestDetailPage() {
                     fill
                     className="object-cover opacity-90"
                     priority
+                    onError={() => setBannerFailed(true)}
                     unoptimized={isIpfsBanner}
                   />
                 ) : (

@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useState } from "react"
 import { BadgeCheck, MoveRight } from "lucide-react"
 
 import { ipfsToHttp } from "@/lib/ipfs"
@@ -21,7 +22,11 @@ import type { ChainCampaign } from "@/lib/api"
 export function CampaignCard({ campaign }: { campaign: ChainCampaign }) {
   const name =
     campaign.title ?? campaign.campaignId ?? `Pool ${campaign.campaignKey.slice(0, 10)}…`
-  const image = campaign.image ? ipfsToHttp(campaign.image) : undefined
+  // A pinned banner is fetched from a public IPFS gateway, which rate-limits and sometimes has not
+  // propagated yet. When it fails the card drops back to its plain background rather than leaving a
+  // broken image: the picture is decoration, and the numbers beside it are the point.
+  const [imageFailed, setImageFailed] = useState(false)
+  const image = campaign.image && !imageFailed ? ipfsToHttp(campaign.image) : undefined
   const balance = Number(campaign.balanceVael).toLocaleString(undefined, {
     maximumFractionDigits: 2,
   })
@@ -41,6 +46,7 @@ export function CampaignCard({ campaign }: { campaign: ChainCampaign }) {
           fill
           className="pointer-events-none object-cover opacity-[0.14] transition duration-500 group-hover:opacity-25"
           sizes="(max-width: 768px) 100vw, 420px"
+          onError={() => setImageFailed(true)}
           unoptimized
         />
       )}
