@@ -1,7 +1,7 @@
 "use client"
 
 import { AFFINITY_LABELS, HeroStatePayload } from "./EventBus"
-import { HeroScene } from "./scenes/HeroScene"
+import { HERO_FLOOR_FRACTION, HeroScene } from "./scenes/HeroScene"
 import PhaserGame from "./PhaserGame"
 
 /**
@@ -30,8 +30,12 @@ export default function HeroCanvas({
   const ratio = state.xpToNext > 0 ? Math.min(1, state.xp / state.xpToNext) : 0
 
   const overlay = (
-    <div className="flex h-full flex-col justify-between p-4 text-center">
-      <p className="text-base font-semibold text-white sm:text-lg">
+    // The bottom padding clears the dirt floor the scene paints, so nothing readable lands on it.
+    <div
+      className="flex h-full flex-col justify-between p-4 text-center"
+      style={{ paddingBottom: `calc(${(HERO_FLOOR_FRACTION * 100).toFixed(2)}% + 0.75rem)` }}
+    >
+      <p className="text-sm font-semibold text-white sm:text-lg">
         {state.hasHero ? `Level ${state.level}  ${AFFINITY_LABELS[state.affinity]}` : "No hero yet"}
       </p>
 
@@ -57,7 +61,9 @@ export default function HeroCanvas({
 
       {state.hasHero ? (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-400 sm:text-sm">
+          {/* Smaller on a phone: the canvas is a sixteen by nine box, so at 390px wide it is under
+              200px tall and desktop type would fill it. */}
+          <p className="text-[10px] text-zinc-400 sm:text-sm">
             STR {state.strength} &nbsp; AGI {state.agility} &nbsp; INT {state.intellect} &nbsp;
             streak {state.streak}
           </p>
@@ -72,7 +78,7 @@ export default function HeroCanvas({
             >
               <div className="h-full bg-sky-400 transition-[width]" style={{ width: `${ratio * 100}%` }} />
             </div>
-            <p className="mt-1.5 text-[11px] text-zinc-500">
+            <p className="mt-1 text-[9px] text-zinc-500 sm:mt-1.5 sm:text-[11px]">
               {state.xp} / {state.xpToNext} XP
             </p>
           </div>

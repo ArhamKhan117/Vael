@@ -30,6 +30,15 @@ const AFFINITY_FRAMES = {
 const FLOOR_FRAME = 49
 
 /**
+ * How much of the canvas's height the dirt floor takes, as a fraction.
+ *
+ * Exported because the DOM overlay has to keep clear of it: the stat line and the XP bar used to
+ * land on top of the dirt, and the XP label was unreadable against it. A shared constant means
+ * moving the floor moves the text with it, instead of leaving a magic number behind in the layout.
+ */
+export const HERO_FLOOR_FRACTION = (TILE * 3) / 360
+
+/**
  * The hero card, pixels only.
  *
  * Every label, the XP bar and the mint button used to be Phaser objects and are now DOM, drawn
@@ -108,8 +117,11 @@ export class HeroScene extends Phaser.Scene {
     // A hero with no stats has done nothing yet, so it is a novice rather than a warrior by
     // default: an armoured knight for somebody who has never made a transaction is a claim the
     // chain does not support.
+    // Upper-middle rather than centred. The overlay's stat line and XP bar live in the lower third,
+    // and at phone width the canvas is only about 195px tall, so a centred sprite sat directly
+    // behind the text. Placed by fraction so it holds at every rendered size.
     this.sprite = this.add
-      .image(width / 2, height / 2 - 10, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
+      .image(width / 2, height * 0.36, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
       .setScale(4)
 
     // A gentle breathing bob so the hero reads as alive rather than as a screenshot.
