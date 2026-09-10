@@ -37,20 +37,25 @@ export function CampaignCard({ campaign }: { campaign: ChainCampaign }) {
       data-testid={`campaign-card-${campaign.campaignKey}`}
       className="group relative block h-full overflow-hidden rounded border border-[#1A1A1A] bg-black transition hover:border-zinc-700"
     >
-      {/* The partner's own picture, well behind the text. Loud enough to tell two campaigns apart
-          at a glance, quiet enough that the numbers stay the thing you read. */}
+      {/* The partner's own picture, behind the text. Loud enough that the picture reads as a
+          picture rather than a tint, quiet enough that the numbers stay the thing you read; the
+          gradient below keeps the left edge, where the text sits, darker than the right. Hover
+          lifts it by the same step it always did. */}
       {image && (
         <Image
           src={image}
           alt=""
           fill
-          className="pointer-events-none object-cover opacity-[0.14] transition duration-500 group-hover:opacity-25"
+          className="pointer-events-none object-cover opacity-[0.24] transition duration-500 group-hover:opacity-[0.35]"
           sizes="(max-width: 768px) 100vw, 420px"
           onError={() => setImageFailed(true)}
           unoptimized
         />
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/55" />
+      {/* Darkest under the text at the left, clear at the right where nothing sits on it. The old
+          85% mid-stop hid the picture again after its opacity had been raised, which is why the
+          card read as a dark tint rather than a picture at any opacity. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent" />
 
       <div className="relative flex h-full flex-col justify-between gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
