@@ -277,12 +277,19 @@ gameRouter.get("/actions/:address", async (req, res, next) => {
     await store.init()
 
     const [actions, rewards] = await Promise.all([store.actions(address), store.allRewards()])
-    const rewardByQuest = new Map<number, string>()
-    for (const reward of rewards) {
-      if (reward.recipient.toLowerCase() === address.toLowerCase()) {
-        rewardByQuest.set(reward.questId, reward.amount)
-      }
-    }
+    const mine = rewards.filter((reward) => reward.recipient.toLowerCase() === address.toLowerCase())
+
+    // Quest ids are only comparable inside one QuestManager. RewardVault and CampaignEscrow
+    // survive a redeploy, so their events keep naming quest ids a new QuestManager has since
+    // reissued from 1: nine releases in the index were paid for quests 1 to 11 of a superseded
+    // manager. A release can never precede the action it paid for, and never follow it by more
+    // than the worker takes to submit, so the release this action earned is the first one for its
+    // quest id at or after the action's own block. Keyed on the id alone, an old release could be
+    // shown against a new quest that happened to reuse its number.
+    const releaseFor = (action: { questId: number; creditcoinBlock: number }) =>
+      mine
+        .filter((reward) => reward.questId === action.questId && reward.creditcoinBlock >= action.creditcoinBlock)
+        .sort((a, b) => a.creditcoinBlock - b.creditcoinBlock)[0]
 
     return res.json({
       address: address.toLowerCase(),
@@ -290,7 +297,7 @@ gameRouter.get("/actions/:address", async (req, res, next) => {
       // the labels, and a second copy of that map here would only drift from it.
       actions: actions.slice(0, limit).map((action) => ({
         ...action,
-        vaelReleased: rewardByQuest.get(action.questId) ?? "0",
+        vaelReleased: releaseFor(action)?.amount ?? "0",
       })),
     })
   } catch (error) {

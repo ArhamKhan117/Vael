@@ -520,6 +520,17 @@ function PartnerCampaignPageInner() {
                   </option>
                 ))}
               </select>
+              {/* Said here rather than discovered by a player: the escrow releases only through
+                  QuestASC, and NativePortal has no path to it (docs/SPEC.md section 10.3). */}
+              {nativeAction && (
+                <span
+                  data-testid="native-no-payout"
+                  className="mt-1.5 block text-[11px] leading-relaxed text-amber-400/90"
+                >
+                  A Creditcoin action completes through NativePortal, which cannot release from
+                  this pool: the quest will mint its badge and credit the hero, and pay no VAEL.
+                </span>
+              )}
             </label>
             <label className="block">
               <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Minimum amount</span>
