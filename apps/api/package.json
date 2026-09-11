@@ -29,6 +29,7 @@
     "seed-content": "tsx scripts/seed-content.ts",
     "write-seed-log": "tsx scripts/write-seed-log.ts",
     "audit-seed": "tsx scripts/audit-seed.ts",
+    "migrate-escrow-index": "tsx scripts/migrate-escrow-index.ts",
     "generate-art": "tsx scripts/generate-art.ts"
   },
   "keywords": [

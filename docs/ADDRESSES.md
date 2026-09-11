@@ -31,12 +31,13 @@ this redeploy: the previous cascade needed one to re-mint badges, and this one d
 |---|---|---|---|---|
 | `VaelToken` | [`0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf`](https://creditcoin-testnet.blockscout.com/address/0x7131E59d5068BE6Ecdd1bfED2e81C85Ba2aa90Cf) | [`0xd54ad8a7…e9109b`](https://creditcoin-testnet.blockscout.com/tx/0xd54ad8a7214211bb7885bf92306668f95d5ba98141354971a2a6886a85e9109b) | 5455359 | ERC-20 reward token, VAEL, 18 decimals |
 | `RewardVault` | [`0x89aE45f3B75E20af549715294754292eFf25b89C`](https://creditcoin-testnet.blockscout.com/address/0x89aE45f3B75E20af549715294754292eFf25b89C) | [`0x8ad7d74e…a70268`](https://creditcoin-testnet.blockscout.com/tx/0x8ad7d74eed4b3adb8a156814ff088fa86702c45a84a747fd4cd159b56ea70268) | 5455360 | Mints and releases VAEL for non-campaign quests. Callable only by QuestManager |
-| `CampaignEscrow` | [`0xcF675302d19967788009592423E4E66bd69EA32b`](https://creditcoin-testnet.blockscout.com/address/0xcF675302d19967788009592423E4E66bd69EA32b) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | Partner-funded campaign pools. Releases and refunds only through QuestASC |
+| `CampaignEscrow` | [`0x48f5612Bd48ad29f6Aefd8700EbD3946F0511b28`](https://creditcoin-testnet.blockscout.com/address/0x48f5612Bd48ad29f6Aefd8700EbD3946F0511b28) | [`0x29615203…c952f6`](https://creditcoin-testnet.blockscout.com/tx/0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6) | 5455363 | Partner-funded campaign pools. v2: releases and refunds only through a releaser set that waits a day to change, QuestASC for proved quests and CampaignPayoutHook for native ones |
 | `BadgeNFT` | [`0x6b57F8a913FBC175ff46B53542F23D362e46d8f2`](https://creditcoin-testnet.blockscout.com/address/0x6b57F8a913FBC175ff46B53542F23D362e46d8f2) | [`0x3c8142f3…8b99d2`](https://creditcoin-testnet.blockscout.com/tx/0x3c8142f338968e7d28568a6586aca97c4de44df777be85f9100b4bb4f08b99d2) | 5463522 | Soul-bound ERC-721 quest badges with a rarity and on-chain metadata. Mintable only by QuestManager and RaidBoss |
 | `VaelHero` | [`0x74befcC907073f5F0125813FEF3A2A22406d3024`](https://creditcoin-testnet.blockscout.com/address/0x74befcC907073f5F0125813FEF3A2A22406d3024) | [`0xbaf58563…aa117b`](https://creditcoin-testnet.blockscout.com/tx/0xbaf585631f6561f09208b8ed34dc0784ad856a02284998acfdf7c12113aa117b) | 5465437 | Soul-bound hero, one per wallet. XP arrives only as a hook from a completion path; the import window is closed and the completer set is timelocked |
 | `QuestManager` | [`0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7`](https://creditcoin-testnet.blockscout.com/address/0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7) | [`0x4dd8faf8…c9bcaa`](https://creditcoin-testnet.blockscout.com/tx/0x4dd8faf8c3e157745a8a4ebb0744e7720657be79d80e9934decb6bad51c9bcaa) | 5465161 | Quest lifecycle. `recordCompletion` dispatches on the quest's action type to QuestASC or NativePortal and accepts nobody else. Pays from the vault only when a quest has no campaign |
 | `QuestASC` | [`0x05958dD789EaC1de84e864d6b3956C90d3e90d0f`](https://creditcoin-testnet.blockscout.com/address/0x05958dD789EaC1de84e864d6b3956C90d3e90d0f) | [`0xd12cc7c9…cbee36`](https://creditcoin-testnet.blockscout.com/tx/0xd12cc7c9a2e807da9c4a881d4d913c8930667e1a3f4345f9abe6982e71cbee36) | 5465162 | Verifies Attestcoin proofs and applies them. The only contract that can complete a quest whose action was on Ethereum |
 | `NativePortal` | [`0xa512544f721230Fa04560078D0dC214423FE2970`](https://creditcoin-testnet.blockscout.com/address/0xa512544f721230Fa04560078D0dC214423FE2970) | [`0x9a9a4287…d2b51a`](https://creditcoin-testnet.blockscout.com/tx/0x9a9a428778c6962ff5d3204d76559416cfc9879abe4f826f0ab630e481d2b51a) | 5465163 | Performs a Creditcoin action and records the completion in the same transaction. The only contract that can complete a native quest |
+| `CampaignPayoutHook` | [`0xeeB8A2EEf0D8b4B28D50ce130E7a70b871F621b1`](https://creditcoin-testnet.blockscout.com/address/0xeeB8A2EEf0D8b4B28D50ce130E7a70b871F621b1) | [`0xe6ba49ae…9516a4`](https://creditcoin-testnet.blockscout.com/tx/0xe6ba49ae956aba6be8ebe04ed8a3dd4cc4965ac80e31375b4b676e4f229516a4) | 5478585 | The native completion path's way to the escrow. A hook on NativePortal, trusted by CampaignEscrow as a releaser; releases exactly the quest's reward for a campaign quest NativePortal completed, once, and nothing for a vault quest |
 | `RaidBoss` | [`0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B`](https://creditcoin-testnet.blockscout.com/address/0xF3492B8491f3f9a3272C03b8779374c9eF3D9A7B) | [`0x7fa0fffe…d52192`](https://creditcoin-testnet.blockscout.com/tx/0x7fa0fffe28f8b2ee69b8dc9d908578ea5c9ddfc46649989fd877ab0bcdd52192) | 5465438 | Season boss. Damage arrives only as a hook from a completion path |
 | `Arena` | [`0xa98672b481c35f76d09612849E75A2c7A1a976d9`](https://creditcoin-testnet.blockscout.com/address/0xa98672b481c35f76d09612849E75A2c7A1a976d9) | [`0xf71f4ecd…0dd452`](https://creditcoin-testnet.blockscout.com/tx/0xf71f4ecd057bfcbd62dbd106d5e3783f034fcb36891d51c493df25098f0dd452) | 5465439 | Player versus player duels for VAEL stakes. Reads VaelHero, holds no privilege over it |
 | `Loot` | [`0xFf0271fb151F25cf909d1d8b16017Af54FBb9938`](https://creditcoin-testnet.blockscout.com/address/0xFf0271fb151F25cf909d1d8b16017Af54FBb9938) | [`0x94af1c37…87fb6b`](https://creditcoin-testnet.blockscout.com/tx/0x94af1c37fd9b383e76f27d1c34fcb856ec9b7de25e21ec5e1b81359a5487fb6b) | 5465440 | ERC-1155 items. Reads the RaidBoss ledger; RaidBoss does not know it exists |
@@ -183,6 +184,46 @@ the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
 
 
 ## Superseded deployments
+
+### Superseded in the milestone 13 escrow fix, 2026-09-13
+
+`CampaignEscrow` v1 trusted one releaser, `QuestASC`, and `NativePortal` could not reach it. A
+campaign quest completed on the native path minted its badge, credited its hero, and released
+nothing: quests 16 and 29 in the PenguinSwap demo pool left the pool untouched at 716.4 VAEL. v1's
+`setRewardReleaser` was also plain `onlyOwner`, so the owner could have pointed every pool at any
+address in one transaction with nothing announcing it first.
+
+| Contract | Superseded address | Replaced by |
+|---|---|---|
+| `CampaignEscrow` | `0xcF675302d19967788009592423E4E66bd69EA32b` | `0x48f5612Bd48ad29f6Aefd8700EbD3946F0511b28` |
+
+**Two deployments, five wiring transactions, and four pools moved.** v2 holds a releaser set
+(`ReleaserSet`, bootstrapped once, every later change proposed a day in advance): `QuestASC` for
+proved quests and the new `CampaignPayoutHook` (`0xeeB8A2EEf0D8b4B28D50ce130E7a70b871F621b1`) for
+native ones. The hook is how the native path reaches the escrow, because `QuestManager.setNativePortal`
+is one-shot and a new `NativePortal` would be a new `QuestManager` and the cascade behind it; what
+the deployed `NativePortal` does let its owner add is a hook, and this one releases exactly the
+quest's reward for a campaign quest `QuestManager` confirms completed, once. `QuestASC.setCampaignEscrow`
+re-pointed the proved path ([`0x22ac66e5…68d183`](https://creditcoin-testnet.blockscout.com/tx/0x22ac66e505505041593d4657dce995bf2f929fe844aa38a6289606bdcd68d183)); `NativePortal.addHook` appended the hook
+([`0xdc28f357…204ab5`](https://creditcoin-testnet.blockscout.com/tx/0xdc28f357e12fdfaff4e2f7943b7852f79125e7c2630dd0d4b1167193ba204ab5)); `initialiseReleasers` wrote the set ([`0x0f77bd63…0e70c2`](https://creditcoin-testnet.blockscout.com/tx/0x0f77bd63419ad0e10452dddb425a7510a052b7325d8d769e5a7a07175a0e70c2)).
+
+**Every funded pool was refunded out of v1 through `QuestASC` while it still pointed at v1, then
+deposited into v2 from the same partner key** at the amount that lands exactly the old balance
+after the 0.5% fee, so each pool holds after what it held before. The pool key is `keccak256` of the
+campaign id and does not depend on the escrow, so the names and pictures pinned in milestone 12 carry
+over untouched. v1 holds no VAEL.
+
+| Pool | VAEL carried | Refund out of v1 | Deposit into v2 |
+|---|---|---|---|
+| Creditcoin check-in `0x07e1398c…` | 258.05 | [`0x46053111…ba4886`](https://creditcoin-testnet.blockscout.com/tx/0x46053111b922643fc9897c7dbd25de23490e04eddf50d233cbc7d42ef6ba4886) | [`0x56391e9d…a75da9`](https://creditcoin-testnet.blockscout.com/tx/0x56391e9d3aa3bd5dae02b51c9dbfb3965c0725c8ecb7fd7d4f4607d09aa75da9) |
+| PenguinSwap on Creditcoin `0x50c9f717…` | 716.4 | [`0x3a070621…f48b59`](https://creditcoin-testnet.blockscout.com/tx/0x3a070621ab4507117a905956f6c1a17f03aba0e152724069bdba2ef3d2f48b59) | [`0x04a6c1de…da6b4e`](https://creditcoin-testnet.blockscout.com/tx/0x04a6c1de7d821f8fd7465c27430ab4559471b2bca6e553c1c8e113c690da6b4e) |
+| First steps `0x6fa8f505…` | 327.75 | [`0xec6aea2a…ddaa95`](https://creditcoin-testnet.blockscout.com/tx/0xec6aea2aea84530caf9410205060838d04b4e74ee747b31c245bc3ff01ddaa95) | [`0xc0f7a27d…bf8301`](https://creditcoin-testnet.blockscout.com/tx/0xc0f7a27d2352e0c5b84715eb065149bed397d43be53c5be28b8db2dcb9bf8301) |
+| Swap week `0x4a5d2f43…` | 447 | [`0x4726ef7a…dc6c57`](https://creditcoin-testnet.blockscout.com/tx/0x4726ef7aa171121bddd3ccfa642d3f26ec5b902eac3c81e78c923560cfdc6c57) | [`0xb7c02732…751359`](https://creditcoin-testnet.blockscout.com/tx/0xb7c027329fa4905382ea3154112c2a3196d9652c213222ff9b84b9fa30751359) |
+
+**Quests 16 and 29 stay unpaid.** Nothing on chain can pay them now: a release needs a releaser,
+a releaser releases only inside a completion, and both completions are recorded. Paying them would
+take an owner release, which is the privileged path the escrow refuses to have, so they are listed
+as unpaid in `docs/SPEC.md` section 10.3 rather than paid by hand.
 
 ### Superseded in the Phase 10c arena fix, 2026-09-11
 
@@ -439,7 +480,7 @@ BADGE_NFT_ADDRESS_BLOCK=5463522
 QUEST_MANAGER_ADDRESS=0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7
 QUEST_MANAGER_ADDRESS_TX=0xec01d72916512f1839543e64d8e0d5cd67ffce13c7327458539940f924a12281
 QUEST_MANAGER_ADDRESS_BLOCK=5463524
-CAMPAIGN_ESCROW_ADDRESS=0xcF675302d19967788009592423E4E66bd69EA32b
+CAMPAIGN_ESCROW_ADDRESS=0x48f5612Bd48ad29f6Aefd8700EbD3946F0511b28
 CAMPAIGN_ESCROW_ADDRESS_TX=0x29615203d1eec38c099ba3aa4f30bf0389a64eee783eed0fbc6be62137c952f6
 CAMPAIGN_ESCROW_ADDRESS_BLOCK=5455363
 WIRE_VAULT_TOKEN_TX=0xe6fdb24b0de342454eb6135e712b3235352016cd84e1619d8630b3e3c82b16c2
@@ -914,3 +955,33 @@ V10C_ARENA_ADDRESS=0xa98672b481c35f76d09612849E75A2c7A1a976d9
 V10C_ARENA_ADDRESS_TX=0x93ec01a712baf7f035b008500d1eb2e5d2513e31ff2e7fbf29609b79b88d5757
 V10C_ARENA_ADDRESS_BLOCK=5465619
 V10C_SUPERSEDED_ARENA_ADDRESS=0xCC29353505b1a8F88FC313ffb22926925198d59b
+V13_CAMPAIGN_ESCROW_ADDRESS=0x48f5612Bd48ad29f6Aefd8700EbD3946F0511b28
+V13_CAMPAIGN_ESCROW_ADDRESS_TX=0x15cf0195a468b16fb1d78b1194f9bdd458fdf593091ea58140cf6fead0142464
+V13_CAMPAIGN_ESCROW_ADDRESS_BLOCK=5478582
+V13_CAMPAIGN_PAYOUT_HOOK_ADDRESS=0xeeB8A2EEf0D8b4B28D50ce130E7a70b871F621b1
+V13_CAMPAIGN_PAYOUT_HOOK_ADDRESS_TX=0xe6ba49ae956aba6be8ebe04ed8a3dd4cc4965ac80e31375b4b676e4f229516a4
+V13_CAMPAIGN_PAYOUT_HOOK_ADDRESS_BLOCK=5478585
+V13_ESCROW_TOKEN_TX=0x2423681e40add80c625a21f5e8cb9185e53a307274039ee4bce34ba0005d82fa
+V13_HOOK_ESCROW_TX=0x462acb3ff8899a3f36d5a6995a84d7c06e429d9211c8b43df9f17aed3b5c3882
+V13_ESCROW_RELEASERS_TX=0x0f77bd63419ad0e10452dddb425a7510a052b7325d8d769e5a7a07175a0e70c2
+V13_MIGRATE_07e1398c_AMOUNT=258050000000000000000
+V13_MIGRATE_07e1398c_REFUND_TX=0x46053111b922643fc9897c7dbd25de23490e04eddf50d233cbc7d42ef6ba4886
+V13_MIGRATE_50c9f717_AMOUNT=716400000000000000000
+V13_MIGRATE_50c9f717_REFUND_TX=0x3a070621ab4507117a905956f6c1a17f03aba0e152724069bdba2ef3d2f48b59
+V13_MIGRATE_6fa8f505_AMOUNT=327750000000000000000
+V13_MIGRATE_6fa8f505_REFUND_TX=0xec6aea2aea84530caf9410205060838d04b4e74ee747b31c245bc3ff01ddaa95
+V13_MIGRATE_4a5d2f43_AMOUNT=447000000000000000000
+V13_MIGRATE_4a5d2f43_REFUND_TX=0x4726ef7aa171121bddd3ccfa642d3f26ec5b902eac3c81e78c923560cfdc6c57
+V13_ASC_ESCROW_TX=0x22ac66e505505041593d4657dce995bf2f929fe844aa38a6289606bdcd68d183
+V13_PORTAL_HOOK_TX=0xdc28f357e12fdfaff4e2f7943b7852f79125e7c2630dd0d4b1167193ba204ab5
+V13_MIGRATE_07e1398c_APPROVE_TX=0x49bf942997fab95dcc86f04bf826ebfca9dbc488969b7c9821fb0d864afb12f2
+V13_MIGRATE_07e1398c_DEPOSIT_TX=0x56391e9d3aa3bd5dae02b51c9dbfb3965c0725c8ecb7fd7d4f4607d09aa75da9
+V13_MIGRATE_50c9f717_APPROVE_TX=0x00428a508e744d6aa8d2dcc13bcedff031c5841cccc997712ef102fbac6aca63
+V13_MIGRATE_50c9f717_DEPOSIT_TX=0x04a6c1de7d821f8fd7465c27430ab4559471b2bca6e553c1c8e113c690da6b4e
+V13_MIGRATE_6fa8f505_APPROVE_TX=0xc0af9300c23d2d5384b487024ee7322df77b084a3b9e3263eb5c2c046afe0768
+V13_MIGRATE_6fa8f505_DEPOSIT_TX=0xc0f7a27d2352e0c5b84715eb065149bed397d43be53c5be28b8db2dcb9bf8301
+V13_MIGRATE_4a5d2f43_APPROVE_TX=0xf405799b2a72f429b78f65a9c6fe7d9629bde7e2c119de0f5a52153b195af83b
+V13_MIGRATE_4a5d2f43_DEPOSIT_TX=0xb7c027329fa4905382ea3154112c2a3196d9652c213222ff9b84b9fa30751359
+CAMPAIGN_PAYOUT_HOOK_ADDRESS=0xeeB8A2EEf0D8b4B28D50ce130E7a70b871F621b1
+V13_SUPERSEDED_CAMPAIGN_ESCROW_ADDRESS=0xcF675302d19967788009592423E4E66bd69EA32b
+SUPERSEDED_CAMPAIGN_ESCROWS=0xcF675302d19967788009592423E4E66bd69EA32b

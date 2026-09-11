@@ -89,6 +89,9 @@ submit "$ESCROW"     src/CampaignEscrow.sol:CampaignEscrow \
 
 [ -n "$NATIVE" ] && submit "$NATIVE" src/source/NativePortal.sol:NativePortal \
   "$(cast abi-encode 'constructor(address,address)' "$DEPLOYER_ADDRESS" "$MANAGER")"
+HOOK="$(lookup CAMPAIGN_PAYOUT_HOOK_ADDRESS)"
+[ -n "$HOOK" ] && submit "$HOOK" src/source/CampaignPayoutHook.sol:CampaignPayoutHook \
+  "$(cast abi-encode 'constructor(address,address,address)' "$DEPLOYER_ADDRESS" "$MANAGER" "$NATIVE")"
 
 [ -n "$RAID" ] && submit "$RAID" src/game/RaidBoss.sol:RaidBoss \
   "$(cast abi-encode 'constructor(address,address,address,address)' \
