@@ -5,20 +5,28 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {ReleaserSet} from "./access/ReleaserSet.sol";
+
 /**
  * @title CampaignEscrow
- * @notice Holds partner-funded token rewards (e.g. USDC) for campaign quest completions.
- *         Partner deposits; the configured releaser pays participants on quest completion.
- *         Plain ERC-20 accounting with SafeERC20; no chain-specific token setup is required.
+ * @notice Holds partner-funded token rewards for campaign quest completions. A partner deposits;
+ *         a releaser pays participants on quest completion, and only a releaser can.
+ *
+ * @dev **v2.** v1 named one releaser, `QuestASC`, and the native completion path could not reach
+ * it: `NativePortal` completed quests 16 and 29 against the PenguinSwap demo pool and no token
+ * moved. The releaser is now a set, `QuestASC` for proved quests and `CampaignPayoutHook` for
+ * native ones, bootstrapped at deployment and changed only through a proposal that waits a day
+ * (`ReleaserSet`). Both paths release exactly the quest's `rewardPerParticipant`, read from
+ * `QuestManager`, never an amount a caller supplies.
+ *
+ * Nothing here can pay a player on the owner's say-so. There is no owner release, and the owner
+ * cannot add a releaser without a day's public notice. The accounting is plain ERC-20 with
+ * SafeERC20; no chain-specific token setup is required.
  */
-contract CampaignEscrow is Ownable {
+contract CampaignEscrow is ReleaserSet {
     using SafeERC20 for IERC20;
 
-    /// @notice The only address allowed to release rewards. milestone 3 sets this to QuestASC, so
-    ///         payouts happen only after an Attestcoin proof has verified on Creditcoin.
-    address public rewardReleaser;
-
-    /// @notice Token used for campaign rewards (e.g. USDC)
+    /// @notice Token used for campaign rewards (VAEL on Creditcoin)
     IERC20 public rewardToken;
 
     /// @notice Fee in basis points (e.g. 50 = 0.5%)
@@ -30,7 +38,6 @@ contract CampaignEscrow is Ownable {
     /// @notice campaignId (bytes32) => available balance
     mapping(bytes32 => uint256) private _campaignBalances;
 
-    event RewardReleaserUpdated(address indexed newReleaser);
     event RewardTokenUpdated(address indexed newToken);
     event FeeUpdated(uint256 newFeeBps);
     event FeeCollectorUpdated(address indexed newCollector);
@@ -38,18 +45,11 @@ contract CampaignEscrow is Ownable {
     event Released(bytes32 indexed campaignId, address indexed recipient, uint256 amount);
     event Refunded(bytes32 indexed campaignId, address indexed recipient, uint256 amount);
 
-    error CampaignEscrow__OnlyRewardReleaser();
-    error CampaignEscrow__InvalidReleaser();
     error CampaignEscrow__InvalidFeeCollector();
     error CampaignEscrow__FeeBpsTooHigh();
     error CampaignEscrow__TokenNotConfigured();
     error CampaignEscrow__InsufficientBalance(bytes32 campaignId, uint256 requested, uint256 available);
     error CampaignEscrow__ZeroAmount();
-
-    modifier onlyRewardReleaser() {
-        if (msg.sender != rewardReleaser) revert CampaignEscrow__OnlyRewardReleaser();
-        _;
-    }
 
     uint256 public constant MAX_FEE_BPS = 1000; // 10% max
 
@@ -68,12 +68,6 @@ contract CampaignEscrow is Ownable {
         if (collector == address(0)) revert CampaignEscrow__InvalidFeeCollector();
         feeCollector = collector;
         emit FeeCollectorUpdated(collector);
-    }
-
-    function setRewardReleaser(address releaser_) external onlyOwner {
-        if (releaser_ == address(0)) revert CampaignEscrow__InvalidReleaser();
-        rewardReleaser = releaser_;
-        emit RewardReleaserUpdated(releaser_);
     }
 
     function setRewardToken(address tokenAddress) external onlyOwner {
@@ -107,14 +101,14 @@ contract CampaignEscrow is Ownable {
     }
 
     /**
-     * @notice Release reward to a player who completed a campaign quest. Caller is the reward releaser.
+     * @notice Release reward to a player who completed a campaign quest. Caller is a releaser.
      * @param campaignId bytes32 - must match the campaign UUID hash used in deposit
      * @param recipient Participant who completed the quest
      * @param amount Token amount to release
      */
     function releaseReward(bytes32 campaignId, address recipient, uint256 amount)
         external
-        onlyRewardReleaser
+        onlyReleaser
     {
         if (address(rewardToken) == address(0)) revert CampaignEscrow__TokenNotConfigured();
         if (amount == 0) revert CampaignEscrow__ZeroAmount();
@@ -131,7 +125,7 @@ contract CampaignEscrow is Ownable {
     }
 
     /**
-     * @notice Refund the unspent pool to the partner. Caller is the reward releaser.
+     * @notice Refund the unspent pool to the partner. Caller is a releaser.
      *         Refundable = balance - (participant_count - claimed_count) * reward_per_quest
      * @param campaignId bytes32 - must match the campaign UUID hash used in deposit
      * @param recipient Partner wallet to receive the refund
@@ -139,7 +133,7 @@ contract CampaignEscrow is Ownable {
      */
     function refundToPartner(bytes32 campaignId, address recipient, uint256 amount)
         external
-        onlyRewardReleaser
+        onlyReleaser
     {
         if (address(rewardToken) == address(0)) revert CampaignEscrow__TokenNotConfigured();
         if (amount == 0) revert CampaignEscrow__ZeroAmount();

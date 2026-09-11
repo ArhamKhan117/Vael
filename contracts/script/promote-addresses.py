@@ -35,6 +35,7 @@ REVOCATION_LISTS = {
     "QUEST_MANAGER_ADDRESS": "SUPERSEDED_QUEST_MANAGERS",
     "ARENA_ADDRESS": "SUPERSEDED_ARENAS",
     "RAID_BOSS_ADDRESS": "SUPERSEDED_RAID_BOSSES",
+    "CAMPAIGN_ESCROW_ADDRESS": "SUPERSEDED_CAMPAIGN_ESCROWS",
 }
 
 # The name each key goes by in the "Current deployment" table.
@@ -47,6 +48,7 @@ TABLE_NAMES = {
     "QUEST_MANAGER_ADDRESS": "QuestManager",
     "QUEST_ASC_ADDRESS": "QuestASC",
     "NATIVE_PORTAL_ADDRESS": "NativePortal",
+    "CAMPAIGN_PAYOUT_HOOK_ADDRESS": "CampaignPayoutHook",
     "RAID_BOSS_ADDRESS": "RaidBoss",
     "ARENA_ADDRESS": "Arena",
     "LOOT_ADDRESS": "Loot",

@@ -14,6 +14,7 @@ import {QuestManager} from "../src/QuestManager.sol";
 import {CampaignEscrow} from "../src/CampaignEscrow.sol";
 import {QuestASC} from "../src/QuestASC.sol";
 import {NativePortal} from "../src/source/NativePortal.sol";
+import {CampaignPayoutHook} from "../src/source/CampaignPayoutHook.sol";
 import {VaelTypes} from "../src/interfaces/IVaelTypes.sol";
 import {VaelHero} from "../src/game/VaelHero.sol";
 import {RaidBoss} from "../src/game/RaidBoss.sol";
@@ -90,6 +91,7 @@ contract VerifyBaseline is Script {
         RaidBoss raid = RaidBoss(vm.envAddress("RAID_BOSS_ADDRESS"));
         uint64 sepoliaChainKey = uint64(vm.envOr("SOURCE_CHAIN_KEY", uint256(1)));
         CampaignEscrow escrow = CampaignEscrow(vm.envAddress("CAMPAIGN_ESCROW_ADDRESS"));
+        CampaignPayoutHook payoutHook = CampaignPayoutHook(vm.envAddress("CAMPAIGN_PAYOUT_HOOK_ADDRESS"));
         Arena arena = Arena(vm.envAddress("ARENA_ADDRESS"));
         Loot loot = Loot(vm.envAddress("LOOT_ADDRESS"));
         Equipment equipment = Equipment(vm.envAddress("EQUIPMENT_ADDRESS"));
@@ -160,7 +162,16 @@ contract VerifyBaseline is Script {
         // The one-shot binding is now closed. Only QuestASC can complete a quest.
         _eq("QuestManager.questASC", manager.questASC(), address(questASC));
         _eq("QuestASC.QUEST_MANAGER", address(questASC.QUEST_MANAGER()), address(manager));
-        _eq("CampaignEscrow.rewardReleaser", escrow.rewardReleaser(), address(questASC));
+        // The escrow trusts a set, bootstrapped once and changed only after a day's notice. Both
+        // completion paths are in it: QuestASC directly, and the native path through its payout
+        // hook, because the deployed NativePortal cannot be taught to release itself.
+        _isTrue("CampaignEscrow releaser set is initialised", escrow.releasersInitialised());
+        _isTrue("CampaignEscrow accepts QuestASC as a releaser", escrow.releasers(address(questASC)));
+        _isTrue("CampaignEscrow accepts CampaignPayoutHook as a releaser", escrow.releasers(address(payoutHook)));
+        _isTrue("CampaignEscrow does not let NativePortal release directly", !escrow.releasers(address(nativePortal)));
+        _isTrue("CampaignEscrow does not let the deployer release", !escrow.releasers(deployer));
+        (address escrowPending,,) = escrow.pendingReleaser();
+        _isTrue("CampaignEscrow has no releaser change pending", escrowPending == ZERO);
         _eq("QuestASC.campaignEscrow", address(questASC.campaignEscrow()), address(escrow));
         _eq("QuestASC.questPortal(sepolia)", questASC.questPortal(sepoliaChainKey), questPortal);
         // VERIFIER is immutable and taken from the address library, never a constructor argument.
@@ -217,13 +228,19 @@ contract VerifyBaseline is Script {
         _hasCode("PenguinSwap SwapRouter", vm.envAddress("PENGUINSWAP_ROUTER_ADDRESS"));
         _hasCode("PenguinSwap WCTC", vm.envAddress("PENGUINSWAP_WCTC_ADDRESS"));
 
-        // Both paths carry the same hooks in the same order, or the same action would be worth
-        // different XP depending on which chain it happened on.
+        // Both paths carry the same game hooks in the same order, or the same action would be
+        // worth different XP depending on which chain it happened on. The native path carries one
+        // more: the payout hook, which is how a native campaign quest reaches the escrow.
         _eq("NativePortal.hooks[0] is VaelHero", address(nativePortal.hooks(0)), address(hero));
         _eq("NativePortal.hooks[1] is RaidBoss", address(nativePortal.hooks(1)), address(raid));
-        require(nativePortal.hookCount() == 2, "VerifyBaseline: NativePortal needs exactly two hooks");
+        _eq("NativePortal.hooks[2] is CampaignPayoutHook", address(nativePortal.hooks(2)), address(payoutHook));
+        require(nativePortal.hookCount() == 3, "VerifyBaseline: NativePortal needs exactly three hooks");
         checks++;
-        console.log("ok   NativePortal carries exactly two hooks");
+        console.log("ok   NativePortal carries exactly three hooks");
+        _eq("CampaignPayoutHook.NATIVE_PORTAL", payoutHook.NATIVE_PORTAL(), address(nativePortal));
+        _eq("CampaignPayoutHook.QUEST_MANAGER", address(payoutHook.QUEST_MANAGER()), address(manager));
+        _eq("CampaignPayoutHook.campaignEscrow", address(payoutHook.campaignEscrow()), address(escrow));
+        _eq("CampaignPayoutHook.owner", payoutHook.owner(), deployer);
         _isTrue("VaelHero accepts NativePortal as a completer", hero.completers(address(nativePortal)));
         _isTrue("RaidBoss accepts NativePortal as a completer", raid.completers(address(nativePortal)));
 
@@ -381,6 +398,19 @@ contract VerifyBaseline is Script {
             _isTrue(
                 "ReputationRegistry no longer authorizes a superseded QuestManager",
                 !reputation.isReviewerAuthorized(supersededManagers[i])
+            );
+        }
+        // A superseded CampaignEscrow must hold nothing: its pools were refunded into the current
+        // one, and QuestASC no longer points at it, so anything left there could not be paid out.
+        address[] memory supersededEscrows = vm.envOr("SUPERSEDED_CAMPAIGN_ESCROWS", ",", new address[](0));
+        for (uint256 i = 0; i < supersededEscrows.length; i++) {
+            _isTrue(
+                "QuestASC no longer points at a superseded CampaignEscrow",
+                address(questASC.campaignEscrow()) != supersededEscrows[i]
+            );
+            _isTrue(
+                "a superseded CampaignEscrow holds no VAEL",
+                token.balanceOf(supersededEscrows[i]) == 0
             );
         }
         address[] memory supersededBosses = vm.envOr("SUPERSEDED_RAID_BOSSES", ",", new address[](0));

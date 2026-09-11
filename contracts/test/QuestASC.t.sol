@@ -198,7 +198,9 @@ contract QuestASCTest is Test {
     {
         escrow = new CampaignEscrow(owner);
         escrow.setRewardToken(address(vaelToken));
-        escrow.setRewardReleaser(address(questASC));
+        address[] memory releasers = new address[](1);
+        releasers[0] = address(questASC);
+        escrow.initialiseReleasers(releasers);
         questASC.setCampaignEscrow(address(escrow));
 
         vaelToken.grantMinterRole(owner);
@@ -268,7 +270,9 @@ contract QuestASCTest is Test {
     function test_CampaignEscrowIsUntouchedByAPlainQuest() public {
         CampaignEscrow escrow = new CampaignEscrow(owner);
         escrow.setRewardToken(address(vaelToken));
-        escrow.setRewardReleaser(address(questASC));
+        address[] memory releasers = new address[](1);
+        releasers[0] = address(questASC);
+        escrow.initialiseReleasers(releasers);
         questASC.setCampaignEscrow(address(escrow));
 
         vaelToken.grantMinterRole(owner);
