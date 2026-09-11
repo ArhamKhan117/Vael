@@ -30,6 +30,7 @@
     "write-seed-log": "tsx scripts/write-seed-log.ts",
     "audit-seed": "tsx scripts/audit-seed.ts",
     "migrate-escrow-index": "tsx scripts/migrate-escrow-index.ts",
+    "backfill-escrow-rewards": "tsx scripts/backfill-escrow-rewards.ts",
     "generate-art": "tsx scripts/generate-art.ts"
   },
   "keywords": [

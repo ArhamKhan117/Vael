@@ -269,6 +269,24 @@ export class CreditcoinIndexer {
       case "Released": {
         await this.creditCampaign(parsed.args.campaignId as string, "released", parsed.args.amount as bigint, log)
         outcome.campaigns += 1
+        // A campaign payout is a reward too. The escrow's event names the pool and the recipient
+        // but not the quest; the quest is in the same transaction's QuestCompleted, since both
+        // paths release inside the completion. Without this a player's history showed 0 VAEL for
+        // every campaign quest they finished, because reward_releases held only the vault's rows.
+        const questId = await this.questCompletedIn(log, String(parsed.args.recipient))
+        if (questId !== undefined) {
+          const block = await this.provider.getBlock(log.blockNumber)
+          await this.store.addReward({
+            id: `${log.transactionHash}:${questId}`,
+            questId,
+            recipient: String(parsed.args.recipient).toLowerCase(),
+            amount: (parsed.args.amount as bigint).toString(),
+            creditcoinBlock: log.blockNumber,
+            creditcoinTxHash: log.transactionHash,
+            createdAt: new Date(Number(block?.timestamp ?? 0) * 1000).toISOString(),
+          })
+          outcome.rewards += 1
+        }
         break
       }
       case "Refunded": {
@@ -722,6 +740,24 @@ export class CreditcoinIndexer {
    * file store cannot express. The row remembers the position of the last log it counted, so a
    * rescan over blocks already folded in changes nothing.
    */
+  /** The quest whose completion this log's transaction recorded for `participant`, if any. */
+  private async questCompletedIn(log: Log, participant: string): Promise<number | undefined> {
+    const receipt = await this.provider.getTransactionReceipt(log.transactionHash)
+    for (const entry of receipt?.logs ?? []) {
+      if (entry.address.toLowerCase() !== env.QUEST_MANAGER_ADDRESS.toLowerCase()) continue
+      let parsed
+      try {
+        parsed = this.iface.parseLog({ topics: [...entry.topics], data: entry.data })
+      } catch {
+        continue
+      }
+      if (parsed?.name !== "QuestCompleted") continue
+      if (String(parsed.args.participant).toLowerCase() !== participant.toLowerCase()) continue
+      return Number(parsed.args.questId)
+    }
+    return undefined
+  }
+
   private async creditCampaign(
     campaignKey: string,
     field: "deposited" | "released" | "refunded",
