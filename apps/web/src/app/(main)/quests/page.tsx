@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
 import PartnershipCarousel from "@/components/partnership-carousel";
 import { QuestCard, QuestGridEmpty } from "@/components/quest-card";
@@ -20,6 +21,11 @@ import type { ChainQuest } from "@/lib/api";
  * exist, who they are assigned to and which have been proved, before deciding to connect anything.
  * The one thing a wallet is needed for is accepting, and a quest is assigned to an address at
  * creation, so somebody else's quest is readable by everyone and acceptable by nobody else.
+ *
+ * Two kinds of quest are on chain and not on the board. A quest past its expiry, which
+ * QuestManager will not let anybody accept or complete, goes into a section at the bottom that is
+ * closed by default and counted in no section's total. A quest whose campaign pool was refunded
+ * would pay nothing, and it is left out here and shown only on that campaign's own page, marked.
  */
 
 const PERSONAL: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] = [
@@ -66,14 +72,30 @@ export default function QuestsPage() {
   const { quests, loading, error } = useAllQuests();
   const viewer = isConnected && address ? address.toLowerCase() : undefined;
 
+  const [showExpired, setShowExpired] = useState(false);
+
+  // What the board shows, what it folds away, and what it leaves out.
+  const { live, expired, refundedCount } = useMemo(() => {
+    const live: ChainQuest[] = [];
+    const expired: ChainQuest[] = [];
+    let refundedCount = 0;
+    for (const quest of quests) {
+      if (quest.campaignStatus === "refunded") refundedCount += 1;
+      else if (quest.expired) expired.push(quest);
+      else live.push(quest);
+    }
+    expired.sort((a, b) => b.questId - a.questId);
+    return { live, expired, refundedCount };
+  }, [quests]);
+
   const mineCount = useMemo(
-    () => (viewer ? quests.filter((q) => q.participant?.toLowerCase() === viewer).length : 0),
-    [quests, viewer]
+    () => (viewer ? live.filter((q) => q.participant?.toLowerCase() === viewer).length : 0),
+    [live, viewer]
   );
 
   const byCadence = useMemo(() => {
     const map = new Map<ChainQuest["cadence"], ChainQuest[]>();
-    for (const quest of quests) {
+    for (const quest of live) {
       const list = map.get(quest.cadence) ?? [];
       list.push(quest);
       map.set(quest.cadence, list);
@@ -90,7 +112,7 @@ export default function QuestsPage() {
       }
     }
     return map;
-  }, [quests, viewer]);
+  }, [live, viewer]);
 
   const emptyMessage = (cadence: ChainQuest["cadence"]) => {
     if (cadence === "campaign") {
@@ -122,7 +144,15 @@ export default function QuestsPage() {
             </p>
           </div>
           <p className="text-xs text-zinc-500" data-testid="quest-count">
-            {loading ? "Loading…" : `${quests.length} quest${quests.length === 1 ? "" : "s"} indexed`}
+            {loading
+              ? "Loading…"
+              : [
+                  `${live.length} quest${live.length === 1 ? "" : "s"} on the board`,
+                  expired.length > 0 ? `${expired.length} expired` : null,
+                  refundedCount > 0 ? `${refundedCount} in a refunded campaign, not shown` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
           </p>
         </div>
 
@@ -175,6 +205,37 @@ export default function QuestsPage() {
             </section>
           );
         })}
+
+        {/* Past their expiry: on chain, and nothing anybody can do. Kept for the record, folded
+            away so they are never mistaken for work, and counted in no section above. */}
+        {expired.length > 0 && (
+          <section className="space-y-4" data-testid="expired-section">
+            <button
+              type="button"
+              onClick={() => setShowExpired((open) => !open)}
+              aria-expanded={showExpired}
+              className="flex flex-wrap items-center gap-3 text-left"
+            >
+              <h2 className="text-base font-semibold text-zinc-400 md:text-lg">Expired</h2>
+              <span className="rounded border border-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                {expired.length}
+              </span>
+              <p className="text-xs text-zinc-600">
+                Past the expiry QuestManager enforces, so nobody can accept or complete them now.
+              </p>
+              <ChevronDown
+                className={`h-4 w-4 text-zinc-500 transition ${showExpired ? "rotate-180" : ""}`}
+              />
+            </button>
+            {showExpired && (
+              <div className="grid gap-4 opacity-60 md:grid-cols-2 xl:grid-cols-4">
+                {expired.map((quest) => (
+                  <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );

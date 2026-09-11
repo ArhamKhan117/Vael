@@ -62,6 +62,11 @@ export function QuestCard({
   const stage = quest.proof.state
   const mine =
     !!viewer && !!quest.participant && quest.participant.toLowerCase() === viewer.toLowerCase()
+  // Two ways a quest that is Active on chain can be nothing a player can do: its expiry has
+  // passed, or the pool that would pay it was refunded. Either one is said on the card, and the
+  // button stops offering to accept it.
+  const refunded = quest.campaignStatus === "refunded"
+  const dead = !quest.completed && (quest.expired || refunded)
 
   return (
     <div
@@ -87,6 +92,16 @@ export function QuestCard({
                 {mine && (
                   <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] text-sky-300">
                     Yours
+                  </span>
+                )}
+                {refunded && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-400">
+                    Refunded
+                  </span>
+                )}
+                {quest.expired && !quest.completed && (
+                  <span className="rounded-full bg-zinc-500/15 px-2 py-0.5 text-[10px] text-zinc-400">
+                    Expired
                   </span>
                 )}
               </span>
@@ -126,9 +141,11 @@ export function QuestCard({
               </span>
             </span>
           </div>
-          <div className="flex items-center justify-between text-zinc-500">
-            <span>SETTLED BY</span>
-            <span className="text-xs text-white">
+          {/* The label never wraps: in a four-column grid the long value pushed "SETTLED BY"
+              onto two lines and into the value's first word. */}
+          <div className="flex items-start justify-between gap-3 text-zinc-500">
+            <span className="shrink-0">SETTLED BY</span>
+            <span className="text-right text-xs text-white">
               {isNativeAction(quest.action.actionType)
                 ? "NativePortal, in one transaction"
                 : "QuestASC, against an Attestcoin proof"}
@@ -160,7 +177,7 @@ export function QuestCard({
         asChild
         variant="default"
         className={`mt-5 rounded font-semibold ${
-          mine || quest.completed
+          (mine || quest.completed) && !dead
             ? "bg-white text-black hover:bg-white/80"
             : "border border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-900"
         }`}
@@ -168,13 +185,15 @@ export function QuestCard({
         <Link href={`/quests/${quest.questId}`}>
           {quest.completed
             ? "View proof"
-            : mine
-              ? quest.accepted
-                ? "Continue quest"
-                : "Accept quest"
-              : viewer
-                ? "View quest"
-                : "Connect to accept"}
+            : dead
+              ? "View quest"
+              : mine
+                ? quest.accepted
+                  ? "Continue quest"
+                  : "Accept quest"
+                : viewer
+                  ? "View quest"
+                  : "Connect to accept"}
           <MoveRight className="ml-2 h-4 w-4" />
         </Link>
       </Button>
