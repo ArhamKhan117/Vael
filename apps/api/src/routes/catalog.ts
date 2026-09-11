@@ -68,6 +68,53 @@ function escrowAddress(): string | undefined {
   return value && /^0x[0-9a-fA-F]{40}$/.test(value) ? value : undefined
 }
 
+/**
+ * What the escrow holds for a pool right now, read from the contract and remembered for a short
+ * while.
+ *
+ * The balance is read rather than accumulated, so it is whatever the contract says even if the
+ * index has never seen a single one of the pool's events. It is also what decides whether a pool
+ * is refunded, which the quest board now asks on every refresh, and eight contract reads against a
+ * rate-limited public RPC every few seconds is how a board stops loading. Thirty seconds is well
+ * inside how often a pool's balance changes.
+ */
+const BALANCE_TTL_MS = 30_000
+const balances = new Map<string, { value: string; at: number }>()
+
+async function campaignBalance(campaignKey: string): Promise<string> {
+  const cached = balances.get(campaignKey)
+  if (cached && Date.now() - cached.at < BALANCE_TTL_MS) return cached.value
+  const escrow = escrowAddress()
+  if (!escrow) return "0"
+  try {
+    const contract = new Contract(escrow, ESCROW_ABI, creditcoinProvider())
+    const balance: bigint = await contract.getFunction("campaignBalance").staticCall(campaignKey)
+    balances.set(campaignKey, { value: balance.toString(), at: Date.now() })
+    return balance.toString()
+  } catch {
+    return cached?.value ?? "0"
+  }
+}
+
+type PoolStatus = "funded" | "drained" | "refunded"
+
+function poolStatus(campaign: IndexedCampaign, balance: string): PoolStatus {
+  if (BigInt(balance) > 0n) return "funded"
+  return BigInt(campaign.refunded) > 0n ? "refunded" : "drained"
+}
+
+/** The status of every indexed pool, by escrow key. */
+async function poolStatuses(store: WorkerStore): Promise<Map<string, PoolStatus>> {
+  const campaigns = await store.campaigns()
+  const statuses = new Map<string, PoolStatus>()
+  await Promise.all(
+    campaigns.map(async (campaign) => {
+      statuses.set(campaign.campaignKey, poolStatus(campaign, await campaignBalance(campaign.campaignKey)))
+    })
+  )
+  return statuses
+}
+
 /** A uint256 campaign id as the bytes32 key CampaignEscrow stores pools under. */
 function campaignKeyOf(campaignId: string): string {
   return `0x${BigInt(campaignId).toString(16).padStart(64, "0")}`
@@ -114,10 +161,16 @@ function proofStateOf(
   return { state: "waiting" }
 }
 
-function serialize(quest: CataloguedQuest, proof: ProofState) {
+function serialize(
+  quest: CataloguedQuest,
+  proof: ProofState,
+  pools?: Map<string, PoolStatus>
+) {
   const campaignId = quest.campaignId ?? "0"
   const isCampaign = campaignId !== "0"
+  const campaignKey = isCampaign ? campaignKeyOf(campaignId) : null
   const rewardAmount = quest.rewardAmount ?? "0"
+  const expiry = quest.expiry ?? 0
   return {
     questId: quest.questId,
     title: quest.title || `Quest #${quest.questId}`,
@@ -133,11 +186,18 @@ function serialize(quest: CataloguedQuest, proof: ProofState) {
     rewardAmount,
     rewardVael: formatUnits(rewardAmount, 18),
     badgeLevel: quest.badgeLevel ?? 1,
-    expiry: quest.expiry ?? 0,
+    expiry,
+    // QuestManager refuses to accept or complete a quest past its expiry, so a card for one is a
+    // card for something nobody can do. Zero means the quest never expires.
+    expired: expiry !== 0 && expiry < Math.floor(Date.now() / 1000),
     createdAt: quest.createdAtChain ?? 0,
     sourceChainKey: quest.sourceChainKey,
     campaignId,
-    campaignKey: isCampaign ? campaignKeyOf(campaignId) : null,
+    campaignKey,
+    // Whether the pool this quest draws on can still pay. A quest whose campaign was refunded is
+    // on chain and Active, and would pay nothing: the board hides it and the campaign's own page
+    // says why.
+    campaignStatus: campaignKey ? (pools?.get(campaignKey) ?? null) : null,
     // Decided in docs/SPEC.md section 17.1: a campaign quest is paid by the partner's escrow and
     // an ordinary quest by RewardVault. Never both.
     fundedBy: isCampaign ? ("escrow" as const) : ("vault" as const),
@@ -188,11 +248,15 @@ catalogRouter.get("/quests", async (req, res, next) => {
 
     const store = createWorkerStore()
     await store.init()
-    const [quests, state] = await Promise.all([store.questCatalog(filter), readState(store)])
+    const [quests, state, pools] = await Promise.all([
+      store.questCatalog(filter),
+      readState(store),
+      poolStatuses(store),
+    ])
 
     return res.json({
       quests: quests.map((quest) =>
-        serialize(quest, proofStateOf(quest.questId, state.actions, state.submissions))
+        serialize(quest, proofStateOf(quest.questId, state.actions, state.submissions), pools)
       ),
     })
   } catch (error) {
@@ -219,7 +283,11 @@ catalogRouter.get("/quests/:id", async (req, res, next) => {
     if (!quest) return res.status(404).json({ message: `Quest ${questId} is not indexed` })
 
     return res.json({
-      quest: serialize(quest, proofStateOf(questId, state.actions, state.submissions)),
+      quest: serialize(
+        quest,
+        proofStateOf(questId, state.actions, state.submissions),
+        await poolStatuses(store)
+      ),
     })
   } catch (error) {
     next(error)
@@ -239,32 +307,15 @@ async function summarize(
   campaigns: IndexedCampaign[],
   quests: CataloguedQuest[]
 ): Promise<CampaignSummary[]> {
-  const escrow = escrowAddress()
-  const contract = escrow ? new Contract(escrow, ESCROW_ABI, creditcoinProvider()) : undefined
-
-  // The balance is read rather than accumulated, so it is whatever the contract says right now
-  // even if the index has never seen a single one of the pool's events.
-  const balances = await Promise.all(
-    campaigns.map(async (campaign) => {
-      if (!contract) return "0"
-      try {
-        const balance: bigint = await contract
-          .getFunction("campaignBalance")
-          .staticCall(campaign.campaignKey)
-        return balance.toString()
-      } catch {
-        return "0"
-      }
-    })
-  )
+  const held = await Promise.all(campaigns.map((campaign) => campaignBalance(campaign.campaignKey)))
 
   return Promise.all(
     campaigns.map(async (campaign, i) => {
-      const balance = balances[i] ?? "0"
-    const mine = quests.filter(
-      (quest) => quest.campaignId && campaignKeyOf(quest.campaignId) === campaign.campaignKey
-    )
-    const refunded = BigInt(campaign.refunded) > 0n
+      const balance = held[i] ?? "0"
+    // Oldest first, so "the first quest" below is the one the pool was published with.
+    const mine = quests
+      .filter((quest) => quest.campaignId && campaignKeyOf(quest.campaignId) === campaign.campaignKey)
+      .sort((a, b) => a.questId - b.questId)
 
     // A pool must have received at least what has left it plus what is still in it. The index can
     // be short of the deposit when its cursor starts after the funding transaction, which is the
@@ -275,13 +326,13 @@ async function summarize(
     const deposited =
       accountedFor > BigInt(campaign.deposited) ? accountedFor.toString() : campaign.deposited
 
-    // CampaignEscrow stores a bytes32 key and no name, so a pool has nothing to call itself and
-    // every partner card read "Pool 0x6fa8f505…". Its quests do have a name: they carry the
-    // metadata the partner pinned when they published. Where every quest in a pool agrees on a
-    // title, that is the pool's name. Where they disagree, or there are none, the key stands,
-    // because inventing a name for a pool is worse than showing the identifier it actually has.
-    const questTitles = new Set(mine.map((quest) => quest.title).filter((t): t is string => !!t))
-    const title = campaign.title ?? (questTitles.size === 1 ? [...questTitles][0] : undefined)
+    // CampaignEscrow stores a bytes32 key and no name. A pool's name is the one its partner pinned
+    // for it through /partner/campaign/:id/metadata; a pool that was never named is called after
+    // the first quest it was published with, which carries the metadata the partner pinned then.
+    // Only a pool with no quests at all is left to its key, and a card shows that as what it is.
+    // The earlier rule, a name only where every quest agreed on a title, went blank the moment a
+    // fourth quest with its own title joined a pool of three.
+    const title = campaign.title ?? mine.find((quest) => quest.title)?.title
 
       // Which protocol this pool's quests target, and whether the chain's own allowlist agrees it
       // is that protocol's contract. Claimed only when every quest in the pool points at the same
@@ -308,15 +359,18 @@ async function summarize(
       selfFunded:
         !!process.env.DEPLOYER_ADDRESS &&
         campaign.partner.toLowerCase() === process.env.DEPLOYER_ADDRESS.toLowerCase(),
-      // A pool has no picture of its own; its quests do, and they share one when published
-      // together. Borrowing it is how a partner card gets a background without inventing one.
-      ...(mine.find((quest) => quest.image) ? { image: mine.find((quest) => quest.image)!.image } : {}),
+      // The pool's own picture where its partner pinned one; otherwise its quests', which share
+      // one when published together. Borrowing it is how a partner card gets a background without
+      // inventing one.
+      ...(campaign.image ?? mine.find((quest) => quest.image)?.image
+        ? { image: campaign.image ?? mine.find((quest) => quest.image)!.image }
+        : {}),
       deposited,
       balance,
       balanceVael: formatUnits(balance, 18),
       questCount: mine.length,
       completedCount: mine.filter((quest) => quest.completed).length,
-      status: BigInt(balance) > 0n ? "funded" : refunded ? "refunded" : "drained",
+      status: poolStatus(campaign, balance),
     }
     })
   )
@@ -377,11 +431,12 @@ catalogRouter.get("/campaigns/:key", async (req, res, next) => {
     const mine = quests.filter(
       (quest) => quest.campaignId && campaignKeyOf(quest.campaignId) === key
     )
+    const pools = new Map<string, PoolStatus>([[key, campaign!.status]])
 
     return res.json({
       campaign,
       quests: mine.map((quest) =>
-        serialize(quest, proofStateOf(quest.questId, state.actions, state.submissions))
+        serialize(quest, proofStateOf(quest.questId, state.actions, state.submissions), pools)
       ),
     })
   } catch (error) {

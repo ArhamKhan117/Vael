@@ -301,10 +301,18 @@ export interface ChainQuest {
   rewardVael: string
   badgeLevel: number
   expiry: number
+  /** Past its expiry, which QuestManager enforces: nobody can accept or complete it now. */
+  expired: boolean
   createdAt: number
   sourceChainKey: number
   campaignId: string
   campaignKey: string | null
+  /**
+   * Whether the pool a campaign quest draws on can still pay. Null for a quest the vault pays. A
+   * quest whose pool was refunded is still Active on chain and would pay nothing, so the board
+   * leaves it out and the campaign's own page marks it.
+   */
+  campaignStatus: CampaignStatus | null
   /** A campaign quest is paid by the partner's escrow, an ordinary one by RewardVault. */
   fundedBy: "escrow" | "vault"
   accepted: boolean
@@ -334,8 +342,15 @@ export type CampaignStatus = "funded" | "drained" | "refunded"
 
 export interface ChainCampaign {
   campaignKey: string
+  /** The string the partner published under; its keccak256 is the escrow key. */
   campaignId?: string
+  /**
+   * From the pool's own pinned document where the partner pinned one, otherwise the title of the
+   * first quest it was published with. Absent only for a pool with no quests at all.
+   */
   title?: string
+  description?: string
+  metadataUri?: string
   partner: string
   deposited: string
   released: string
@@ -353,7 +368,7 @@ export interface ChainCampaign {
    * accepts that contract for that action type, so a campaign cannot call itself official.
    */
   protocol?: { name: string; slug: string; verified: boolean }
-  /** Banner pinned with the campaign's quests, if one was. */
+  /** The pool's own pinned picture, or the one pinned with its quests. */
   image?: string
   /**
    * True when Vael's own deployer funded the pool.

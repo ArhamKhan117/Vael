@@ -54,10 +54,23 @@ export default function CampaignDetailPage() {
           <Link href="/campaigns" className="text-xs text-zinc-500 underline hover:text-white">
             All campaigns
           </Link>
-          <h1 className="text-xl font-semibold md:text-2xl">
-            {campaign.title ?? campaign.campaignId ?? "Partner campaign"}
-          </h1>
-          <p className="break-all font-mono text-[11px] text-zinc-500">{campaign.campaignKey}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-semibold md:text-2xl">
+              {campaign.title ?? campaign.campaignId ?? "Partner campaign"}
+            </h1>
+            {campaign.status === "refunded" && (
+              <span className="rounded bg-amber-900/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-amber-500/90">
+                Refunded
+              </span>
+            )}
+          </div>
+          {campaign.description && (
+            <p className="max-w-2xl text-sm leading-relaxed text-zinc-400">{campaign.description}</p>
+          )}
+          <p className="break-all font-mono text-[11px] text-zinc-500">
+            {campaign.campaignId ? `${campaign.campaignId} · ` : ""}
+            {campaign.campaignKey}
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -98,10 +111,20 @@ export default function CampaignDetailPage() {
           <h2 className="text-base font-semibold md:text-lg">
             Quests drawing on this pool ({quests.length})
           </h2>
+          {/* The one place a refunded pool's quests are shown. The board leaves them out, because
+              they are Active on chain and would pay nothing; here, each card says so. */}
+          {campaign.status === "refunded" && quests.length > 0 && (
+            <p className="text-xs text-zinc-500">
+              This pool was refunded to its partner. These quests are still on chain and are not
+              on the board: nothing is left to pay them.
+            </p>
+          )}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {quests.length === 0 ? (
               <QuestGridEmpty>
-                This pool is funded but no quest has been published against it yet.
+                {campaign.status === "refunded"
+                  ? "This pool was refunded, and no quest of the current QuestManager draws on it."
+                  : "This pool is funded but no quest has been published against it yet."}
               </QuestGridEmpty>
             ) : (
               quests.map((quest) => <QuestCard key={quest.questId} quest={quest} />)

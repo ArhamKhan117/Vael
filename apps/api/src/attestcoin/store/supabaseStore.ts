@@ -301,6 +301,9 @@ export class SupabaseWorkerStore implements WorkerStore {
     const row: Record<string, unknown> = { campaign_key: key, updated_at: new Date().toISOString() }
     if (campaign.campaignId !== undefined) row.campaign_id = campaign.campaignId
     if (campaign.title !== undefined) row.title = campaign.title
+    if (campaign.description !== undefined) row.description = campaign.description
+    if (campaign.image !== undefined) row.image = campaign.image
+    if (campaign.metadataUri !== undefined) row.metadata_uri = campaign.metadataUri
     if (campaign.partner !== undefined) row.partner = campaign.partner.toLowerCase()
     if (campaign.deposited !== undefined) row.deposited = campaign.deposited
     if (campaign.released !== undefined) row.released = campaign.released
@@ -752,6 +755,9 @@ function campaignFromRow(row: any): IndexedCampaign {
   }
   if (row.campaign_id) campaign.campaignId = row.campaign_id
   if (row.title) campaign.title = row.title
+  if (row.description) campaign.description = row.description
+  if (row.image) campaign.image = row.image
+  if (row.metadata_uri) campaign.metadataUri = row.metadata_uri
   return campaign
 }
 

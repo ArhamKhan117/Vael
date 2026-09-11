@@ -84,6 +84,11 @@ interface CampaignView {
   onChainCampaignId: string
   escrowKey: string
   poolBalance: string
+  /** From the pool's own pinned document, or null until the partner names it. */
+  title: string | null
+  description: string | null
+  image: string | null
+  metadataURI: string | null
   quests: CampaignQuest[]
 }
 
@@ -123,6 +128,10 @@ function PartnerCampaignPageInner() {
   const [reward, setReward] = useState("250")
   const [title, setTitle] = useState("")
   const [summary, setSummary] = useState("")
+  const [poolName, setPoolName] = useState("")
+  const [poolSummary, setPoolSummary] = useState("")
+  const [poolImage, setPoolImage] = useState<string | null>(null)
+  const [poolImageName, setPoolImageName] = useState<string | null>(null)
   // The picked banner as a data URL. Held here rather than as a File so a re-render cannot lose it.
   const [image, setImage] = useState<string | null>(null)
   const [imageName, setImageName] = useState<string | null>(null)
@@ -209,21 +218,67 @@ function PartnerCampaignPageInner() {
    * in the browser is faster than refusing it after a round trip, and the API still refuses it if
    * this check is ever bypassed.
    */
-  const onPickImage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError(`That image is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB.`)
-      event.target.value = ""
-      return
+  const pickImage =
+    (onLoaded: (dataUrl: string, name: string) => void) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) return
+      if (file.size > MAX_IMAGE_BYTES) {
+        setError(`That image is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB.`)
+        event.target.value = ""
+        return
+      }
+      setError(null)
+      const reader = new FileReader()
+      reader.onload = () => onLoaded(String(reader.result), file.name)
+      reader.readAsDataURL(file)
     }
+  const onPickImage = pickImage((dataUrl, name) => {
+    setImage(dataUrl)
+    setImageName(name)
+  })
+  const onPickPoolImage = pickImage((dataUrl, name) => {
+    setPoolImage(dataUrl)
+    setPoolImageName(name)
+  })
+
+  /**
+   * Name the pool.
+   *
+   * CampaignEscrow stores a key and no name, so a pool used to be called after its quests and
+   * showed its key the moment they disagreed. This pins a document for the pool itself: the name
+   * and summary a card shows, and a picture if one is given. It needs the pool to exist, so it
+   * comes after funding.
+   */
+  const namePool = async () => {
     setError(null)
-    const reader = new FileReader()
-    reader.onload = () => {
-      setImage(String(reader.result))
-      setImageName(file.name)
+    setNotice(null)
+    setBusy("name")
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/partner/campaign/${encodeURIComponent(campaignId)}/metadata`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: poolName,
+            summary: poolSummary,
+            ...(poolImage ? { image: poolImage } : {}),
+          }),
+        }
+      )
+      const body = (await response.json()) as { metadataURI?: string; message?: string }
+      if (!response.ok || !body.metadataURI) {
+        setError(body.message ?? "could not pin the campaign document")
+        return
+      }
+      setNotice(`Pinned the campaign document at ${body.metadataURI}.`)
+      void refresh()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught))
+    } finally {
+      setBusy(null)
     }
-    reader.readAsDataURL(file)
   }
 
   const publish = async () => {
@@ -377,7 +432,61 @@ function PartnerCampaignPageInner() {
 
         <section className="rounded border border-[#1A1A1A] bg-black p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">2. Publish a quest</h2>
+            <h2 className="text-sm font-semibold text-white">2. Name the pool</h2>
+            <span data-testid="pool-name" className="text-[11px] text-zinc-500">
+              {view?.title ? `Called "${view.title}"` : "Not named yet"}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            The escrow stores a key and no name. This is what the campaign card and page call the
+            pool; without it they fall back to the first quest&apos;s title.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Campaign name</span>
+              <input
+                data-testid="pool-title"
+                value={poolName}
+                onChange={(event) => setPoolName(event.target.value)}
+                placeholder="Swap week"
+                className="mt-1 w-full rounded border border-[#1A1A1A] bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-200 outline-none focus:border-zinc-600"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Picture, optional</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={onPickPoolImage}
+                className="mt-1 block w-full text-[11px] text-zinc-400 file:mr-3 file:rounded file:border file:border-[#1A1A1A] file:bg-[#0A0A0A] file:px-3 file:py-1.5 file:text-[11px] file:text-zinc-300"
+              />
+              {poolImageName && <span className="mt-1 block text-[10px] text-zinc-600">{poolImageName}</span>}
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">About the campaign</span>
+              <textarea
+                data-testid="pool-summary"
+                value={poolSummary}
+                onChange={(event) => setPoolSummary(event.target.value)}
+                rows={2}
+                placeholder="What this pool pays for, in a sentence or two."
+                className="mt-1 w-full rounded border border-[#1A1A1A] bg-[#0A0A0A] px-3 py-2 text-xs text-zinc-200 outline-none focus:border-zinc-600"
+              />
+            </label>
+          </div>
+          <Button
+            data-testid="name-pool"
+            onClick={namePool}
+            disabled={!campaignId || poolName.trim().length < 3 || poolSummary.trim().length < 10 || busy !== null}
+            className="mt-3 rounded bg-white text-black hover:bg-white/90"
+          >
+            {busy === "name" ? "Pinning…" : "Pin the campaign document"}
+          </Button>
+        </section>
+
+        <section className="rounded border border-[#1A1A1A] bg-black p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold text-white">3. Publish a quest</h2>
             <span data-testid="pool" className="text-[11px] text-zinc-500">
               Pool on chain: {view ? `${vael(view.poolBalance)} VAEL` : "—"}
             </span>
@@ -522,7 +631,7 @@ function PartnerCampaignPageInner() {
 
         <section className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
           <header className="border-b border-[#1A1A1A] px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">3. Proof state</h2>
+            <h2 className="text-sm font-semibold text-white">4. Proof state</h2>
             <p className="mt-1 text-[11px] text-zinc-600">
               From the index for what the chain verified, and from the worker&apos;s queue for what
               is still in flight.

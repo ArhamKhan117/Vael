@@ -291,8 +291,17 @@ export type CataloguedQuest = IndexedQuest & Partial<QuestCatalogFields> & { cat
  */
 export interface IndexedCampaign {
   campaignKey: string
+  /** The string the partner published under, whose keccak256 is the escrow key. */
   campaignId?: string
+  /**
+   * From the pool's own pinned document. The escrow stores a key and no name, so a pool's name,
+   * summary and picture are what the partner pinned for it, referenced from here and nowhere on
+   * chain.
+   */
   title?: string
+  description?: string
+  image?: string
+  metadataUri?: string
   partner: string
   deposited: string
   released: string

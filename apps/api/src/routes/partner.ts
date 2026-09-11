@@ -113,6 +113,84 @@ function escrowAddress(): string | undefined {
   return value && /^0x[0-9a-fA-F]{40}$/.test(value) ? value : undefined
 }
 
+/** What a partner writes about the pool itself, as distinct from any one quest in it. */
+const campaignMetadataSchema = z.object({
+  name: z.string().min(3).max(80),
+  summary: z.string().min(10).max(600),
+  /** A `data:image/...;base64,...` URL, or absent to keep the pool's quests' picture. */
+  image: z.string().max(Math.ceil(MAX_IMAGE_BYTES * 1.4)).optional(),
+})
+
+/**
+ * POST /partner/campaign/:campaignId/metadata
+ *
+ * Name the pool: pin a document for the campaign itself and record it against the escrow key.
+ *
+ * CampaignEscrow stores a bytes32 key and no name, and QuestManager has no way to change a quest's
+ * metadata once it is created, so a pool used to be named by its quests: where every quest agreed
+ * on a title that was the name, and where they disagreed the card showed the key. Two pools came
+ * to read "Pool 0x07e1398c…" and "Pool 0x50c9f717…" the moment each gained a fourth quest with a
+ * title of its own. The pool's document is the partner's, pinned once, and the campaign row holds
+ * the URI because nothing on chain can.
+ *
+ * The pool must already exist: funded on the escrow, or seen by the index. Naming a pool that has
+ * never held a unit would be inventing a campaign.
+ */
+partnerRouter.post("/campaign/:campaignId/metadata", async (req, res, next) => {
+  try {
+    const parsed = campaignMetadataSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid input", errors: parsed.error.issues })
+    }
+    const campaignId = String(req.params.campaignId)
+    const key = `0x${campaignIdToUint(campaignId).toString(16).padStart(64, "0")}`
+
+    const store = createWorkerStore()
+    await store.init()
+    const indexed = await store.getCampaign(key)
+    if (!indexed) {
+      const escrow = escrowAddress()
+      if (!escrow) return res.status(503).json({ message: "CampaignEscrow is not configured" })
+      const contract = new Contract(escrow, ESCROW_ABI, creditcoinProvider())
+      const balance: bigint = await contract.getFunction("campaignBalance").staticCall(key)
+      if (balance === 0n) {
+        return res.status(404).json({ message: "No pool has been funded under that campaign id" })
+      }
+    }
+
+    const draft = parsed.data
+    let image: string | undefined
+    if (draft.image) {
+      const { bytes, contentType } = decodeDataUrl(draft.image)
+      image = await uploadImage(bytes, contentType, `vael-campaign-${campaignId}`)
+    }
+    const document = {
+      name: draft.name,
+      description: draft.summary,
+      ...(image ? { image } : {}),
+      campaignId,
+      escrowKey: key,
+      attributes: [{ trait_type: "Kind", value: "Vael campaign" }],
+    }
+    const metadataURI = await uploadQuestMetadata(document, `vael-campaign-${campaignId}`)
+
+    await store.upsertCampaign({
+      campaignKey: key,
+      campaignId,
+      title: draft.name,
+      description: draft.summary,
+      metadataUri: metadataURI,
+      ...(image ? { image } : {}),
+    })
+    return res.json({ campaignId, campaignKey: key, metadataURI, image: image ?? null })
+  } catch (error) {
+    if (error instanceof ImageRejected) {
+      return res.status(400).json({ message: error.message })
+    }
+    next(error)
+  }
+})
+
 /**
  * POST /partner/publish
  *
@@ -231,11 +309,19 @@ partnerRouter.get("/campaign/:campaignId", async (req, res, next) => {
       })
     }
 
+    // The pool's own document, if the partner has pinned one, so the Studio can show what the
+    // pool is called rather than only what it holds.
+    const named = await store.getCampaign(key)
+
     return res.json({
       campaignId,
       onChainCampaignId: onChain.toString(),
       escrowKey: key,
       poolBalance: balance.toString(),
+      title: named?.title ?? null,
+      description: named?.description ?? null,
+      image: named?.image ?? null,
+      metadataURI: named?.metadataUri ?? null,
       quests,
     })
   } catch (error) {
