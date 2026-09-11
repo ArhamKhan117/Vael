@@ -2,25 +2,10 @@
 import * as Phaser from "phaser"
 
 import { EventBus, GameEvents, HeroStatePayload } from "../EventBus"
+import { heroFrame } from "../heroSprite"
 
 const TILE = 16
 
-/**
- * Frames in `tilemap_packed.png`, a 12x11 grid of 16x16 tiles indexed row-major.
- *
- * These were checked by eye against a labelled contact sheet of all 132 tiles, because the first
- * guesses were all wrong in a way nothing would have caught: 84 is the wizard, not a warrior; 85 is
- * an unarmoured villager; 88 is a bare-chested barbarian. A hero page showing the wrong class for
- * everyone is the kind of bug that survives every test suite.
- */
-const AFFINITY_FRAMES = {
-  novice: 85, // an unarmoured villager, for a hero that has yet to prove anything
-  warrior: 96, // full plate, closed helm
-  rogue: 112, // green hood and headband
-  mage: 84, // purple robe, pointed hat, white beard
-} as const
-
-/** Plain stone floor tile. */
 /**
  * Frame 49 is sandy floor with visible grit. Frame 40, which this used, is a grey brick *wall*, and
  * tiling it across the bottom half of the canvas made the hero look like they were standing in
@@ -121,7 +106,7 @@ export class HeroScene extends Phaser.Scene {
     // and at phone width the canvas is only about 195px tall, so a centred sprite sat directly
     // behind the text. Placed by fraction so it holds at every rendered size.
     this.sprite = this.add
-      .image(width / 2, height * 0.36, "dungeon-tiles", AFFINITY_FRAMES[state.affinity])
+      .image(width / 2, height * 0.36, "dungeon-tiles", heroFrame(state.affinity))
       .setScale(4)
 
     // A gentle breathing bob so the hero reads as alive rather than as a screenshot.

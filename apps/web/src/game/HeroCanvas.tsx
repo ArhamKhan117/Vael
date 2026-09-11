@@ -1,6 +1,7 @@
 "use client"
 
-import { AFFINITY_LABELS, HeroStatePayload } from "./EventBus"
+import { HeroStatePayload } from "./EventBus"
+import { affinityLabel } from "./heroSprite"
 import { HERO_FLOOR_FRACTION, HeroScene } from "./scenes/HeroScene"
 import PhaserGame from "./PhaserGame"
 
@@ -36,7 +37,7 @@ export default function HeroCanvas({
       style={{ paddingBottom: `calc(${(HERO_FLOOR_FRACTION * 100).toFixed(2)}% + 0.75rem)` }}
     >
       <p className="text-sm font-semibold text-white sm:text-lg">
-        {state.hasHero ? `Level ${state.level}  ${AFFINITY_LABELS[state.affinity]}` : "No hero yet"}
+        {state.hasHero ? `Level ${state.level}  ${affinityLabel(state.affinity)}` : "No hero yet"}
       </p>
 
       {!state.hasHero && (

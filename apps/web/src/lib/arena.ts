@@ -38,17 +38,7 @@ export function baseDamage(level: number, strength: number, agility: number): nu
   return 2 + 2 * level + 2 * strength + agility
 }
 
-/** Affinity names as a page should print them. "novice" means no verified action yet. */
-export const AFFINITY_LABELS: Record<string, string> = {
-  novice: "Novice",
-  warrior: "Warrior",
-  rogue: "Rogue",
-  mage: "Mage",
-}
-
-export function affinityLabel(affinity: string | undefined): string {
-  return AFFINITY_LABELS[affinity ?? "novice"] ?? "Novice"
-}
+export { affinityLabel } from "@/game/heroSprite"
 
 export function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`

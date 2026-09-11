@@ -92,15 +92,10 @@ export const GameEvents = {
   ArenaHit: "arena-hit",
 } as const
 
-export type Affinity = "novice" | "warrior" | "rogue" | "mage"
+import type { Affinity } from "./heroSprite"
 
-/** Names as the page says them, so a label never reads "novice" in lower case. */
-export const AFFINITY_LABELS: Record<Affinity, string> = {
-  novice: "Novice",
-  warrior: "Warrior",
-  rogue: "Rogue",
-  mage: "Mage",
-}
+export type { Affinity } from "./heroSprite"
+export { AFFINITY_LABELS } from "./heroSprite"
 
 /** One swing, decoded from the three bytes the chain emitted for it. */
 export interface ArenaSwing {

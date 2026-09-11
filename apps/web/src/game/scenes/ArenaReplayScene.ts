@@ -1,19 +1,9 @@
 import * as Phaser from "phaser"
 
 import { ArenaReplayPayload, EventBus, GameEvents } from "../EventBus"
+import { heroFrame } from "../heroSprite"
 
 const TILE = 16
-
-/**
- * Verified by eye against a labelled contact sheet of the whole tilemap, the same frames HeroScene
- * uses. Guessing these is how they were wrong for a whole phase.
- */
-const AFFINITY_FRAMES = {
-  novice: 85, // an unarmoured villager, for a hero that has yet to prove anything
-  warrior: 96,
-  rogue: 112,
-  mage: 84,
-} as const
 
 /** Sandy floor with grit. Frame 40 is a wall and 48 is featureless; see HeroScene. */
 const FLOOR_FRAME = 49
@@ -91,7 +81,7 @@ export class ArenaReplayScene extends Phaser.Scene {
     sides.forEach((side, slot) => {
       const x = slot === 0 ? width * 0.28 : width * 0.72
       const sprite = this.add
-        .image(x, height / 2, "dungeon-tiles", AFFINITY_FRAMES[side.affinity])
+        .image(x, height / 2, "dungeon-tiles", heroFrame(side.affinity))
         .setScale(5)
       if (slot === 1) sprite.setFlipX(true)
       this.fighters[slot] = sprite
@@ -135,8 +125,12 @@ export class ArenaReplayScene extends Phaser.Scene {
 
     this.hp[defender] = Math.max(0, this.hp[defender]! - swing.damage)
 
-    defenderSprite.setTintFill(swing.crit ? 0xffdd55 : 0xffffff)
-    this.time.delayedCall(110, () => defenderSprite.clearTint())
+    // A flush of colour, not a fill. The fill painted the whole sprite flat white for the flash,
+    // and any still image taken in that window showed a white silhouette where a hero should be:
+    // the milestone 12 evidence caught duel 22's opponent that way and it read as a missing sprite.
+    // A multiply tint keeps the hero recognisable while it flashes.
+    defenderSprite.setTint(swing.crit ? 0xffd166 : 0xff8080)
+    this.time.delayedCall(140, () => defenderSprite.clearTint())
     this.cameras.main.shake(swing.crit ? 160 : 80, swing.crit ? 0.006 : 0.003)
 
     // The damage number is DOM. It floats and fades in CSS over the fighter that took it.
