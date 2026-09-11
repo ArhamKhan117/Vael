@@ -25,7 +25,7 @@ const ESCROW_ABI = [
   "function deposit(bytes32 campaignId, uint256 amount)",
   "function campaignBalance(bytes32 campaignId) view returns (uint256)",
   "function getFeeAndPoolAmount(uint256 depositAmount) view returns (uint256 feeAmount, uint256 poolAmount)",
-  "function rewardReleaser() view returns (address)",
+  "function releasers(address releaser) view returns (bool)",
   "function rewardToken() view returns (address)",
   "event Released(bytes32 indexed campaignId, address indexed recipient, uint256 amount)",
 ]
@@ -89,11 +89,10 @@ async function main() {
   const token = new Contract(tokenAddress, TOKEN_ABI, partner)
   const manager = new Contract(managerAddress, QUEST_MANAGER_ABI, partner)
 
-  const releaser = await escrow.getFunction("rewardReleaser")()
-  if (releaser.toLowerCase() !== ascAddress.toLowerCase()) {
-    throw new Error(`escrow releaser is ${releaser}, not QuestASC ${ascAddress}`)
-  }
-  log("escrow releaser  ", `${releaser} (QuestASC, the only caller it accepts)`)
+  // v2 holds a releaser set rather than one address; the proved path needs QuestASC in it.
+  const ascIsReleaser: boolean = await escrow.getFunction("releasers")(ascAddress)
+  if (!ascIsReleaser) throw new Error(`QuestASC ${ascAddress} is not a releaser on the escrow`)
+  log("escrow releaser  ", `${ascAddress} (QuestASC is in the releaser set)`)
 
   // ------------------------------------------------------------ 1. fund
 
