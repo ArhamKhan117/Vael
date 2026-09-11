@@ -261,7 +261,10 @@ export function useChallenges(status = "open", address?: string, refreshMs = 12_
 export function useArenaHistory(address?: string, refreshMs = 20_000) {
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const refetch = useCallback(async () => {
-    const query = address ? `?address=${address}` : ""
+    // The API's cap, not its default page: the page shows the newest few in full and keeps the
+    // rest behind a scroll, and a scroll that stops at the first twenty-five is a lie about how
+    // many duels there were.
+    const query = `?limit=200${address ? `&address=${address}` : ""}`
     const body = await getJson<{ challenges: Challenge[] }>(`/arena/history${query}`)
     setChallenges(body?.challenges ?? [])
   }, [address])
@@ -353,7 +356,7 @@ export interface ActivityEvent {
   block: number
 }
 
-export function useMarketActivity(limit = 40, refreshMs = 20_000) {
+export function useMarketActivity(limit = 200, refreshMs = 20_000) {
   const [activity, setActivity] = useState<ActivityEvent[]>([])
 
   const refetch = useCallback(async () => {

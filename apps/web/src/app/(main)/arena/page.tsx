@@ -6,6 +6,7 @@ import { formatUnits, parseUnits } from "viem"
 import { Swords } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { RecentList } from "@/components/ui/recent-list"
 import { EventBus, GameEvents } from "@/game/EventBus"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import {
@@ -348,12 +349,16 @@ export default function ArenaPage() {
           {history.length === 0 ? (
             <p className="px-5 py-6 text-xs text-zinc-500">No duel has been fought yet.</p>
           ) : (
-            <ul className="divide-y divide-[#1A1A1A]">
-              {history.map((challenge) => (
-                <li
-                  key={challenge.challengeId}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs"
-                >
+            // Newest first, from the API. The five most recent are laid out in full and the rest
+            // scroll inside a fixed box, so the page stops at the same place however many duels
+            // have been fought.
+            <RecentList
+              items={history}
+              visible={5}
+              keyOf={(challenge) => String(challenge.challengeId)}
+              testId="finished-duels"
+              render={(challenge) => (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs">
                   <button
                     type="button"
                     onClick={() => challenge.status !== "voided" && setSelected(challenge)}
@@ -392,9 +397,9 @@ export default function ArenaPage() {
                       block {challenge.resolvedAtBlock.toLocaleString()}
                     </a>
                   ) : null}
-                </li>
-              ))}
-            </ul>
+                </div>
+              )}
+            />
           )}
         </section>
       </div>

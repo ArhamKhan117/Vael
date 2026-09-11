@@ -6,6 +6,7 @@ import { formatUnits, parseUnits } from "viem"
 import { Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { RecentList } from "@/components/ui/recent-list"
 import { MarketItemCard } from "@/components/market/item-card"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import {
@@ -498,12 +499,14 @@ export default function MarketPage() {
           {activity.length === 0 ? (
             <p className="px-5 py-8 text-center text-xs text-zinc-600">Nothing has happened yet.</p>
           ) : (
-            <ul className="divide-y divide-[#1A1A1A]">
-              {activity.map((event) => (
-                <li
-                  key={`${event.kind}-${event.listingId}-${event.block}`}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 text-xs"
-                >
+            // Newest first, from the API. Ten in full, the rest behind a scroll of fixed height.
+            <RecentList
+              items={activity}
+              visible={10}
+              keyOf={(event) => `${event.kind}-${event.listingId}-${event.block}`}
+              testId="market-activity"
+              render={(event) => (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 text-xs">
                   <span className="flex min-w-0 items-center gap-2.5">
                     <span
                       className={`rounded px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${
@@ -530,9 +533,9 @@ export default function MarketPage() {
                       {event.block.toLocaleString()}
                     </a>
                   </span>
-                </li>
-              ))}
-            </ul>
+                </div>
+              )}
+            />
           )}
         </section>
       </div>
