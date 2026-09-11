@@ -594,14 +594,55 @@ export class CreditcoinIndexer {
 
 
 
+  /** When each untitled quest may next be retried, and how long to wait after that. */
+  private readonly metadataRetry = new Map<number, { at: number; waitMs: number }>()
+
+  /**
+   * Go back for the metadata of quests that were catalogued without it.
+   *
+   * A quest is catalogued seconds after QuestCreated, and its document was pinned seconds before
+   * that, so the gateway has often not seen the CID yet: the fetch fails, the row is written with
+   * an empty title and the fallback cadence, and the board shows "Quest #37" for a quest whose
+   * document says "Lending Basics" and "daily". Eight of the scheduler's quests read that way.
+   * Nothing went back for them, because the indexer moves on blocks and a missed fetch is not a
+   * block.
+   *
+   * Called once per scan. Each untitled quest is retried on a doubling wait from one minute to an
+   * hour, at most a few per call, so a document that is really gone costs a request an hour rather
+   * than one per tick. Returns how many were filled in.
+   */
+  async recatalogueUntitled(limit = 3): Promise<number> {
+    const now = Date.now()
+    const untitled = (await this.store.questCatalog())
+      .filter((quest) => !quest.title && quest.metadataURI?.startsWith("ipfs://"))
+      .filter((quest) => quest.metadataURI !== "ipfs://placeholder")
+      .filter((quest) => (this.metadataRetry.get(quest.questId)?.at ?? 0) <= now)
+      .slice(0, limit)
+
+    let filled = 0
+    for (const quest of untitled) {
+      if (await this.indexQuestCatalog(quest.questId, quest.creditcoinBlock ?? 0)) {
+        this.metadataRetry.delete(quest.questId)
+        filled += 1
+        continue
+      }
+      const waitMs = Math.min((this.metadataRetry.get(quest.questId)?.waitMs ?? 30_000) * 2, 3_600_000)
+      this.metadataRetry.set(quest.questId, { at: now + waitMs, waitMs })
+    }
+    return filled
+  }
+
   /**
    * Read a quest back off QuestManager and store the half a page renders.
    *
    * A failure here is not fatal. The worker's half of the row is what makes a quest completable,
    * and it is written by RuleRegistered; leaving the display half behind costs a card, not a
    * payout.
+   *
+   * @returns whether the quest's metadata document was fetched, so a caller can retry the ones
+   * that were catalogued without it.
    */
-  private async indexQuestCatalog(questId: number, creditcoinBlock: number): Promise<void> {
+  private async indexQuestCatalog(questId: number, creditcoinBlock: number): Promise<boolean> {
     try {
       const manager = new Contract(env.QUEST_MANAGER_ADDRESS, QUEST_MANAGER_READ_ABI, this.provider)
       const quest = await manager.getFunction("getQuest").staticCall(questId)
@@ -644,8 +685,10 @@ export class CreditcoinIndexer {
       if (await manager.getFunction("isNativeQuest").staticCall(questId)) {
         await this.indexNativeRule(manager, questId)
       }
+      return metadata !== undefined
     } catch (error) {
       console.warn(`[indexer] could not catalogue quest ${questId}: ${error}`)
+      return false
     }
   }
 

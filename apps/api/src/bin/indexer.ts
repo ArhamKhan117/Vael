@@ -5,11 +5,12 @@
  *   node apps/api/dist/bin/indexer.js
  *
  * Signs nothing and needs no private key: it reads Creditcoin's own events into the store, which
- * is what the site's read paths are assembled from.
+ * is what the site's read paths are assembled from. The loop itself is in src/indexer/loop.ts,
+ * shared with the tsx entry point in scripts/.
  */
 import "dotenv/config"
 
-import { CreditcoinIndexer } from "../indexer"
+import { runIndexer } from "../indexer/loop"
 
 const INTERVAL_MS = Number(process.env.INDEXER_INTERVAL_MS ?? 20_000)
 
@@ -22,49 +23,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   })
 }
 
-function stamp() {
-  return new Date().toISOString().slice(11, 19)
-}
-
-async function main() {
-  const indexer = new CreditcoinIndexer()
-  await indexer.init()
-  console.log(`[indexer] scanning every ${INTERVAL_MS / 1000}s`)
-
-  for (;;) {
-    if (stopping) return
-    try {
-      const outcome = await indexer.scanOnce()
-      const moved = [
-        ["quest", outcome.questsTouched],
-        ["hero", outcome.heroesTouched],
-        ["raid hit", outcome.raidHits],
-        ["action", outcome.actions],
-        ["reward", outcome.rewards],
-        ["badge", outcome.badges],
-        ["arena", outcome.arena],
-        ["drop", outcome.drops],
-        ["equipment", outcome.equipment],
-        ["listing", outcome.listings],
-        ["campaign", outcome.campaigns],
-      ].filter(([, count]) => (count as number) > 0)
-
-      if (outcome.toBlock >= outcome.fromBlock) {
-        console.log(
-          `[${stamp()}] ${outcome.fromBlock}..${outcome.toBlock}  ${outcome.logsSeen} logs` +
-            (moved.length > 0 ? `  ${moved.map(([l, c]) => `${c} ${l}`).join(", ")}` : "")
-        )
-      }
-    } catch (error) {
-      // A scan that fails is retried on the next tick. The cursor only advances on success, so a
-      // failed scan costs time rather than data.
-      console.error(`[${stamp()}] scan failed: ${(error as Error).message}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS))
-  }
-}
-
-main().catch((error) => {
+runIndexer(INTERVAL_MS, () => stopping).catch((error) => {
   console.error("[indexer] fatal:", error instanceof Error ? error.message : error)
   process.exit(1)
 })
