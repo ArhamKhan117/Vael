@@ -110,3 +110,4 @@ tools/.venv/
 
 # Windows download sidecars
 *:Zone.Identifier
+__pycache__/
