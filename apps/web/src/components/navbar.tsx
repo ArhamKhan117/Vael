@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -136,9 +135,8 @@ export default function Navbar() {
       )}
     >
       <div className="mx-auto flex items-center gap-3 px-5 py-5 md:px-10">
-        {/* The logo never shrinks. Everything else gives way before it does. */}
+        {/* The wordmark never shrinks. Everything else gives way before it does. */}
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <Image src="/logo/vael.svg" alt="Vael" width={24} height={24} />
           <span className="font-matemasie mb-1 text-xl font-medium text-white">VAEL</span>
         </Link>
 

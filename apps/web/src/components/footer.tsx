@@ -31,9 +31,17 @@ export default function Footer() {
           row, so the eye reads them as two separate things instead of one long line of text. */}
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between md:gap-24">
         <div className="md:max-w-xs">
-          <Link href="/" className="mb-4 flex items-center gap-2">
-            <Image src="/logo/vael.svg" alt="Vael" width={24} height={24} />
-            <span className="font-matemasie mb-1 text-xl text-white">VAEL</span>
+          {/* The logo, alone, where the mark and the wordmark used to sit: 28 px tall, which is
+              the line the wordmark took, from a master three times that so it is sharp at 2x. */}
+          <Link href="/" className="mb-4 flex items-center">
+            <Image
+              src="/brand/vael-logo-84h.webp"
+              alt="Vael"
+              width={86}
+              height={28}
+              className="h-7 w-auto"
+              priority={false}
+            />
           </Link>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Do real DeFi on Ethereum. Prove it on Creditcoin with the Attestcoin Protocol. Earn

@@ -45,7 +45,7 @@ export const metadata = {
   description:
     "Do real DeFi on Ethereum. Prove it on Creditcoin with Attestcoin. Earn rewards no backend can fake.",
   url: getMetadataUrl(),
-  icons: ["/logo/vael.svg"],
+  icons: ["/icons/icon-512.png"],
 }
 
 export const appKit = createAppKit({

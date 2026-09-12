@@ -104,3 +104,9 @@ Thumbs.db
 
 # Artwork masters: the PNGs the image models drew, packed into public/ by apps/web/scripts/pack-art.mjs
 apps/web/art-src/
+
+# Local authoring venv for the README art (tools/requirements.txt)
+tools/.venv/
+
+# Windows download sidecars
+*:Zone.Identifier

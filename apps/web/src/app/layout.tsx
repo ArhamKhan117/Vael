@@ -29,6 +29,22 @@ export const metadata: Metadata = {
     template: "%s | Vael",
   },
   description: TAGLINE,
+  // The icon set is generated from the logo by tools/make_brand.py: the wordmark on a black
+  // rounded tile with a one-pixel lighter border, so it reads on a light tab bar as well as a
+  // dark one. favicon.ico bundles 16, 32 and 48 for browsers that ask for the classic file.
+  icons: {
+    icon: [
+      { url: "/icons/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icons/icon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/icons/favicon.ico"],
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Vael - Prove It On-Chain",
     description: TAGLINE,

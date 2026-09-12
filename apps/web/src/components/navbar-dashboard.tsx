@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useId, useState } from 'react'
@@ -37,7 +36,6 @@ export default function NavbarDashboard() {
                 them. */}
             <div className="flex items-center gap-3 px-5 py-5 md:px-10">
                 <Link href="/dashboard/studio" className="flex shrink-0 items-center gap-2">
-                    <Image src="/logo/vael.svg" alt="Vael" width={24} height={24} />
                     <span className="text-xl font-medium tracking-tighter text-white">
                         VAEL | Studio
                     </span>

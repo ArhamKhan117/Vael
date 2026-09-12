@@ -26,6 +26,28 @@ replaced by the generated artwork below in milestone 11 and are not committed.
 
 CC0 permits both without condition; the packs are credited above regardless.
 
+## The logo
+
+`apps/web/public/brand/vael-logo-source.png` is the Vael wordmark as it was supplied for the
+project: a 620 x 214 raster on a transparent background, chunky white letters with a dark outline
+and a blue underside.
+It is the project's own mark, made for it, and belongs to the project; nothing in it is drawn from
+another work.
+
+Everything the site ships is made from that file by `tools/make_brand.py`, in this order: crop to
+the visible artwork; bleed the edge colour outward under the transparent surround so the resampler
+has nothing foreign to mix into the edges (which is what a halo is); resample colour and alpha
+separately with Lanczos to a 2048 px master; re-harden the alpha with a smoothstep centred on half
+coverage so a scaled-up soft edge comes back to about a pixel and a half; a light unsharp mask on
+the colour.
+The master is `apps/web/public/brand/vael-logo.png`, 2048 x 665, transparent.
+`vael-logo-84h.webp` is the footer's copy, three times its 92 x 28 slot.
+The icon set under `apps/web/public/icons/` (16, 32, 48, a 180 apple-touch icon, 192 and 512 for
+the web manifest, a 1024 tile, and a `favicon.ico` bundling 16, 32 and 48) puts the wordmark on a
+black rounded-square tile with a one-pixel lighter border; below 64 px it uses the wordmark's flat
+white silhouette from the master's alpha, because at that size the outline and shading average to
+grey.
+
 ## Superseded pixel-art generators
 
 milestone 10 drew the action icons and the Academy diagrams from integer primitives on a small pixel
