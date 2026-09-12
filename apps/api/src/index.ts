@@ -1,6 +1,8 @@
 import cors from "cors"
 import express from "express"
 
+import { creditcoinProvider } from "./attestcoin/config"
+import { createWorkerStore } from "./attestcoin/store"
 import { env, hasServiceEnv } from "./config/env"
 import { academyRouter } from "./routes/academy"
 import { aiRouter } from "./routes/ai"
@@ -28,7 +30,26 @@ if (hasServiceEnv()) {
 
 const app = express()
 
-app.use(cors())
+/**
+ * Which browsers may call this API, by origin.
+ *
+ * ALLOWED_ORIGINS is a comma-separated list; unset, it is the local web app. A request with no
+ * Origin header (curl, the worker, a health check) is never a cross-origin request and is let
+ * through; a browser on an origin not in the list gets no CORS headers and its request fails in
+ * the browser, which is the point. In production the list holds the Vercel URL of the web app.
+ */
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "http://localhost:3101")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean)
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+      callback(null, false)
+    },
+  })
+)
 
 /**
  * One route takes an image, and only one.
@@ -43,8 +64,39 @@ app.use((req, res, next) =>
   express.json({ limit: LARGE_BODY_PATHS.has(req.path) ? "4mb" : "1mb" })(req, res, next)
 )
 
-app.get("/health", (_, res) => {
-  res.json({ status: "ok", network: "Creditcoin testnet" })
+/**
+ * GET /health
+ *
+ * Enough for a deploy check to tell the three things that go wrong apart: the store cannot be
+ * reached, the chain cannot be reached, or both can and the indexer has stopped moving. The index
+ * head is the Creditcoin block the indexer last finished, and `lag` is how far behind the chain's
+ * head that is; a lag that keeps growing is an indexer that is down.
+ */
+app.get("/health", async (_, res) => {
+  const body: Record<string, unknown> = {
+    status: "ok",
+    network: "Creditcoin testnet",
+    chainId: 102031,
+    store: process.env.WORKER_STORE === "supabase" ? "supabase" : "file",
+  }
+  try {
+    const store = createWorkerStore()
+    await store.init()
+    const cursor = await store.getCursor(102031, "creditcoin-index")
+    body.indexHead = cursor?.lastBlock ?? null
+  } catch (error) {
+    body.status = "degraded"
+    body.store = `unreachable: ${error instanceof Error ? error.message : String(error)}`
+  }
+  try {
+    const head = await creditcoinProvider().getBlockNumber()
+    body.chainHead = head
+    if (typeof body.indexHead === "number") body.lag = head - body.indexHead
+  } catch (error) {
+    body.status = "degraded"
+    body.chain = `unreachable: ${error instanceof Error ? error.message : String(error)}`
+  }
+  res.status(body.status === "ok" ? 200 : 503).json(body)
 })
 
 app.use("/academy", academyRouter)

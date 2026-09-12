@@ -1,5 +1,41 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
+
+/**
+ * Where the repository's documents are, from wherever this is running.
+ *
+ * In development and in the standalone build the app runs from apps/web, two levels below the
+ * repository (or below the traced root, which mirrors it). On Vercel the function runs from the
+ * traced root itself. Both are tried, in that order, so one file can serve both without a copy.
+ */
+/**
+ * The file name, hidden from static analysis on purpose.
+ *
+ * The tracer that decides what a serverless bundle carries follows string arithmetic into
+ * readFile. Given `join(process.cwd(), "..", "..", file)` it emitted the whole directory (the
+ * first standalone build weighed 429 MB and held the entire repository); given a path whose last
+ * segment it could still read it emitted `**\/README.md`, which is every package's README under
+ * node_modules and the contracts' vendored libraries. Reversed twice at run time the name is the
+ * same name, and the tracer sees nothing it can follow. The two documents are then named for it
+ * explicitly in next.config.ts, which is the one place that decides what the bundle holds.
+ */
+function opaque(value: string): string {
+  return [...value].reverse().reverse().join("")
+}
+
+async function readRepositoryFile(file: string): Promise<string> {
+  const roots = [["..", ".."], []]
+  let lastError: unknown
+  for (const up of roots) {
+    const candidate = [...up, ...opaque(file).split("/")].reduce((acc, part) => join(acc, part), process.cwd())
+    try {
+      return await readFile(candidate, "utf8")
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError
+}
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -68,7 +104,7 @@ export async function MarkdownPage({
 }) {
   let source: string
   try {
-    source = await readFile(join(process.cwd(), "..", "..", file), "utf8")
+    source = await readRepositoryFile(file)
   } catch {
     source = `# ${title}\n\nThis document could not be read from the repository.`
   }
