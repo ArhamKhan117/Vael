@@ -68,7 +68,7 @@ export function MarketItemCard({
             {item?.name ?? "Unknown item"}
           </p>
           <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">
-            {item?.slotName ?? "—"}
+            {item?.slotName ?? "-"}
           </p>
         </div>
 

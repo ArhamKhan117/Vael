@@ -118,21 +118,21 @@ Twenty-two contracts on Creditcoin testnet and one on Ethereum Sepolia, all sour
 | `Marketplace` | [`0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374`](https://creditcoin-testnet.blockscout.com/address/0x868Bb518122B670Cd02b93dEeDc6B53DcFA36374) |
 | `QuestPortal` (Sepolia) | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://sepolia.etherscan.io/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 
-What the deployment holds, read from the chain and the index at Creditcoin block 5479826:
+What the deployment holds, read from the chain and the index at Creditcoin block 5479941:
 
 | | |
 |---|---|
-| Quests on the current `QuestManager` | 43, of which 18 completed |
-| Completions proved through Attestcoin | 12 |
+| Quests on the current `QuestManager` | 44, of which 19 completed |
+| Completions proved through Attestcoin | 13 |
 | Completions performed by `NativePortal` | 6 |
 | Heroes minted | 6 |
-| Badges minted | 44 |
+| Badges minted | 45 |
 | Raid seasons fought | 3, all defeated, 2,900 damage in 16 hits |
 | Duels fought | 22, of which 21 resolved and 1 voided |
 | Loot dropped | 27 items |
 | Market | 13 listed, 4 sold, 86 VAEL of volume |
 | Partner pools | 4 funded, holding 1,629.2 VAEL, 770 VAEL released to players |
-| VAEL released in all | 2,575 |
+| VAEL released in all | 2,675 |
 
 ## Run it locally
 

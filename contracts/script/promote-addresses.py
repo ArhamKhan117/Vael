@@ -78,8 +78,8 @@ def rewrite_table_row(text: str, key: str, address: str, tx: str | None, block: 
     columns = [c.strip() for c in found.group(0).strip().strip("|").split("|")]
     # Contract, Address, Deploy tx, Block, What it is. The last column is prose worth keeping.
     what = columns[4] if len(columns) >= 5 else ""
-    tx_cell = f"[`{_short(tx)}`]({BLOCKSCOUT}/tx/{tx})" if tx else (columns[2] if len(columns) > 2 else "—")
-    block_cell = block or (columns[3] if len(columns) > 3 else "—")
+    tx_cell = f"[`{_short(tx)}`]({BLOCKSCOUT}/tx/{tx})" if tx else (columns[2] if len(columns) > 2 else "-")
+    block_cell = block or (columns[3] if len(columns) > 3 else "-")
     row = f"| `{name}` | [`{address}`]({BLOCKSCOUT}/address/{address}) | {tx_cell} | {block_cell} | {what} |"
     print(f"  and rewrote its row in the current table")
     return pattern.sub(lambda _: row, text, count=1)

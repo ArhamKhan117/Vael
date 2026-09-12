@@ -3,8 +3,8 @@ import { notFound } from "next/navigation"
 /**
  * Every Tiny Dungeon tile with its index, for checking sprite frames by eye.
  *
- * Development only. This exists because the first hero sprite indices were all wrong — 84 is the
- * wizard, not a warrior — and nothing in the test suite could have noticed. Being able to see the
+ * Development only. This exists because the first hero sprite indices were all wrong - 84 is the
+ * wizard, not a warrior - and nothing in the test suite could have noticed. Being able to see the
  * numbered grid is the only reliable way to pick a frame.
  */
 const COLS = 12

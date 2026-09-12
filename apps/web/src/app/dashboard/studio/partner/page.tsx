@@ -488,7 +488,7 @@ function PartnerCampaignPageInner() {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h2 className="text-sm font-semibold text-white">3. Publish a quest</h2>
             <span data-testid="pool" className="text-[11px] text-zinc-500">
-              Pool on chain: {view ? `${vael(view.poolBalance)} VAEL` : "—"}
+              Pool on chain: {view ? `${vael(view.poolBalance)} VAEL` : "-"}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-zinc-600">

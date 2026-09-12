@@ -186,11 +186,11 @@ export default function MarketPage() {
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4 md:shrink-0">
               <Stat
                 label="Floor"
-                value={stats?.floor ? vael(stats.floor) : "—"}
+                value={stats?.floor ? vael(stats.floor) : "-"}
                 hint="VAEL"
               />
               <Stat label="Listed" value={String(stats?.listed ?? 0)} hint={`${stats?.kinds ?? 0} kinds`} />
-              <Stat label="Volume" value={stats ? vael(stats.volume) : "—"} hint={`${stats?.sales ?? 0} sales`} />
+              <Stat label="Volume" value={stats ? vael(stats.volume) : "-"} hint={`${stats?.sales ?? 0} sales`} />
               <Stat label="Owners" value={String(stats?.owners ?? 0)} hint="holding now" />
             </div>
           </div>

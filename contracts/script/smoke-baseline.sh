@@ -68,7 +68,7 @@ log "Smoke test against Creditcoin testnet $EXPECTED_CHAIN_ID"
 info "QuestManager  $QUEST_MANAGER"
 info "agent         $DEPLOYER_ADDRESS (id $(lookup AGENT_ID))"
 
-# send DESCRIPTION TARGET SIG ARGS... — one transaction; echoes "hash block" on stdout.
+# send DESCRIPTION TARGET SIG ARGS... - one transaction; echoes "hash block" on stdout.
 send() {
   local desc="$1" target="$2" sig="$3"; shift 3
   local out hash status gas_used gas_limit block

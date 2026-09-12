@@ -33,7 +33,7 @@ Nobody is.
 The contract that pays has itself verified a cryptographic proof of the Ethereum transaction through the Attestcoin Protocol's block prover, and it accepts no other evidence and no other caller.
 For actions that happen on Creditcoin, where there is nothing to prove, a second contract performs the action with the player's own tokens and records the completion in the same transaction, so that again nobody makes a claim.
 
-The document states that claim, explains what enforces it, shows how a reader can check it without a private key, and reports what the live deployment has done: at Creditcoin block 5479826, 43 quests, 18 completed, 12 by proof and 6 by performance, 2,575 VAEL released, 44 badges, 3 raid seasons defeated, 22 duels, 27 items dropped, and not one of those numbers produced by a key.
+The document states that claim, explains what enforces it, shows how a reader can check it without a private key, and reports what the live deployment has done: at Creditcoin block 5479941, 44 quests, 19 completed, 13 by proof and 6 by performance, 2,675 VAEL released, 45 badges, 3 raid seasons defeated, 22 duels, 27 items dropped, and not one of those numbers produced by a key.
 
 ## 2. The problem
 
@@ -256,17 +256,17 @@ For a native completion, PenguinSwap's router is trusted to swap, and nothing is
 
 ## 9. Measurements from the live network
 
-Read from the chain and the index at Creditcoin block 5479826; the full run log with every hash is `docs/E2E_LOG.md`.
+Read from the chain and the index at Creditcoin block 5479941; the full run log with every hash is `docs/E2E_LOG.md`.
 
 | | |
 |---|---|
-| Quests on the current `QuestManager` | 43, of which 18 completed |
-| Completions proved through Attestcoin | 12 |
+| Quests on the current `QuestManager` | 44, of which 19 completed |
+| Completions proved through Attestcoin | 13 |
 | Completions performed by `NativePortal` | 6 |
-| VAEL released in all | 2,575 |
+| VAEL released in all | 2,675 |
 | Partner pools | 4 funded, holding 1,629.2 VAEL, 770 VAEL released |
 | Heroes minted | 6 |
-| Badges minted | 44 |
+| Badges minted | 45 |
 | Raid seasons | 3, all defeated, 2,900 damage in 16 hits |
 | Duels | 22, of which 21 resolved and 1 voided |
 | Loot dropped | 27 items; 13 listed, 4 sold, 86 VAEL of volume |

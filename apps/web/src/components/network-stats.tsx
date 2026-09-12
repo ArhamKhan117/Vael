@@ -44,7 +44,7 @@ function Stat({
  */
 export function NetworkStats() {
   const { stats, loading } = useStats()
-  const show = (value: string) => (loading && !stats ? "—" : value)
+  const show = (value: string) => (loading && !stats ? "-" : value)
 
   return (
     <div className="space-y-2">
@@ -86,7 +86,7 @@ export function NetworkStats() {
       </div>
       <p className="text-[11px] text-zinc-600">
         Counted from Creditcoin events through block{" "}
-        {stats?.indexedThrough ? stats.indexedThrough.toLocaleString() : "—"}. Nothing here is
+        {stats?.indexedThrough ? stats.indexedThrough.toLocaleString() : "-"}. Nothing here is
         estimated or seeded.
       </p>
     </div>

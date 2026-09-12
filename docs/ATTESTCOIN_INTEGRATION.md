@@ -124,7 +124,7 @@ of putting decoding outside the core.
 | Success required | `receiptStatus` must be 1. The precompile proves inclusion, not success; a reverted source transaction moved no value. |
 | Replay keyed per log | `keccak256(chainKey, blockHeight, txIndex, logOrdinal)`. A transaction-scoped key would strand every quest log after the first in the same transaction. |
 | Dispatch from the proof | Handlers are chosen from the verified log's emitter and `topics[0]`. There is no action byte in `SourceTx`. |
-| Chain-scoped emitters | `chainKey` is threaded into every hook. The same address exists on more than one chain — our own Sepolia `QuestPortal` happens to share an address with a Creditcoin contract, which is exactly the collision this prevents. |
+| Chain-scoped emitters | `chainKey` is threaded into every hook. The same address exists on more than one chain - our own Sepolia `QuestPortal` happens to share an address with a Creditcoin contract, which is exactly the collision this prevents. |
 | Batching is honest | `submitBatch` takes ≤10 members within a 1000 block span, each carrying **its own** continuity proof, verified sequentially, all-or-nothing. One continuity proof proves exactly one height. |
 
 ## 5. Decoding

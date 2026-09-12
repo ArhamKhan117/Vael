@@ -41,7 +41,7 @@ MINTER_ROLE="0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
 
 RPC=(--rpc-url "$CREDITCOIN_RPC_URL")
 
-# json_get FIELD — read one top-level field from JSON on stdin. Uses python3 rather than
+# json_get FIELD - read one top-level field from JSON on stdin. Uses python3 rather than
 # jq, which is not installed on this machine and must not be added silently.
 json_get() {
   python3 -c 'import json,sys; print(json.load(sys.stdin).get(sys.argv[1], ""))' "$1"
@@ -83,7 +83,7 @@ fi
 
 # ---------------------------------------------------------------- record keeping
 
-# record KEY VALUE — append `KEY=VALUE` to the machine-readable block, once.
+# record KEY VALUE - append `KEY=VALUE` to the machine-readable block, once.
 record() {
   local key="$1" value="$2"
   if ! grep -qE "^${key}=" "$ADDRESSES_FILE" 2>/dev/null; then
@@ -91,17 +91,17 @@ record() {
   fi
 }
 
-# lookup KEY — echo a previously recorded value, empty if absent.
+# lookup KEY - echo a previously recorded value, empty if absent.
 lookup() {
   grep -E "^${1}=" "$ADDRESSES_FILE" 2>/dev/null | tail -1 | cut -d= -f2- || true
 }
 
-# note TEXT — append a human-readable line.
+# note TEXT - append a human-readable line.
 note() { printf '%s\n' "$1" >> "$ADDRESSES_FILE"; }
 
 # ---------------------------------------------------------------- primitives
 
-# send DESCRIPTION TARGET SIG ARGS... — one transaction, reporting gas used vs limit.
+# send DESCRIPTION TARGET SIG ARGS... - one transaction, reporting gas used vs limit.
 # Echoes the transaction hash on stdout; all narration goes to stderr.
 send() {
   local desc="$1" target="$2" sig="$3"; shift 3
@@ -179,7 +179,7 @@ expect_call() {
   info "verified  $desc = $expected (block $block)"
 }
 
-# done KEY — true if this step is already recorded.
+# done KEY - true if this step is already recorded.
 done_already() { [ -n "$(lookup "$1")" ]; }
 
 # wire KEY DESC TARGET SEND_SIG SEND_ARGS READ_SIG EXPECTED READ_ARGS
@@ -194,7 +194,7 @@ wire() {
     return
   fi
   local result hash block
-  # shellcheck disable=SC2086 — deliberate word splitting of the argument lists
+  # shellcheck disable=SC2086 - deliberate word splitting of the argument lists
   result="$(send "$desc" "$target" "$send_sig" $send_args)"
   hash="${result% *}"; block="${result#* }"
   # shellcheck disable=SC2086
