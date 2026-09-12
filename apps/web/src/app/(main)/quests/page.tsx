@@ -28,7 +28,7 @@ import type { ChainQuest } from "@/lib/api";
  * would pay nothing, and it is left out here and shown only on that campaign's own page, marked.
  */
 
-const PERSONAL: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] = [
+const SECTIONS: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] = [
   {
     cadence: "daily",
     title: "Daily quests",
@@ -39,9 +39,6 @@ const PERSONAL: { cadence: ChainQuest["cadence"]; title: string; blurb: string }
     title: "Weekly quests",
     blurb: "A longer target, refreshed every Monday.",
   },
-];
-
-const BOARD: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] = [
   {
     cadence: "campaign",
     title: "Partner quests",
@@ -54,7 +51,20 @@ const BOARD: { cadence: ChainQuest["cadence"]; title: string; blurb: string }[] 
   },
 ];
 
-function SectionHeading({ title, count, blurb }: { title: string; count: number; blurb: string }) {
+/** How many cards a section shows before it asks. Two rows of three at desktop width. */
+const COLLAPSED = 6;
+
+function SectionHeading({
+  title,
+  count,
+  blurb,
+  control,
+}: {
+  title: string;
+  count: number;
+  blurb: string;
+  control?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <h2 className="text-base font-semibold md:text-lg">{title}</h2>
@@ -62,7 +72,67 @@ function SectionHeading({ title, count, blurb }: { title: string; count: number;
         {count}
       </span>
       <p className="text-xs text-zinc-500">{blurb}</p>
+      {control && <span className="ml-auto">{control}</span>}
     </div>
+  );
+}
+
+/**
+ * One section of the board: a grid of cards, the first six in full, the rest behind one control.
+ *
+ * The board once laid every daily quest in a single column, and with fifteen of them the connected
+ * board was ten thousand pixels tall. Every section is now the same grid, three across at desktop
+ * width and one on a phone, capped at six cards until "Show all" is pressed, which expands the
+ * section in place. Your own quests are sorted first by the page, so the cap never hides them
+ * behind somebody else's.
+ */
+function QuestSection({
+  section,
+  quests,
+  viewer,
+  loading,
+  emptyMessage,
+}: {
+  section: (typeof SECTIONS)[number];
+  quests: ChainQuest[];
+  viewer?: string;
+  loading: boolean;
+  emptyMessage: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? quests : quests.slice(0, COLLAPSED);
+  // The control sits in the heading line, beside the count it refers to, rather than under the
+  // grid: a row of its own under every section was fifty pixels four times over.
+  const control =
+    quests.length > COLLAPSED ? (
+      <button
+        type="button"
+        onClick={() => setExpanded((open) => !open)}
+        aria-expanded={expanded}
+        data-testid={`show-all-${section.cadence}`}
+        className="rounded border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+      >
+        {expanded ? `Show the first ${COLLAPSED}` : `Show all ${quests.length}`}
+      </button>
+    ) : undefined;
+  return (
+    <section className="space-y-3" data-testid={`section-${section.cadence}`}>
+      <SectionHeading
+        title={section.title}
+        count={quests.length}
+        blurb={section.blurb}
+        control={control}
+      />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {loading ? (
+          <QuestGridEmpty>Reading the chain…</QuestGridEmpty>
+        ) : quests.length === 0 ? (
+          <QuestGridEmpty>{emptyMessage}</QuestGridEmpty>
+        ) : (
+          shown.map((quest) => <QuestCard key={quest.questId} quest={quest} viewer={viewer} />)
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -130,8 +200,8 @@ export default function QuestsPage() {
   };
 
   return (
-    <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
-      <div className="space-y-12">
+    <main className="bg-black px-5 pb-12 pt-24 text-white md:px-10">
+      <div className="space-y-8">
         <PartnershipCarousel />
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -162,49 +232,16 @@ export default function QuestsPage() {
           </div>
         )}
 
-        {/* The two personal quests sit side by side: one card each, and a four-column grid would
-            leave three quarters of the row empty. */}
-        <div className="grid gap-8 md:grid-cols-2">
-          {PERSONAL.map((section) => {
-            const list = byCadence.get(section.cadence) ?? [];
-            return (
-              <section key={section.cadence} className="space-y-4">
-                <SectionHeading title={section.title} count={list.length} blurb={section.blurb} />
-                <div className="grid gap-4">
-                  {loading ? (
-                    <QuestGridEmpty>Reading the chain…</QuestGridEmpty>
-                  ) : list.length === 0 ? (
-                    <QuestGridEmpty>{emptyMessage(section.cadence)}</QuestGridEmpty>
-                  ) : (
-                    list.map((quest) => (
-                      <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
-                    ))
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-
-        {BOARD.map((section) => {
-          const list = byCadence.get(section.cadence) ?? [];
-          return (
-            <section key={section.cadence} className="space-y-4">
-              <SectionHeading title={section.title} count={list.length} blurb={section.blurb} />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {loading ? (
-                  <QuestGridEmpty>Reading the chain…</QuestGridEmpty>
-                ) : list.length === 0 ? (
-                  <QuestGridEmpty>{emptyMessage(section.cadence)}</QuestGridEmpty>
-                ) : (
-                  list.map((quest) => (
-                    <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
-                  ))
-                )}
-              </div>
-            </section>
-          );
-        })}
+        {SECTIONS.map((section) => (
+          <QuestSection
+            key={section.cadence}
+            section={section}
+            quests={byCadence.get(section.cadence) ?? []}
+            viewer={viewer}
+            loading={loading}
+            emptyMessage={emptyMessage(section.cadence)}
+          />
+        ))}
 
         {/* Past their expiry: on chain, and nothing anybody can do. Kept for the record, folded
             away so they are never mistaken for work, and counted in no section above. */}
@@ -228,7 +265,7 @@ export default function QuestsPage() {
               />
             </button>
             {showExpired && (
-              <div className="grid gap-4 opacity-60 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 opacity-60 sm:grid-cols-2 xl:grid-cols-3">
                 {expired.map((quest) => (
                   <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
                 ))}

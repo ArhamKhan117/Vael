@@ -74,11 +74,11 @@ export function QuestCard({
       // Your own quest is marked by its edge and its chip, never by its ground: every card on the
       // board sits on the same black, so a marked one reads as marked rather than as a different
       // kind of card.
-      className={`flex h-full flex-col justify-between rounded border bg-black p-6 ${
+      className={`flex h-full flex-col justify-between rounded border bg-black p-5 ${
         mine ? "border-sky-500/40" : "border-[#1A1A1A]"
       }`}
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* The art says what the action is; the chip says how often it comes round. A letter in a
             circle said neither, which is why it is gone. */}
         <div className="flex items-start gap-4">
@@ -113,44 +113,42 @@ export function QuestCard({
           </div>
         </div>
 
-        <p className="line-clamp-3 text-xs leading-relaxed text-zinc-400">
+        <p className="line-clamp-2 text-xs leading-relaxed text-zinc-400">
           {/* The fallback names the action the rule checks, not Quest.category, which the
               agent sets to Swap for every quest and would call a portal check-in a swap. */}
           {quest.description || `${quest.action.actionName} on ${quest.action.chain}.`}
         </p>
 
-        <div className="space-y-2 border-t border-[#1A1A1A] pt-4 text-[11px]">
-          <div className="flex items-center justify-between text-zinc-500">
-            <span>REWARD</span>
-            <span className="text-xs font-semibold text-white">
-              {Number(quest.rewardVael).toLocaleString()} VAEL
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-zinc-500">
-            <span>PAID BY</span>
-            <span className="text-xs text-white">
-              {quest.fundedBy === "escrow" ? "Campaign escrow" : "Reward vault"}
-            </span>
-          </div>
-          <div className="flex items-start justify-between gap-3 text-zinc-500">
-            <span className="shrink-0">DO THIS</span>
-            <span className="text-right text-xs text-white">
-              {quest.action.actionName}
-              <span className="block text-[10px] text-zinc-500">
+        {/* The facts, in two columns and a line: what it pays and from where, what to do and the
+            floor, and which contract settles it. The board shows up to six of these per section in
+            three columns, so the card's height is the board's height. */}
+        <div className="border-t border-[#1A1A1A] pt-3 text-[11px]">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-zinc-500">REWARD</p>
+              <p className="mt-0.5 text-xs font-semibold text-white">
+                {Number(quest.rewardVael).toLocaleString()} VAEL
+              </p>
+              <p className="text-[10px] text-zinc-500">
+                {quest.fundedBy === "escrow" ? "campaign escrow" : "reward vault"}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-zinc-500">DO THIS</p>
+              <p className="mt-0.5 truncate text-xs text-white">{quest.action.actionName}</p>
+              <p className="truncate text-[10px] text-zinc-500">
                 min {quest.action.minAmountLabel} · {short(quest.action.emitter)}
-              </span>
-            </span>
+              </p>
+            </div>
           </div>
-          {/* The label never wraps: in a four-column grid the long value pushed "SETTLED BY"
-              onto two lines and into the value's first word. */}
-          <div className="flex items-start justify-between gap-3 text-zinc-500">
-            <span className="shrink-0">SETTLED BY</span>
-            <span className="text-right text-xs text-white">
+          <p className="mt-2 text-[10px] text-zinc-500">
+            Settled by{" "}
+            <span className="text-zinc-300">
               {isNativeAction(quest.action.actionType)
-                ? "NativePortal, in one transaction"
-                : "QuestASC, against an Attestcoin proof"}
+                ? "NativePortal, one transaction"
+                : "QuestASC, Attestcoin proof"}
             </span>
-          </div>
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.14em]">
@@ -176,7 +174,7 @@ export function QuestCard({
       <Button
         asChild
         variant="default"
-        className={`mt-5 rounded font-semibold ${
+        className={`mt-4 rounded font-semibold ${
           (mine || quest.completed) && !dead
             ? "bg-white text-black hover:bg-white/80"
             : "border border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-900"
