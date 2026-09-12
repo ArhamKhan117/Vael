@@ -6,7 +6,7 @@ import { formatUnits, parseUnits } from "viem"
 import { Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { RecentList } from "@/components/ui/recent-list"
+import { PagedList } from "@/components/ui/paged-list"
 import { MarketItemCard } from "@/components/market/item-card"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import {
@@ -209,7 +209,7 @@ export default function MarketPage() {
 
         <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
           {/* -------------------------------------------------------- filter rail */}
-          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
             <div>
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
@@ -499,10 +499,10 @@ export default function MarketPage() {
           {activity.length === 0 ? (
             <p className="px-5 py-8 text-center text-xs text-zinc-600">Nothing has happened yet.</p>
           ) : (
-            // Newest first, from the API. Ten in full, the rest behind a scroll of fixed height.
-            <RecentList
+            // Newest first, from the API, ten to a page with arrows and a page size.
+            <PagedList
               items={activity}
-              visible={10}
+              noun="entries"
               keyOf={(event) => `${event.kind}-${event.listingId}-${event.block}`}
               testId="market-activity"
               render={(event) => (

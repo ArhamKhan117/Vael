@@ -6,7 +6,7 @@ import { formatUnits, parseUnits } from "viem"
 import { Swords } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { RecentList } from "@/components/ui/recent-list"
+import { PagedList } from "@/components/ui/paged-list"
 import { EventBus, GameEvents } from "@/game/EventBus"
 import { useReownWallet } from "@/hooks/useReownWallet"
 import {
@@ -349,12 +349,11 @@ export default function ArenaPage() {
           {history.length === 0 ? (
             <p className="px-5 py-6 text-xs text-zinc-500">No duel has been fought yet.</p>
           ) : (
-            // Newest first, from the API. The five most recent are laid out in full and the rest
-            // scroll inside a fixed box, so the page stops at the same place however many duels
-            // have been fought.
-            <RecentList
+            // Newest first, from the API, ten to a page with arrows and a page size, so the page
+            // stops at the same place however many duels have been fought.
+            <PagedList
               items={history}
-              visible={5}
+              noun="duels"
               keyOf={(challenge) => String(challenge.challengeId)}
               testId="finished-duels"
               render={(challenge) => (
