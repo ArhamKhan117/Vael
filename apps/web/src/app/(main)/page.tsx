@@ -255,7 +255,7 @@ export default function Home() {
             </div>
 
             <div>
-              <PartnershipCarousel showHeading={false} />
+              <PartnershipCarousel showHeading={false} autoAdvanceMs={3000} />
             </div>
 
           </div>
