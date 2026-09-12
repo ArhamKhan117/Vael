@@ -138,6 +138,44 @@
     @apply bg-background text-foreground;
   }
 
+  /*
+   * Scrollbars, everywhere something scrolls: thin, a track the colour of the page, a muted thumb
+   * that lightens under the pointer. The default scrollbar is white and grey and was the one thing
+   * on the site drawn in somebody else's palette. `scrollbar-color` covers Firefox and every
+   * browser that implements the standard; the WebKit pseudo-elements cover the rest. A browser
+   * that understands neither draws its own and the box still scrolls, which is the fallback.
+   * `color-scheme: dark` makes that fallback dark rather than white. The page's own scrollbar
+   * stays hidden (`scrollbar-hide` on <html>); this styles the boxes inside it.
+   */
+  :root {
+    color-scheme: dark;
+    --scrollbar-track: #0a0a0c;
+    --scrollbar-thumb: #2a2a2f;
+    --scrollbar-thumb-hover: #4a4a52;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 2px solid var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+  *::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+  }
+
   .font-matemasie {
     font-family: var(--font-matemasie), system-ui, sans-serif;
   }
