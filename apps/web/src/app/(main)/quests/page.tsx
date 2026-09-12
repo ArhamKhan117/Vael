@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 import PartnershipCarousel from "@/components/partnership-carousel";
+import { CardCarousel } from "@/components/ui/card-carousel";
 import { QuestCard, QuestGridEmpty } from "@/components/quest-card";
 import { useAllQuests } from "@/hooks/useQuests";
 import { useWallet } from "@/hooks/useWallet";
@@ -15,12 +16,18 @@ import type { ChainQuest } from "@/lib/api";
  *
  * Every quest here exists because QuestManager emitted QuestCreated on Creditcoin, and every one of
  * them is on this page whether a wallet is connected or not. Connecting does not filter the board;
- * it sorts it, putting your own assignments first and marking them.
+ * it lifts your own assignments into a section of their own at the top, a plain grid that never
+ * moves, and leaves everybody else's where it was.
  *
  * That is deliberate. The board is the argument: a visitor should be able to see that real quests
  * exist, who they are assigned to and which have been proved, before deciding to connect anything.
  * The one thing a wallet is needed for is accepting, and a quest is assigned to an address at
  * creation, so somebody else's quest is readable by everyone and acceptable by nobody else.
+ *
+ * Each of the four sections is a carousel: three cards in view at desktop width, one on a phone,
+ * stepping one card every four seconds and wrapping, paused under the pointer. "View all" in a
+ * section's heading expands it into a grid in place and stops its rotation. Fifteen daily quests
+ * in one column was a board ten thousand pixels tall; six in a grid was better, and still a wall.
  *
  * Two kinds of quest are on chain and not on the board. A quest past its expiry, which
  * QuestManager will not let anybody accept or complete, goes into a section at the bottom that is
@@ -51,8 +58,8 @@ const SECTIONS: { cadence: ChainQuest["cadence"]; title: string; blurb: string }
   },
 ];
 
-/** How many cards a section shows before it asks. Two rows of three at desktop width. */
-const COLLAPSED = 6;
+/** How often a section's carousel steps on its own. */
+const ROTATE_MS = 4000;
 
 function SectionHeading({
   title,
@@ -78,13 +85,10 @@ function SectionHeading({
 }
 
 /**
- * One section of the board: a grid of cards, the first six in full, the rest behind one control.
+ * One section of the board: a carousel of its quests, or the whole grid once "View all" is pressed.
  *
- * The board once laid every daily quest in a single column, and with fifteen of them the connected
- * board was ten thousand pixels tall. Every section is now the same grid, three across at desktop
- * width and one on a phone, capped at six cards until "Show all" is pressed, which expands the
- * section in place. Your own quests are sorted first by the page, so the cap never hides them
- * behind somebody else's.
+ * The control sits in the heading line, beside the count it refers to. Expanding stops the
+ * rotation, because a grid that is all in view has nothing to rotate to.
  */
 function QuestSection({
   section,
@@ -100,19 +104,16 @@ function QuestSection({
   emptyMessage: React.ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const shown = expanded ? quests : quests.slice(0, COLLAPSED);
-  // The control sits in the heading line, beside the count it refers to, rather than under the
-  // grid: a row of its own under every section was fifty pixels four times over.
   const control =
-    quests.length > COLLAPSED ? (
+    quests.length > 1 ? (
       <button
         type="button"
         onClick={() => setExpanded((open) => !open)}
         aria-expanded={expanded}
-        data-testid={`show-all-${section.cadence}`}
+        data-testid={`view-all-${section.cadence}`}
         className="rounded border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 transition hover:border-zinc-500 hover:text-white"
       >
-        {expanded ? `Show the first ${COLLAPSED}` : `Show all ${quests.length}`}
+        {expanded ? "Show fewer" : `View all ${quests.length}`}
       </button>
     ) : undefined;
   return (
@@ -123,15 +124,31 @@ function QuestSection({
         blurb={section.blurb}
         control={control}
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {loading ? (
+      {loading ? (
+        <div className="grid gap-4">
           <QuestGridEmpty>Reading the chain…</QuestGridEmpty>
-        ) : quests.length === 0 ? (
+        </div>
+      ) : quests.length === 0 ? (
+        <div className="grid gap-4">
           <QuestGridEmpty>{emptyMessage}</QuestGridEmpty>
-        ) : (
-          shown.map((quest) => <QuestCard key={quest.questId} quest={quest} viewer={viewer} />)
-        )}
-      </div>
+        </div>
+      ) : expanded ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid={`grid-${section.cadence}`}>
+          {quests.map((quest) => (
+            <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
+          ))}
+        </div>
+      ) : (
+        <CardCarousel
+          items={quests}
+          keyOf={(quest) => String(quest.questId)}
+          render={(quest) => <QuestCard quest={quest} viewer={viewer} />}
+          perSlide={3}
+          autoAdvanceMs={ROTATE_MS}
+          label={`${section.title.toLowerCase().replace(/ quests$/, "")} quest`}
+          testId={`carousel-${section.cadence}`}
+        />
+      )}
     </section>
   );
 }
@@ -158,33 +175,33 @@ export default function QuestsPage() {
     return { live, expired, refundedCount };
   }, [quests]);
 
-  const mineCount = useMemo(
-    () => (viewer ? live.filter((q) => q.participant?.toLowerCase() === viewer).length : 0),
-    [live, viewer]
-  );
-
-  const byCadence = useMemo(() => {
+  // The connected wallet's own assignments, lifted out of the sections below and never repeated
+  // in them. Newest first, and the section counts count only what each section shows.
+  const { mine, byCadence } = useMemo(() => {
+    const mine: ChainQuest[] = [];
     const map = new Map<ChainQuest["cadence"], ChainQuest[]>();
     for (const quest of live) {
+      if (viewer && quest.participant?.toLowerCase() === viewer) {
+        mine.push(quest);
+        continue;
+      }
       const list = map.get(quest.cadence) ?? [];
       list.push(quest);
       map.set(quest.cadence, list);
     }
-    // Your own assignments first inside each section, then the rest. Sorting rather than hiding is
-    // the whole difference between a board and a private list.
-    if (viewer) {
-      for (const list of map.values()) {
-        list.sort((a, b) => {
-          const mineA = a.participant?.toLowerCase() === viewer ? 0 : 1;
-          const mineB = b.participant?.toLowerCase() === viewer ? 0 : 1;
-          return mineA - mineB || b.questId - a.questId;
-        });
-      }
-    }
-    return map;
+    mine.sort((a, b) => b.questId - a.questId);
+    for (const list of map.values()) list.sort((a, b) => b.questId - a.questId);
+    return { mine, byCadence: map };
   }, [live, viewer]);
+  const mineCount = mine.length;
 
   const emptyMessage = (cadence: ChainQuest["cadence"]) => {
+    // A section that is empty only because everything in it is yours says so, rather than
+    // claiming the chain holds nothing of the kind.
+    const yours = mine.filter((quest) => quest.cadence === cadence).length;
+    if (yours > 0) {
+      return `${yours === 1 ? "The one quest" : `All ${yours} quests`} of this kind ${yours === 1 ? "is" : "are"} assigned to you, in Your quests above.`;
+    }
     if (cadence === "campaign") {
       return (
         <>
@@ -209,7 +226,7 @@ export default function QuestsPage() {
             <h2 className="text-xl font-semibold md:text-2xl">Quest board</h2>
             <p className="mt-1 text-xs text-zinc-500">
               {viewer
-                ? `Every quest on chain, read from QuestManager. ${mineCount} assigned to your wallet, shown first.`
+                ? `Every quest on chain, read from QuestManager. ${mineCount} assigned to your wallet, in a section of their own.`
                 : "Every quest on chain, read from QuestManager. Connect a wallet to accept the ones assigned to you."}
             </p>
           </div>
@@ -230,6 +247,23 @@ export default function QuestsPage() {
           <div className="rounded border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300">
             {error}
           </div>
+        )}
+
+        {/* The wallet's own quests: a plain grid, at the top, that never rotates. A carousel is
+            for browsing what is there; what is yours is for doing, and it should hold still. */}
+        {viewer && !loading && mine.length > 0 && (
+          <section className="space-y-3" data-testid="section-mine">
+            <SectionHeading
+              title="Your quests"
+              count={mine.length}
+              blurb="Assigned to the connected wallet. Not repeated below."
+            />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="grid-mine">
+              {mine.map((quest) => (
+                <QuestCard key={quest.questId} quest={quest} viewer={viewer} />
+              ))}
+            </div>
+          </section>
         )}
 
         {SECTIONS.map((section) => (

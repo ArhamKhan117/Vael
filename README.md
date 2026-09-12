@@ -4,9 +4,9 @@
 **Vael is a quest game on Creditcoin where no key can hand out a reward.**
 Players do real DeFi on Ethereum; the Attestcoin Protocol proves the transaction to Creditcoin; a contract verifies the proof itself and only then pays, mints the badge, grants the XP and deals the raid damage.
 
-Author: Arham Khan.
-Hackathon: BUIDL CTC 2026 Fall, Gaming track.
-Creditcoin testnet 102031, Ethereum Sepolia 11155111.
+
+Hackathon: BUIDL CTC 2026 Fall, Gaming track and Defi Track.
+
 
 ---
 
