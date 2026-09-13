@@ -256,7 +256,7 @@ For a native completion, PenguinSwap's router is trusted to swap, and nothing is
 
 ## 9. Measurements from the live network
 
-Read from the chain and the index at Creditcoin block 5479941; the full run log with every hash is `docs/E2E_LOG.md`.
+Read from the chain and the index at Creditcoin block 5479941; every transaction behind them is in `docs/EVIDENCE.md`.
 
 | | |
 |---|---|
@@ -306,4 +306,4 @@ Read from the chain and the index at Creditcoin block 5479941; the full run log 
 - ERC-8004, trustless agents: the identity, reputation and validation registries the quest agent is registered with.
 - Uniswap v3, Aave v3 and the ERC-20 `Transfer` event, as the source of the actions proved.
 - Kenney's CC0 packs for the sprites, credited in `apps/web/public/game/CREDITS.md`.
-- `docs/SPEC.md` for architecture, contracts and constants; `docs/ADDRESSES.md` for every address and supersession; `docs/E2E_LOG.md` for every live run.
+- `docs/ARCHITECTURE.md` for the system as deployed; `docs/ADDRESSES.md` for every address and supersession; `docs/EVIDENCE.md` for every feature exercised on the live network.

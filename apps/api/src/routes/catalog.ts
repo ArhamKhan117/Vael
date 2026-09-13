@@ -198,7 +198,7 @@ function serialize(
     // on chain and Active, and would pay nothing: the board hides it and the campaign's own page
     // says why.
     campaignStatus: campaignKey ? (pools?.get(campaignKey) ?? null) : null,
-    // Decided in docs/SPEC.md section 17.1: a campaign quest is paid by the partner's escrow and
+    // A campaign quest is paid by the partner's escrow and
     // an ordinary quest by RewardVault. Never both.
     fundedBy: isCampaign ? ("escrow" as const) : ("vault" as const),
     accepted: quest.accepted,

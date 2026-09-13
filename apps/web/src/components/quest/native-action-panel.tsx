@@ -65,7 +65,7 @@ export function NativeActionPanel({ questId, rule, onCompleted }: NativeActionPa
     : PENGUINSWAP.USD1
 
   // Both sides of the only liquid pair are 18 decimals, checked on chain and recorded in
-  // docs/SPEC.md section 3.1a.
+  // docs/ADDRESSES.md.
   const decimals = 18
   const minimum = rule.minAmount
   const [amount, setAmount] = useState(() => formatUnits(minimum > 0n ? minimum : parseUnits("1", decimals), decimals))

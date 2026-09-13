@@ -1,7 +1,7 @@
 /**
  * Worker state, and the two places it can live.
  *
- * The state machine is the one in docs/SPEC.md section 6. A submission is written **before** any
+ * The state machine is the one described in docs/ATTESTCOIN_INTEGRATION.md section 3. A submission is written **before** any
  * network work happens, so a crash between observing a Sepolia log and proving it leaves a row
  * behind rather than losing the action entirely. Everything else is a transition on that row.
  */

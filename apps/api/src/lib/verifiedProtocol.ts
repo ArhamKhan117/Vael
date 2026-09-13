@@ -19,7 +19,7 @@ const QUEST_ASC_ALLOWLIST_ABI = [
   "function allowedEmitters(uint64 chainKey, uint8 actionType, address emitter) view returns (bool)",
 ]
 
-/** Addresses this deployment knows by name. Recorded in docs/SPEC.md §3.1 and §3.1a. */
+/** Addresses this deployment knows by name. Recorded in docs/ADDRESSES.md. */
 function knownProtocols(): { address: string; name: string; slug: string }[] {
   const entries: { address: string | undefined; name: string; slug: string }[] = [
     { address: process.env.QUEST_PORTAL_ADDRESS, name: "Vael Quest Portal", slug: "vael" },

@@ -31,7 +31,7 @@ interface IQuestManagerProgress is IQuestManager {
  * @dev **Why a hook and not `NativePortal` itself.** `QuestASC` releases a campaign reward inside
  * the same call that records the completion. `NativePortal` never did, and it cannot be taught to:
  * `QuestManager.setNativePortal` is one-shot, so a new `NativePortal` means a new `QuestManager`,
- * and through the immutable graph the nine-contract cascade milestone 10 was built to be the last of.
+ * and through the immutable graph the nine-contract cascade the completer set was built to end.
  * What the deployed `NativePortal` does expose is its hook list, which the owner can extend. This
  * contract is that hook: `NativePortal` calls it after every native completion, it reads the quest
  * off `QuestManager`, and if the quest draws on a campaign it releases exactly the quest's
@@ -52,7 +52,7 @@ interface IQuestManagerProgress is IQuestManager {
  * the pool cannot cover the reward the completion stands and this emits `CampaignRewardSkipped`
  * where `QuestASC` would have reverted the whole completion. The API refuses to publish a quest a
  * pool cannot cover, and only a releaser can lower a pool, so this is a corner the operator has to
- * work to reach; it is recorded in `docs/SPEC.md` section 10.3 rather than glossed.
+ * work to reach; it is recorded in `docs/ATTESTCOIN_INTEGRATION.md` section 6d rather than glossed.
  */
 contract CampaignPayoutHook is Ownable, ICompletionHook {
     IQuestManagerProgress public immutable QUEST_MANAGER;

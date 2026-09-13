@@ -227,7 +227,7 @@ This run was made against the previous deployment; the self-claim code path in t
 | Portal check-in, 0.001 ETH | Sepolia | [`0xd49c904c…f8cd2b`](https://sepolia.etherscan.io/tx/0xd49c904cb252ebc0d8aeda1a4cb26cd47db5e16249af07bf91a1d3b5c4f8cd2b) | 11675552 | - |
 | Proof fetched in the browser and submitted from the player's wallet; 75 VAEL paid | Creditcoin | [`0x1dab0174…913912`](https://creditcoin-testnet.blockscout.com/tx/0x1dab017412f69afaa9e506b91507dd2828068e9b05dd3b0e994f502e96913912) | - | - |
 
-## 11. The removal test, reproduced
+## 11. No key can pay a player, reproduced
 
 Every privileged path that could pay a player without a proof reverts with a named error.
 Reproduce with `cast call` against the current addresses; the outputs are in the README.

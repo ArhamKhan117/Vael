@@ -7,8 +7,8 @@ pragma solidity ^0.8.28;
 /// circular import.
 library VaelTypes {
     /// @notice The five source-chain actions a quest can be satisfied by.
-    /// @dev Only `Portal` is decoded today. The rest revert `ActionNotYetSupported` in QuestASC and
-    /// land in milestone 3b. The enum is complete from the start so a rule stored now keeps its meaning.
+    /// @dev Each one is decoded by its own adapter. The enum was complete from the start, so a rule
+    /// stored early keeps its meaning.
     enum ActionType {
         Portal,
         UniswapSwap,

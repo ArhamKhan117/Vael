@@ -450,7 +450,7 @@ contract QuestASC is VaelAscBase, Ownable, IQuestASC {
         }
     }
 
-    // ---------------------------------------------------------------- milestone 3b
+    // ---------------------------------------------------------------- action types
 
     /// @notice Whether a rule may be written against an action type.
     /// @dev All five are decodable now that the adapters exist. Whether a specific log is accepted

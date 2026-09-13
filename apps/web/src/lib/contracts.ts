@@ -31,7 +31,7 @@ export const CONTRACT_ADDRESSES = {
 } as const
 
 /**
- * PenguinSwap on Creditcoin testnet, discovered on chain and recorded in docs/SPEC.md section 3.1a.
+ * PenguinSwap on Creditcoin testnet, discovered on chain and recorded in docs/ADDRESSES.md.
  *
  * There is exactly one pair with real liquidity, WCTC/USD1 at the 0.05% tier, so a native swap
  * quest trades against that one. Naming it here rather than guessing per quest keeps the panel from

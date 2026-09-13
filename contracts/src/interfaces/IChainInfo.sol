@@ -12,7 +12,7 @@ pragma solidity ^0.8.28;
 /// readability.
 ///
 /// Vael calls exactly one of these in contract code, at quest acceptance, to anchor the source
-/// block window. The rest are declared because the worker and future phases read them, and because
+/// block window. The rest are declared because the worker and later modules read them, and because
 /// a partial interface invites someone to guess a selector later.
 interface IChainInfo {
     /// @notice A source chain known to the attestors.

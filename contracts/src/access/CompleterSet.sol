@@ -11,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * trusted any caller then anyone could mint XP without doing anything. Earlier versions solved that
  * with a one-shot `setQuestASC`, which is the strongest possible answer and has one cost: every
  * change to the core forced a redeploy of the module, and through the immutable graph a redeploy of
- * everything holding it. That cascade is not free either. It replaced nine contracts in milestone 8,
+ * everything holding it. That cascade is not free either. The last one replaced nine contracts,
  * required a hero import and a badge re-mint, and would have stranded a partner's escrow if one had
  * been mid-flight.
  *
@@ -30,7 +30,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  *   privilege is hero XP and raid damage, which are earned records, not money.
  *
  * That is weaker than one-shot and it is written down rather than glossed. What it buys is that the
- * milestone 10 cascade is the last one: a new completion path is one proposal and one acceptance a day
+ * cascade which introduced this set is the last one: a new completion path is one proposal and one acceptance a day
  * later, not nine deployments and a state migration.
  */
 abstract contract CompleterSet is Ownable {

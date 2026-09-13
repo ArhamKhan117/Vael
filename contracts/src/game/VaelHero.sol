@@ -24,7 +24,7 @@ import {VaelTypes} from "../interfaces/IVaelTypes.sol";
 /// is now spent rather than merely recorded, and a one-time import can carry v1's heroes across.
 /// A hero cannot be migrated by its owner, because it is soul-bound and holds state no ERC-721
 /// interface exposes, so the import is the only way a redeploy does not erase everybody's history.
-/// See `docs/SPEC.md` §17.1 for the redeploy this ships in.
+/// See `docs/ADDRESSES.md` for the deployment this ships in.
 contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
     struct Hero {
         uint32 level;
@@ -32,7 +32,7 @@ contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
         uint16 strength;
         uint16 agility;
         uint16 intellect;
-        /// @dev Four equipment slots, reserved for the loot module in a later phase.
+        /// @dev Four equipment slots, reserved for the loot module.
         uint16[4] equipment;
         /// @dev Source block of the most recent action, for the streak window.
         uint64 lastActionSourceBlock;
@@ -240,7 +240,7 @@ contract VaelHero is ERC721, Ownable, CompleterSet, ICompletionHook {
     }
 
     /// @notice The streak multiplier in basis points: 1 + 0.1 per streak, capped at x2.
-    /// @dev `docs/SPEC.md` §4.1 and milestone 6 both state it as `1 + 0.1 * streak`, so a streak of 1,
+    /// @dev The rule is `1 + 0.1 * streak`, so a streak of 1,
     /// the first action after a gap, is already worth x1.1 and a streak of 10 is worth x2.
     function streakMultiplierBps(uint16 streak) public pure returns (uint256) {
         uint256 steps = streak > MAX_STREAK_BONUS ? MAX_STREAK_BONUS : streak;

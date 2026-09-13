@@ -1,4 +1,4 @@
--- Attestcoin proof pipeline and game state tables (docs/SPEC.md section 12).
+-- Attestcoin proof pipeline and game state tables (see docs/ARCHITECTURE.md).
 -- Chain events are the source of truth. Every table here is a cache the indexer can rebuild.
 
 -- One row per source-chain transaction as it moves through the proof pipeline.

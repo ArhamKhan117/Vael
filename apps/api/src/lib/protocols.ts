@@ -5,7 +5,7 @@
  * emitters QuestASC allowlists when it decodes a proof. Creditcoin entries are native
  * protocols reachable directly on the game chain.
  *
- * Addresses come from docs/SPEC.md section 3.3. Re-verify against the official deployment
+ * Addresses are recorded in docs/ADDRESSES.md. Re-verify against the official deployment
  * pages before registering a new verification rule.
  */
 
