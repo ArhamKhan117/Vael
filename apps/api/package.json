@@ -16,7 +16,6 @@
     "worker": "tsx scripts/worker.ts",
     "indexer": "tsx scripts/indexer.ts",
     "reindex": "tsx scripts/reindex.ts",
-    "export-state": "tsx scripts/export-state.ts",
     "make-quest": "tsx scripts/make-quest.ts",
     "pin-badges": "tsx scripts/pin-badges.ts",
     "pin-items": "tsx scripts/pin-items.ts",
@@ -24,14 +23,7 @@
     "e2e:arena": "tsx scripts/e2e-arena.ts",
     "e2e:partner": "tsx scripts/e2e-partner.ts",
     "e2e:ai-quest": "tsx scripts/e2e-ai-quest.ts",
-    "spike:mainnet": "tsx scripts/spike-mainnet.ts",
-    "seed-wallets": "tsx scripts/seed-wallets.ts",
-    "seed-content": "tsx scripts/seed-content.ts",
-    "write-seed-log": "tsx scripts/write-seed-log.ts",
-    "audit-seed": "tsx scripts/audit-seed.ts",
-    "migrate-escrow-index": "tsx scripts/migrate-escrow-index.ts",
-    "backfill-escrow-rewards": "tsx scripts/backfill-escrow-rewards.ts",
-    "generate-art": "tsx scripts/generate-art.ts"
+    "spike:mainnet": "tsx scripts/spike-mainnet.ts"
   },
   "keywords": [
     "vael",

@@ -111,3 +111,5 @@ tools/.venv/
 # Windows download sidecars
 *:Zone.Identifier
 __pycache__/
+
+apps/api/scripts/audit-seed.ts
