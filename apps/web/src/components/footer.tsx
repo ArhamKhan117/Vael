@@ -1,5 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Github, Twitter } from "lucide-react"
+
+import { GITHUB_URL, X_URL } from "@/lib/site"
 
 /**
  * Twelve destinations in a 4 x 3 grid, in the order they are meant to be met.
@@ -47,6 +50,26 @@ export default function Footer() {
             Do real DeFi on Ethereum. Prove it on Creditcoin with the Attestcoin Protocol. Earn
             rewards no backend key can hand out.
           </p>
+          <div className="mt-4 flex items-center gap-4">
+            <a
+              href={X_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Vael on X"
+              className="text-muted-foreground transition hover:text-white"
+            >
+              <Twitter className="h-5 w-5" />
+            </a>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Vael on GitHub"
+              className="text-muted-foreground transition hover:text-white"
+            >
+              <Github className="h-5 w-5" />
+            </a>
+          </div>
         </div>
 
         <nav aria-labelledby="footer-menu" className="md:shrink-0">

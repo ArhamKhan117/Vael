@@ -3,7 +3,7 @@ import { NetworkStats } from "@/components/network-stats"
 import { LeaderboardTables } from "./leaderboard-client"
 
 export const metadata = {
-  title: "Leaderboard · Vael",
+  title: "Leaderboard",
   description: "Rankings derived from proofs Creditcoin verified itself.",
 }
 

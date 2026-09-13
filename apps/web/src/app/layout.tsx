@@ -24,9 +24,11 @@ const TAGLINE =
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
+  // The tab reads "Vael" on the landing page and "Vael - Quests" and so on everywhere else; each
+  // route names itself in its own layout.
   title: {
-    default: "Vael - Prove It On-Chain",
-    template: "%s | Vael",
+    default: "Vael",
+    template: "Vael - %s",
   },
   description: TAGLINE,
   // The icon set is generated from the logo by tools/make_brand.py: the wordmark on a black

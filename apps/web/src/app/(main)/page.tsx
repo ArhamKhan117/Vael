@@ -20,6 +20,7 @@ import { LiveRaidBanner } from "@/components/live-raid-banner";
 import { NetworkStats } from "@/components/network-stats";
 import { FaqSection } from "@/components/faq-section";
 import { api } from "@/lib/api";
+import { GITHUB_URL, X_URL } from "@/lib/site";
 // import TextType from "@/components/ui/TextType";
 // import dynamic from "next/dynamic";
 
@@ -124,12 +125,12 @@ export default function Home() {
 
           <div className="flex items-end justify-center md:justify-between mt-4 md:mt-0">
             <div className="border-r border-white py-1 px-4">
-              <Link href="https://x.com" target="_blank" rel="noopener noreferrer">
+              <Link href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="Vael on X">
                 <Twitter className="w-6 h-6 text-white transition-transform duration-500 hover:rotate-[360deg]" />
               </Link>
             </div>
             <div className="py-1 px-4">
-              <Link href="https://github.com" target="_blank" rel="noopener noreferrer">
+              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="Vael on GitHub">
                 <Github className="w-6 h-6 text-white transition-transform duration-500 hover:rotate-[360deg]" />
               </Link>
             </div>
