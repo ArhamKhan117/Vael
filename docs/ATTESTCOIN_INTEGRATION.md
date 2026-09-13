@@ -64,9 +64,9 @@ cast call $QUEST_MANAGER_ADDRESS \
 | Sepolia 11155111 | `QuestPortal` | [`0x62d937DC3410C9C79078A521dA254E6fD53936F1`](https://eth-sepolia.blockscout.com/address/0x62d937DC3410C9C79078A521dA254E6fD53936F1) |
 
 Full table, including every superseded deployment and the reason it was replaced, in
-[ADDRESSES.md](./ADDRESSES.md). Nine of these contracts were replaced together on 2026-09-10 in
-the one consolidated redeploy of `SPEC.md` §17.1; the four adapters were not, which is the point
-of putting decoding outside the core.
+[ADDRESSES.md](./ADDRESSES.md). Nine of these contracts have been replaced together, following the
+immutable graph that document describes; the four adapters never were, which is the point of
+putting decoding outside the core.
 
 ### Protocol addresses used
 
@@ -115,7 +115,7 @@ of putting decoding outside the core.
 ## 4. What the base contract guarantees
 
 `contracts/src/asc/VaelAscBase.sol`. Vael does **not** inherit `ASCBase` from
-`@gluwa/asc-contracts`; the reasons are security properties, recorded in `SPEC.md` §4.1.
+`@gluwa/asc-contracts`; the reasons are security properties, recorded at the top of that file.
 
 | Property | How |
 |---|---|
@@ -225,16 +225,18 @@ compared with the root the provider returned.
 
 ## 6. Live evidence
 
-Full detail, with gas and timings for every run, in [E2E_LOG.md](./E2E_LOG.md).
+Every transaction, with block and gas, in [EVIDENCE.md](./EVIDENCE.md).
 
-Everything in this section was performed on the current deployment on 2026-09-10, against
-processes built for production rather than run with `tsx`.
+Everything in this section was performed against processes built for production rather than run
+with `tsx`, on the deployment that was current at the time; the superseded addresses are in
+`ADDRESSES.md`, and the same paths exercised on the current deployment are tabulated in
+`EVIDENCE.md`.
 
 ### The five action types
 
-Each of the five was proved live on the current deployment or the one before it. The first three
-below are from today's runs; the two Aave rows are the Aave supply from today and the Aave borrow
-from milestone 3b, which is the same adapter and the same code path against the same emitter.
+Each of the five was proved live on the current deployment or the one before it. The Aave borrow
+is the oldest of them, proved through the same adapter and the same code path against the same
+emitter as the supply.
 
 | Action | Sepolia tx | Creditcoin tx | Attest wait |
 |---|---|---|---|
@@ -275,7 +277,7 @@ the worker narrows, QuestASC decides.
 Quest 11 was accepted in the browser, acted on Sepolia, and completed by the player's own wallet
 fetching the proof from the Proof Builder and calling `verifyAndEmit`:
 [`0x1dab0174…913912`](https://creditcoin-testnet.blockscout.com/tx/0x1dab017412f69afaa9e506b91507dd2828068e9b05dd3b0e994f502e96913912). **The worker was
-stopped for the whole of it.** Screenshots in `docs/evidence/final/`.
+stopped for the whole of it.**
 
 ### Proof-gated partner payouts
 
@@ -285,9 +287,10 @@ the quest's reward, 250 VAEL**, in the same receipt as the proof:
 campaign's remaining 745 VAEL was returned through `QuestASC.refundCampaign`:
 [`0xf2c62f9e…0d7399`](https://creditcoin-testnet.blockscout.com/tx/0xf2c62f9e8e25d5d1f123d961a0b0b08bbce05fd0b47818284ec054a3f30d7399).
 
-`CampaignEscrow.releaseReward` accepts one caller, QuestASC, and QuestASC reaches it only after the
-precompile has verified a Merkle proof and a continuity proof. A partner's money cannot leave the
-escrow except behind a real transaction on Ethereum.
+`CampaignEscrow.releaseReward` accepts only its releaser set: QuestASC, which reaches it only after
+the precompile has verified a Merkle proof and a continuity proof, and `CampaignPayoutHook`, which
+reaches it only inside a completion `NativePortal` has just performed. A partner's money cannot
+leave the escrow except behind a real transaction.
 
 ### Fixtures
 
@@ -338,8 +341,7 @@ were worth 90, 95, 100, 100 and 100 because the hero's streak ran from 8 to 12: 
 streak is settled against the source block of the proved action, not against wall-clock time, so it
 cannot be moved by a clock.
 
-Every number is reproducible from the formulas and the proofs; `docs/E2E_LOG.md` works through the
-arithmetic.
+Every number is reproducible from the formulas and the proofs in `docs/EVIDENCE.md`.
 
 ### Hooks cannot hold a reward hostage
 
@@ -507,7 +509,7 @@ proof is exactly how a valid proof gets aimed at the wrong interpretation.
 
 Every quest described above happens on Ethereum and is settled on Creditcoin against an Attestcoin
 proof.
-milestone 10 adds a second kind: a quest whose action happens on Creditcoin itself, through PenguinSwap.
+There is a second kind: a quest whose action happens on Creditcoin itself, through PenguinSwap.
 These are not Attestcoin-verified, and the reason is worth stating plainly rather than burying.
 
 ### Why they carry no proof
@@ -600,7 +602,7 @@ still run on proofs.
 ## 7. Setup
 
 Contracts, tests, and deployment: `contracts/README.md`.
-Worker configuration: `apps/api/README.md` and `SPEC.md` §13.
+Worker configuration: `apps/api/README.md` and `apps/api/.env.example`.
 The Attestcoin worker needs only `CREDITCOIN_RPC_URL`, `SEPOLIA_RPC_URL`, `WORKER_PRIVATE_KEY`,
 `PROOF_BUILDER_URL`, and the contract addresses; it does not need the Supabase, Groq, or Pinata
 credentials, which are validated lazily and only where they are used.
@@ -608,8 +610,7 @@ credentials, which are validated lazily and only where they are used.
 ## 8. Known limits
 
 Everything here is true of the live deployment. Nothing in this document describes a feature that
-is written but not deployed; where that was the case in earlier phases it is now either deployed or
-listed below.
+is written but not deployed; anything that once was is now either deployed or listed below.
 
 ### Attestcoin and the proof path
 
@@ -618,11 +619,11 @@ listed below.
   transaction identifier. It is unforgeable for the same reason the replay key is, but it is not the
   Ethereum tx hash. The worker records the real hash off chain.
 - Attestation latency is seven to nine minutes on Sepolia, measured at 522 seconds over 33 polls in
-  the milestone 7 partner run. Nothing in Vael can shorten it. The product is built around it: a quest
+  one partner run. Nothing in Vael can shorten it. The product is built around it: a quest
   shows its proof state, the worker resumes across restarts, and a demo has to pre-record the wait.
 - One continuity proof proves exactly one source height, so a batch submission still costs one
   continuity proof per distinct block. Batching helps when several actions land in the same block
-  or the same attestation pass, which is what `prep-raid-run.ts` arranges.
+  or the same attestation pass.
 - Proof material perishes. It is fetched immediately before submission, never cached.
 - Writability is not live on the protocol and is out of scope. Vael uses readability only.
   `IVaelOutbound` declares the two publications Vael would make, and nothing implements it.
@@ -649,9 +650,9 @@ listed below.
   earned, and no proof is involved in a duel or a sale. Only the stats a duel reads and the items a
   sale moves came from verified proofs.
 
-### The milestone 8 redeploy
+### The badge and hero migration
 
-Nine contracts were replaced on 2026-09-10. Three kinds of state did not come with them, and the
+When nine contracts were replaced together, three kinds of state did not come with them, and the
 old contracts remain readable at the addresses in `docs/ADDRESSES.md`:
 
 - **Loot balances already dropped to players.** `Loot` has no owner mint, by design, and adding one

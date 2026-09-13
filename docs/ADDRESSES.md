@@ -18,9 +18,9 @@ Its public address is [`0x017DFB929979AC1b7e1a080c88Db56Bee45846d2`](https://cre
 
 ## Current deployment, Creditcoin testnet (102031)
 
-Nine of these were deployed together on 2026-09-11 in the final consolidated redeploy described in
-`docs/SPEC.md` §17.1a. The rest have been live since milestone 2 or 3 and were re-pointed rather than
-replaced.
+Nine of these were deployed together, in the redeploy that gave `QuestManager` its second completion
+path (see "Bindings that cannot be quietly changed" below for why one change moves nine contracts).
+The rest have been live since the first deployments and were re-pointed rather than replaced.
 
 `BadgeNFT` is one of the survivors this time. It holds no other contract's address immutably, so it
 was re-pointed at the new QuestManager instead of being replaced, and the twenty badges players hold
@@ -70,7 +70,7 @@ address.
 ## PenguinSwap on Creditcoin testnet
 
 Not ours. `NativePortal` approves the router and the swap panel prices against the pool, so both are
-recorded here. How each was found is in `docs/SPEC.md` §3.1a; every one was read off the chain and
+recorded here. Every one was read off the chain and
 checked against the next rather than taken from a blog post.
 
 | Contract | Address | What it is |
@@ -117,7 +117,7 @@ keyed mainnet endpoint that the submission does not assume.
 |---|---|
 | Erc20Transfer | USDC `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 
-## Wiring transactions, milestone 8
+## Wiring transactions of the badge and hero migration
 
 One transaction per call, each slot read back at the block it landed in.
 
@@ -174,9 +174,9 @@ migration and unmade immediately afterwards. Both transactions are in the table 
 
 ### Campaign pools refunded
 
-`CampaignEscrow.refundToPartner` is `onlyRewardReleaser` and the releaser is QuestASC, which until
-milestone 8 had no function that called it. Three funded pools had therefore been stranded since Phase
-7 with no path out at all. `QuestASC.refundCampaign` closed that, and all three were returned to
+`CampaignEscrow.refundToPartner` is `onlyRewardReleaser` and the releaser is QuestASC, which for a
+time had no function that called it. Three funded pools had therefore been stranded with no path
+out at all. `QuestASC.refundCampaign` closed that, and all three were returned to
 the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
 
 | Campaign | Tx |
@@ -185,7 +185,7 @@ the partner: **1,989.999 VAEL in total, leaving every pool at zero.**
 
 ## Superseded deployments
 
-### Superseded in the milestone 13 escrow fix, 2026-09-13
+### Superseded by the escrow with a releaser set
 
 `CampaignEscrow` v1 trusted one releaser, `QuestASC`, and `NativePortal` could not reach it. A
 campaign quest completed on the native path minted its badge, credited its hero, and released
@@ -210,7 +210,7 @@ re-pointed the proved path ([`0x22ac66e5…68d183`](https://creditcoin-testnet.b
 **Every funded pool was refunded out of v1 through `QuestASC` while it still pointed at v1, then
 deposited into v2 from the same partner key** at the amount that lands exactly the old balance
 after the 0.5% fee, so each pool holds after what it held before. The pool key is `keccak256` of the
-campaign id and does not depend on the escrow, so the names and pictures pinned in milestone 12 carry
+campaign id and does not depend on the escrow, so the names and pictures already pinned carry
 over untouched. v1 holds no VAEL.
 
 | Pool | VAEL carried | Refund out of v1 | Deposit into v2 |
@@ -223,9 +223,9 @@ over untouched. v1 holds no VAEL.
 **Quests 16 and 29 stay unpaid.** Nothing on chain can pay them now: a release needs a releaser,
 a releaser releases only inside a completion, and both completions are recorded. Paying them would
 take an owner release, which is the privileged path the escrow refuses to have, so they are listed
-as unpaid in `docs/SPEC.md` section 10.3 rather than paid by hand.
+as unpaid in `docs/EVIDENCE.md` rather than paid by hand.
 
-### Superseded in the Phase 10c arena fix, 2026-09-11
+### Superseded by the arena with level in its damage
 
 Arena damage was `2*strength + agility`, with no level in it. A level-1 hero has 110 hit points and
 one point of strength, so it dealt two damage a swing: twenty rounds is forty swings, which comes to
@@ -245,7 +245,7 @@ on the new contract and produced three winners.
 Damage is now `2 + 2*level + 2*strength + agility`, so hit points and damage grow together. A test
 walks every level to thirty and asserts no level is a dead zone where a duel cannot end.
 
-### Superseded in the milestone 10b reward-table fix, 2026-09-11
+### Superseded by the corrected reward tables
 
 Extending `ActionType` with the two Creditcoin actions left both reward tables ending in a bare
 `else`, so wrapping CTC paid 150 XP and hit the raid boss for 300: more than a proved Uniswap swap,
@@ -275,12 +275,12 @@ superseded `RaidBoss` was revoked as a `BadgeNFT` minter.
 season seeded afterwards is the second Vael has run and the first on this contract, and it is
 recorded as season 1 because that is what the chain says.
 
-### Superseded in the milestone 10 consolidated redeploy, 2026-09-11
+### Superseded by the second completion path
 
 `NativePortal` gives `QuestManager` a second completion path. That is a change to `QuestManager`,
 and four modules hold `QuestManager` or something downstream of it immutably, so nine contracts
-moved together. The map is in `docs/SPEC.md` §17.1a and the runbook that executed it is
-`contracts/script/redeploy-phase10.sh`.
+moved together. The map is the immutable graph in "Bindings that cannot be quietly changed"
+below.
 
 | Contract | Superseded address | Replaced by |
 |---|---|---|
@@ -321,10 +321,9 @@ one by accident. None of them holds a privilege that matters: the reviewer grant
 QuestManager was explicitly revoked, and the escrow, the vault, and the token were re-pointed at the
 new core rather than replaced.
 
-### Superseded in the milestone 8 consolidated redeploy, 2026-09-10
+### Superseded by the badge and hero migration
 
-The cascade is the immutable map in `docs/SPEC.md` §17.1: BadgeNFT v3 and VaelHero v2 were the two
-changed contracts, and seven more hold one of them, or something that holds one of them, in an
+The cascade follows the immutable map: BadgeNFT v3 and VaelHero v2 were the two changed contracts, and seven more hold one of them, or something that holds one of them, in an
 `immutable`.
 
 | Contract | Address | Why superseded |
@@ -339,7 +338,7 @@ changed contracts, and seven more hold one of them, or something that holds one 
 | `Equipment` v1 | `0x983f2510EdA82260b32dB7EAdBcc578e67Ec4517` | Holds both `HERO` and `LOOT` immutably |
 | `Marketplace` v1 | `0x5d816890b23593E997f66292b7B446E5a8379D56` | Holds `LOOT` immutably |
 
-### Superseded in milestone 9, 2026-09-10
+### Superseded by the arena with a committed seed
 
 | Contract | Address | Why superseded |
 |---|---|---|
@@ -362,31 +361,31 @@ completed quest, burnt replay key, and old drop stays readable on the superseded
 
 Reconstructed from the git history of this file, which is the only complete record of what was
 canonical when. Earlier prose in this repository numbered the QuestASC deployments from two rather
-than one, so a document written before milestone 8 may call `0x929eabBe…` "v4"; it is the fifth
-QuestASC, and the one deployed in milestone 8 is the sixth.
+than one, so an older document may call `0x929eabBe…` "v4"; it is the fifth QuestASC, and the
+one that followed it is the sixth.
 
 | Contract | Address | Why superseded |
 |---|---|---|
-| `BadgeNFT` v1 | `0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3` | milestone 2 baseline, replaced when the badge metadata and minter set changed |
-| `QuestManager` v1 | `0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F` | milestone 2 baseline, before verification rules and the source-height anchor |
+| `BadgeNFT` v1 | `0xcA9ef3CCD228223fDa3D3080eFaA8d5F2A8232d3` | First deployment, replaced when the badge metadata and minter set changed |
+| `QuestManager` v1 | `0x7d8f5f0D5F4523Fb3C8F62a560C00f286CAbed9F` | First deployment, before verification rules and the source-height anchor |
 | `QuestManager` v2 | `0xE2b5e65F55D90BD096CB93A6aD4BC44048a9c6CA` | Constructed against the v1 RewardVault, whose ledger already held quest ids 1 and 2, which bricked it on its first create |
 | `QuestManager` v3 | `0x8E42A111295F72c93d3A23181C4C3E13eCbeF220` | Predates adapter-based decoding |
 | `QuestManager` v4 | `0x68B609a29cC6B0635d6A3A6A1eDa5a1bBCCEdE24` | Predates declining handlers |
-| `QuestManager` v5 | `0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377` | Replaced when the milestone 4 hero and raid hooks needed a QuestASC that knew about them |
+| `QuestManager` v5 | `0x152BcBCE43EC8a3Ef1a96485A28967AbEEe95377` | Replaced when the hero and raid hooks needed a QuestASC that knew about them |
 | `QuestASC` v1 | `0x93866c63CE38936aB832b4635d9B706FC17FD735` | Bound immutably to QuestManager v2 |
 | `QuestASC` v2 | `0x983cFa52747708Fe86d125DdFB1Bf67E052793cb` | Bound immutably to QuestManager v3, before adapter-based decoding |
 | `QuestASC` v3 | `0xB7D7Bf8e3BEBB1321620C3F5D81E2854B1df9776` | Reverted on a recognised log belonging to another quest, so a Uniswap swap could never complete |
 | `QuestASC` v4 | `0x467bF17dcf7A5988dC96b2F8e3Af571169176780` | Bound immutably to QuestManager v5 |
 | `RewardVault` v1 | `0x4cDa11850a3697940329975EA3943f166Ba6FFf8` | Ledger keyed by questId alone, so a manager redeploy bricked it |
 
-#### Why the core was redeployed twice in milestone 3b
+#### Why the core was redeployed twice while decoding took shape
 
 `QuestManager.setQuestASC` is one-shot, so every QuestASC replacement forces a QuestManager
 replacement. That happened twice: once to move decoding into adapters, and once to let a handler
 decline a log rather than revert on it. The second was found by the live network, not by review: a
 Uniswap swap emits ERC-20 `Transfer` logs beside its `Swap`, and the first recognised log killed
 the whole submission. The adapter split is precisely what stops the *next* protocol from costing a
-redeploy, which is why all four adapters survived milestone 8 untouched.
+redeploy, which is why all four adapters have survived every later cascade untouched.
 
 `CampaignEscrow.setRewardReleaser` is plain `onlyOwner`, not one-shot, so the escrow has never
 needed redeploying; it is re-pointed with a single transaction. That is the only reason the three
@@ -401,7 +400,7 @@ id counter only advances on a successful create, the manager was permanently stu
 
 This was found by the live E2E run, not in review. The ledger is now keyed by
 `keccak256(questManager, questId)`, so a manager redeploy is safe without touching the vault again.
-`test/RewardVault.t.sol` covers it, and milestone 8 proved it: QuestManager v7 funds quest id 1 on a
+`test/RewardVault.t.sol` covers it, and the live network proved it: QuestManager v7 funds quest id 1 on a
 vault that already holds six managers' worth of history.
 
 ## Bindings that cannot be quietly changed

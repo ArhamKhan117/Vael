@@ -16,7 +16,7 @@ pnpm --filter @vael/web dev
 Opens on `http://localhost:3001`.
 
 Copy `.env.example` to `.env.local` and fill it in.
-Every variable is documented in `docs/SPEC.md` section 13.
+Every variable is documented beside its name in `.env.example`.
 Never commit `.env.local`.
 
 ## Layout
@@ -26,11 +26,11 @@ Never commit `.env.local`.
 | `src/lib/chains.ts` | Creditcoin and Sepolia chain definitions, RPC fallback lists, explorer links |
 | `src/lib/reownConfig.ts` | AppKit and Wagmi setup, batching off, fallback transports |
 | `src/lib/contracts.ts` | Deployed contract addresses from `NEXT_PUBLIC_*` |
-| `src/app/(main)/` | Landing, quests, campaigns, leaderboard, profile, feedback |
+| `src/app/(main)/` | Landing, quests, campaigns, academy, hero, raid, arena, market, leaderboard, profile, feedback, and the rendered README and whitepaper |
 | `src/app/dashboard/studio/` | Partner Studio |
 | `src/components/` | Shared UI |
-
-`src/game/` (Phaser scenes) and the `/hero`, `/raid`, and `/academy` routes arrive in milestone 4 and milestone 5.
+| `src/game/` | Phaser scenes for the hero, the raid, and duel replays; they render and never decide |
+| `scripts/` | The asset pipeline: `pack-art.mjs` packs the artwork masters into WebP, `make-badges.mjs` and `make-items.mjs` draw the badges and the item catalogue |
 
 ## Explorers
 

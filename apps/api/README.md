@@ -1,7 +1,7 @@
 # @vael/api
 
 Vael's backend.
-It creates quests as the registered ERC-8004 agent, caches chain state in Supabase, and, from milestone 3, runs the Attestcoin proof worker.
+It creates quests as the registered ERC-8004 agent, caches chain state in Supabase, runs the Attestcoin proof worker, and indexes Creditcoin's own events.
 
 It cannot complete a quest.
 `QuestManager.recordCompletion` is gated by `onlyQuestASC`, so only the on-chain verifier can release a reward.
@@ -15,7 +15,7 @@ The worker's job is to fetch a proof and submit it; the chain decides whether it
 
 2. **Environment**
    Copy `.env.example` to `.env` and fill it in.
-   Every variable is documented in `docs/SPEC.md` section 13.
+   Every variable is documented beside its name in `.env.example`.
    Never commit `.env`.
 
 3. **Install and run**
@@ -29,16 +29,16 @@ The worker's job is to fetch a proof and submit it; the chain decides whether it
 
 | Path | What it is |
 |---|---|
-| `src/config/env.ts` | Zod-validated environment, matching `docs/SPEC.md` section 13 |
+| `src/config/env.ts` | Zod-validated environment, matching `.env.example` |
 | `src/lib/chains.ts` | Creditcoin testnet and Sepolia chain definitions |
 | `src/lib/contracts.ts` | viem clients with a fallback transport, batching off, per-request timeout |
 | `src/lib/protocols.ts` | Source-chain protocol and emitter registry |
 | `src/routes/` | Quest, campaign, AI, and feedback endpoints |
 | `src/services/` | Quest lifecycle, campaigns, IPFS, AI generation, Supabase access |
-| `src/polling/` | Creditcoin event mirroring |
 | `src/cron/` | Expiry-driven quest regeneration |
-
-`src/attestcoin/` lands in milestone 3: watcher, attestation wait, proof builder client, submitter, state machine, indexer.
+| `src/attestcoin/` | The proof worker: watcher, attestation wait, proof builder client, submitter, state machine |
+| `src/indexer/` | The Creditcoin indexer |
+| `src/bin/` | The compiled entry points `start:worker` and `start:indexer` run |
 
 ## RPC behaviour
 
@@ -81,8 +81,12 @@ whether they are valid, and a player can always claim from their own wallet inst
 |---|---|
 | `scripts/e2e-portal.ts` | Full portal loop, and `--replay <tx>` to prove a replay is refused |
 | `scripts/e2e-actions.ts` | `--action erc20\|swap\|supply\|borrow`, or `--batch a,b` |
-| `scripts/prep-worker-run.ts` | Stages a Sepolia action and leaves the proof to the worker |
-| `scripts/worker.ts` | The long-running worker |
+| `scripts/e2e-portal.ts` and friends | `e2e:modules`, `e2e:arena`, `e2e:partner`, `e2e:ai-quest`: one live run each of the game modules, a duel, the partner loop, and an AI quest |
+| `scripts/make-quest.ts` | Create one quest on chain, assigned to an address, and stop |
+| `scripts/reindex.ts` | Rebuild the index from the deployment's first block |
+| `scripts/pin-badges.ts`, `scripts/pin-items.ts` | Pin the badge and item metadata documents |
+| `scripts/spike-mainnet.ts` | The keyless Ethereum mainnet feasibility measurement behind `docs/MAINNET_SPIKE.md` |
+| `scripts/worker.ts`, `scripts/indexer.ts` | The worker and the indexer under `tsx`, for development |
 
 The action scripts capture the exact proof material to `contracts/test/fixtures/`, which
 `contracts/test/RealFixtures.t.sol` replays offline.

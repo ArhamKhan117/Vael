@@ -42,7 +42,7 @@ for making it, not the making of it.
 | **Frontier lag** | **33 to 36 blocks, about 7 minutes** |
 | `get_attestation_genesis_height(3)` | 0 |
 
-The genesis read of 0 is not evidence of anything. `docs/SPEC.md` §3.2 records that the precompile
+The genesis read of 0 is not evidence of anything. On the live network the precompile
 returns 0 both for "no configured genesis" and for chains that are in fact supported, so the usable
 depth was measured by asking about real historical heights instead.
 

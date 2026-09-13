@@ -69,7 +69,7 @@ There is no address that can be told a swap happened.
 4. **Prove.** A Merkle proof of the receipt and a continuity proof of the block, built from public data by Vael's worker or by the player's browser; nothing in either is signed by Vael.
 5. **Verify and pay.** `QuestASC` hands the proof to the Block Prover precompile at `0x…0FD2`, then checks the receipt status, the emitting contract against an allowlist, the player against the log's own indexed address, the amount against the rule's minimum, and the block against the window recorded at acceptance. Only then does it record the completion, and the reward, the badge, the XP and the raid damage all follow from that one call.
 
-One live example, from the Ethereum swap to the Creditcoin payout, with every hash: [`docs/E2E_LOG.md`](./docs/E2E_LOG.md).
+Live examples of every path, from the Ethereum action to the Creditcoin payout, with every hash: [`docs/EVIDENCE.md`](./docs/EVIDENCE.md).
 How each Attestcoin surface is used, with measurements: [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md).
 
 ## The game layer
@@ -95,7 +95,7 @@ If the swap does not happen, nothing completes.
 
 A quest is filed to one path at creation by its action type, and `QuestManager.recordCompletion` accepts nobody but the path the quest was filed to.
 Both release exactly the quest's own reward: from `RewardVault` for an open quest, from the partner's `CampaignEscrow` pool for a campaign quest, whose releasers are a set that changes only after a day's public notice.
-The one honest difference is written down in [`docs/SPEC.md`](./docs/SPEC.md) section 10.3.
+The one honest difference is written down in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md), section 4.
 
 ## What is deployed
 
@@ -142,15 +142,17 @@ git submodule update --init --recursive
 cd contracts && forge build && forge test && cd ..
 ```
 
-Copy `apps/api/.env.example` and `apps/web/.env.example` to their real counterparts and fill them in; every variable is documented in `docs/SPEC.md` section 13, and `python3 contracts/script/sync-env.py --write` fills the contract addresses from `docs/ADDRESSES.md`.
+Copy `apps/api/.env.example` and `apps/web/.env.example` to their real counterparts and fill them in; every variable is documented beside its name in those files, and `python3 contracts/script/sync-env.py --write` fills the contract addresses from `docs/ADDRESSES.md`.
 Real env files are ignored and must never be committed.
 
-Then two commands.
-The first builds everything for production and starts all four processes against the live Creditcoin testnet deployment; the second stops them.
+Then build everything for production and start the four processes against the live Creditcoin testnet deployment.
 
 ```bash
-./scripts/run-local.sh
-./scripts/stop-local.sh
+pnpm build
+pnpm --filter @vael/api start            # API on :4000
+pnpm --filter @vael/api start:worker     # the proof worker
+pnpm --filter @vael/api start:indexer    # the Creditcoin indexer
+pnpm --filter @vael/web start -p 3101    # the web app
 ```
 
 | | |
@@ -173,15 +175,13 @@ For development, `pnpm --filter @vael/web dev` on :3001 and `pnpm --filter @vael
 
 | What | Where |
 |---|---|
-| Every live end-to-end run, with hashes, gas, and timings | [`docs/E2E_LOG.md`](./docs/E2E_LOG.md) |
+| Every feature exercised on the live network, with hashes, blocks, and gas | [`docs/EVIDENCE.md`](./docs/EVIDENCE.md) |
 | How Vael uses Attestcoin, surface by surface, with measurements | [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md) |
 | Deployed addresses, wiring, and the full supersession history | [`docs/ADDRESSES.md`](./docs/ADDRESSES.md) |
-| Architecture, contracts, constants, phases, and the decisions not taken | [`docs/SPEC.md`](./docs/SPEC.md) |
+| The architecture as deployed: contracts, the two completion paths, adapters and hooks, worker, indexer, web app | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
 | The whitepaper: the argument, the threat model, the measurements | [`docs/WHITEPAPER.md`](./docs/WHITEPAPER.md) |
 | Ethereum mainnet feasibility spike, keyless, with its conditions | [`docs/MAINNET_SPIKE.md`](./docs/MAINNET_SPIKE.md) |
-| Requirement checklist with a link per row | [`docs/HACKATHON_REQUIREMENTS.md`](./docs/HACKATHON_REQUIREMENTS.md) |
-| Demo script, with the segments that must be pre-recorded and why | [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) |
-| Screenshots of every page at 1280 and 390 px, per phase, from the production build | [`docs/evidence/`](./docs/evidence) |
+| Screenshots of every page at 1280 and 390 px from the production build | [`docs/evidence/final/`](./docs/evidence/final) |
 
 Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBaseline.s.sol` runs 141 keyless checks against the live deployment.
 

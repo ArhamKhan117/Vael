@@ -22,7 +22,7 @@ tiles out of the Kenney Tiny Dungeon sheet and composites them onto a plaque.
 
 `apps/web/scripts/make-items.mjs` writes the loot catalogue, `apps/web/src/content/items.json`.
 Its `--art` flag draws pixel plates for the items from the same two sheets; those plates were
-replaced by the generated artwork below in milestone 11 and are not committed.
+replaced by the generated artwork below and are not committed.
 
 CC0 permits both without condition; the packs are credited above regardless.
 
@@ -50,15 +50,13 @@ grey.
 
 ## Superseded pixel-art generators
 
-milestone 10 drew the action icons and the Academy diagrams from integer primitives on a small pixel
-grid, by `apps/web/scripts/make-action-art.mjs` and `make-lesson-art.mjs`. Both are replaced by the
-generated artwork below and the scripts are removed; the commits are in the history if the schematic
-style is ever wanted back.
+An earlier set of action icons and Academy diagrams was drawn from integer primitives on a small
+pixel grid. All of it is replaced by the generated artwork below and the generators are removed.
 
 ## Third-party brand assets
 
-**None are committed here, and none are used.** milestone 11 set out to build demo campaigns for
-PenguinSwap and Creditcoin using their own brand marks, with attribution. Neither could be obtained:
+**None are committed here, and none are used.** The demo campaigns for PenguinSwap and Creditcoin
+were meant to carry their own brand marks, with attribution. Neither could be obtained:
 Creditcoin's brand kit at `https://docs.creditcoin.org/brand-kit` serves its files through signed
 URLs that resolve to 404 without a session, and PenguinSwap has no reachable site at any of the
 domains tried. The remaining sources were third-party logo aggregators, whose provenance is worse
@@ -73,8 +71,8 @@ relationship. The chip asserts a fact about the chain.
 
 ## Not included
 
-**0x72 Dungeon Tileset II** is listed in `docs/SPEC.md` §8.6 but is not committed here. It is hosted
-on itch.io behind a download flow this environment could not complete non-interactively. Nothing
+**0x72 Dungeon Tileset II** was considered and is not committed here. It is hosted on itch.io
+behind a download flow that could not be completed non-interactively. Nothing
 depends on it: the raid boss is drawn from the Kenney Monster Builder sheet instead, which is CC0
 and serves the same purpose.
 
@@ -85,7 +83,7 @@ committed, so there is nothing to redistribute here.
 
 ## Generated artwork
 
-Drawn by `apps/api/scripts/generate-art.ts` and packed for the web by `apps/web/scripts/pack-art.mjs`.
+Drawn by an image model from the prompts below and packed for the web by `apps/web/scripts/pack-art.mjs`.
 Every image below is original: nothing is traced, sampled, or derived from an existing work, and no
 prompt names a brand or asks for a logo.
 The prompt, the model that answered, and the file are recorded so any of it can be regenerated or
