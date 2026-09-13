@@ -13,6 +13,7 @@ Built for BUIDL CTC 2026 Fall, Gaming track and DeFi track, by Arham Khan.
 ## What Vael is
 
 Vael is a quest platform with a game economy on top of it, and all of it lives on Creditcoin.
+It is also an on-ramp: a newcomer signs in with an email or a social account, learns what a swap and a proof are in the Academy, and ends up with a Creditcoin wallet, a hero and a badge that the chain itself verified.
 A quest asks for one real action: a Uniswap v3 swap, an Aave v3 supply or borrow, an ERC-20 transfer, or a check-in through Vael's own portal contract, on Ethereum Sepolia; or a PenguinSwap swap or a CTC wrap on Creditcoin itself.
 The player does it with their own wallet.
 When the action is verified, the quest pays VAEL, mints a soul-bound badge, grants XP to the player's hero, and deals damage to the season's raid boss, all in the same transaction.
@@ -32,7 +33,7 @@ There is no owner function, no backend key and no agent key that can complete a 
 
 | For | What Vael gives them |
 |---|---|
-| Players | Earn on Creditcoin for what they already do on Ethereum, and a hero whose every stat is a proved action |
+| Players | Earn on Creditcoin for what they already do on Ethereum, a hero whose every stat is a proved action, and, for a newcomer, a first wallet, a first lesson and a first quest |
 | Partners | Proof-gated campaign budgets: the pool releases inside the verified completion, never on a claim, and refunds any time |
 | Creditcoin | A user funnel from Ethereum with no bridge and no oracle operator; CTC pays every gas fee |
 | Builders | Attestcoin as a game-engine primitive: adapters and hooks turn any verified event into quests, raids, duels, loot and seasons. MIT licensed |
@@ -65,6 +66,15 @@ A completion in Vael is a cryptographic proof of a real Ethereum transaction, ve
 Rewards, badges, hero XP, raid damage and partner payouts are released by that verification, in the same transaction.
 Actions that happen on Creditcoin itself, which Attestcoin cannot attest, are performed by a contract instead of reported by one.
 Take the precompile away and no path remains from an Ethereum action to a reward: not for the operator, not for an admin, not for anyone.
+
+### From web2 to Creditcoin
+
+Vael is built to be the first thing a new user does on Creditcoin, not the tenth.
+Sign-in is a wallet, or an email, Google, X or Discord account through Reown AppKit, which provisions a wallet for a reader who has never held one.
+The Academy teaches what a swap, a loan and a proof are before asking for one, and every module ends in a real quest with a real reward.
+The first quests are small, a check-in worth a thousandth of an ETH or a wrap of 1 CTC, with the rule on the card and the proof state on screen, so the wait for attestation is explained rather than hidden.
+The loop of a hero, a boss, a duel and a drop is the loop web2 games already taught everyone; here every step of it is a real transaction on Creditcoin, and CTC pays the gas.
+Each completed quest moves a player from Ethereum into a Creditcoin wallet holding VAEL, a badge and a hero, which is the funnel a new L1 needs and the one no bridge or oracle operator can provide.
 
 ### What it unlocks
 
