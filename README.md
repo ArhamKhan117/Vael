@@ -27,6 +27,8 @@ An Academy teaches what a swap, a supply and a proof are, in four modules that e
 Daily and weekly quests are generated from a player's proved history by an AI agent registered under ERC-8004; the model chooses the quest, the chain decides the completion.
 Partners fund campaign pools through the Studio and pay only for verified actions.
 
+Vael is also an on-ramp. It brings Ethereum users onto Creditcoin and the Attestcoin Protocol without a bridge or a token migration, and its Academy walks someone arriving from web2 through their first swap, their first supply and their first proof, so the gap between signing up and doing something real on chain is closed inside the game.
+
 The rule that makes it different is a small one.
 Rewards are released by contracts, inside the receipt of the transaction that verified the proof.
 There is no owner function, no backend key and no agent key that can complete a quest, and if Vael's own servers disappear, a player can build the proof in the browser and submit it from their own wallet.
@@ -35,7 +37,7 @@ There is no owner function, no backend key and no agent key that can complete a 
 |---|---|
 | Players | Earn on Creditcoin for what they already do on Ethereum, a hero whose every stat is a proved action, and, for a newcomer, a first wallet, a first lesson and a first quest |
 | Partners | Proof-gated campaign budgets: the pool releases inside the verified completion, never on a claim, and refunds any time |
-| Creditcoin | A user funnel from Ethereum with no bridge and no oracle operator; CTC pays every gas fee |
+| Creditcoin | A user funnel from Ethereum with no bridge and no oracle operator; new players are onboarded through the Academy and CTC pays every gas fee |
 | Builders | Attestcoin as a game-engine primitive: adapters and hooks turn any verified event into quests, raids, duels, loot and seasons. MIT licensed |
 
 ## Contents

@@ -2,7 +2,7 @@
   "name": "vael",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-chain quest game on Creditcoin, verified by the Attestcoin Protocol",
+  "description": "Cross-chain quest game that onboards players onto Creditcoin and the Attestcoin Protocol: real DeFi on Ethereum, proved and paid on Creditcoin, with an Academy that bridges web2 users into verified on-chain play",
   "author": "Arham Khan",
   "license": "MIT",
   "engines": {
