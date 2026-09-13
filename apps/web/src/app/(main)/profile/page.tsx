@@ -37,13 +37,16 @@ function actionLabel(actionType: number) {
 }
 
 /** VAEL is 18 decimals. Whole tokens are all this page needs. */
+/** How long a "disconnected" wallet may stay that way before the page gives up on it. */
+const WALLET_SETTLE_MS = 2000
+
 function vael(wei: string) {
   return (BigInt(wei || "0") / 10n ** 18n).toLocaleString()
 }
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, status } = useAccount()
 
   // Off-chain decoration: a name and an avatar. Absent is fine and the page still works.
   const { stats, refetch } = useProfile(address ?? null)
@@ -52,9 +55,15 @@ export default function ProfilePage() {
   const { actions, badges, loading: chainLoading } = useChainProfile(address ?? undefined)
   const { data: academy } = useAcademy(address ?? undefined)
 
+  // Leave only once the wallet has settled. On a hard load wagmi reports "disconnected" until its
+  // persisted state hydrates and the reconnect runs, well under a second, and bouncing in that
+  // window sent every returning reader home on refresh. A visitor with no wallet sees the spinner
+  // for the grace period and then the landing page.
   useEffect(() => {
-    if (!isConnected || !address) router.push("/")
-  }, [isConnected, address, router])
+    if (status !== "disconnected") return
+    const timer = setTimeout(() => router.push("/"), WALLET_SETTLE_MS)
+    return () => clearTimeout(timer)
+  }, [status, router])
 
   if (!isConnected || !address) {
     return (
@@ -255,8 +264,9 @@ export default function ProfilePage() {
           <header className="border-b border-[#1A1A1A] px-5 py-4">
             <h2 className="text-sm font-semibold text-white">Verified actions</h2>
             <p className="mt-1 text-[11px] text-zinc-600">
-              Every row is one QuestProofApplied event. Creditcoin emitted it after checking a
-              Merkle proof and a continuity proof, so nothing here can be added by hand.
+              Every row is one completion Creditcoin recorded itself: a QuestProofApplied event
+              after checking a Merkle proof and a continuity proof, or a native action NativePortal
+              performed in the same transaction. Nothing here can be added by hand.
             </p>
           </header>
 
@@ -276,9 +286,11 @@ export default function ProfilePage() {
                   <div className="min-w-0">
                     <p className="text-zinc-200">{actionLabel(action.actionType)}</p>
                     <p className="mt-0.5 text-[11px] text-zinc-600">
-                      Quest {action.questId} · Sepolia block{" "}
-                      {action.sourceBlock.toLocaleString()} ·{" "}
-                      {new Date(action.createdAt).toLocaleDateString()}
+                      Quest {action.questId} ·{" "}
+                      {action.sourceBlock > 0
+                        ? `Sepolia block ${action.sourceBlock.toLocaleString()}`
+                        : "performed on Creditcoin, no proof"}{" "}
+                      · {new Date(action.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">

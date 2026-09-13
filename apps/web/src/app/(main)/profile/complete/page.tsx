@@ -9,9 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, User, Mail, CheckCircle2, AlertCircle } from "lucide-react"
 
+/** How long a "disconnected" wallet may stay that way before the page gives up on it. */
+const WALLET_SETTLE_MS = 2000
+
 export default function ProfileCompletePage() {
   const router = useRouter()
-  const { address, isConnected } = useAccount()
+  const { address, status } = useAccount()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
@@ -39,12 +42,18 @@ export default function ProfileCompletePage() {
     }
   }, [])
 
+  // Leave only once the wallet has settled: on a hard load wagmi reports "disconnected" until its
+  // persisted state hydrates and the reconnect runs, and bouncing in that window sent a returning
+  // reader home on every refresh.
+  useEffect(() => {
+    if (status !== "disconnected") return
+    const timer = setTimeout(() => router.push("/"), WALLET_SETTLE_MS)
+    return () => clearTimeout(timer)
+  }, [status, router])
+
   // Check if profile already complete
   useEffect(() => {
-    if (!isConnected || !address) {
-      router.push("/")
-      return
-    }
+    if (!address) return
 
     const check = async () => {
       try {
@@ -66,7 +75,7 @@ export default function ProfileCompletePage() {
       }
     }
     check()
-  }, [isConnected, address, router])
+  }, [address, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,7 +106,7 @@ export default function ProfileCompletePage() {
     }
   }
 
-  if (!isConnected || !address) {
+  if (!address) {
     return (
       <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24 relative z-20">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
