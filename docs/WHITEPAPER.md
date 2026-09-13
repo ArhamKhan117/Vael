@@ -290,7 +290,7 @@ Read from the chain and the index at Creditcoin block 5479941; every transaction
 - **The hosted Proof Builder is not reliable enough alone.** It failed on the first live portal run and on three of five wild-action runs; a raw builder over a Sepolia RPC is an independent second source, and either one's material verifies identically.
 - **A native campaign payout is a hook, not a revert.** Section 6.3. Two early native completions, quests 16 and 29, predate the hook and stay unpaid, because paying them by hand would be the privileged path the escrow refuses to have.
 - **A quest's document is fixed at creation.** `QuestManager` has no metadata setter.
-- **Not hosted.** Every number here came from running the app locally against the public deployment.
+- **Hosted on testnet infrastructure.** The app runs at https://vael-black.vercel.app against the public Creditcoin testnet deployment; every number here can be checked there or from a local run.
 - **Nothing here makes a bad trade good.** Vael verifies that an action happened, at a size, in a window. It has no opinion about whether it was wise.
 
 ## 11. Roadmap

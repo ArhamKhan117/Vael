@@ -304,10 +304,10 @@ Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBas
 | | |
 |---|---|
 | Pitch deck | [Vael pitch deck (PDF)](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing) |
-| Whitepaper | [docs/WHITEPAPER.md on GitHub](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md), also rendered in the app at `/whitepaper` |
+| Whitepaper | [docs/WHITEPAPER.md on GitHub](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md), rendered live at [vael-black.vercel.app/whitepaper](https://vael-black.vercel.app/whitepaper) |
 | GitHub | [github.com/ArhamKhan117/Vael](https://github.com/ArhamKhan117/Vael) |
-| Documentation | [docs/ on GitHub](https://github.com/ArhamKhan117/Vael/tree/main/docs), the README rendered in the app at `/readme` |
-| Live website | pending |
+| Documentation | [docs/ on GitHub](https://github.com/ArhamKhan117/Vael/tree/main/docs), this README rendered live at [vael-black.vercel.app/readme](https://vael-black.vercel.app/readme) |
+| Live website | [vael-black.vercel.app](https://vael-black.vercel.app), API at [api-production-a79ef3.up.railway.app/health](https://api-production-a79ef3.up.railway.app/health) |
 | Demo video | pending |
 | DoraHacks submission | pending |
 | Contact | Arham Khan, [arhamkhansab78616@gmail.com](mailto:arhamkhansab78616@gmail.com) |
