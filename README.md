@@ -1,24 +1,12 @@
 ![Vael](apps/web/public/readme/hero-dark.png#gh-dark-mode-only)
 ![Vael](apps/web/public/readme/hero-light.png#gh-light-mode-only)
 
-[![BUIDL CTC 2026 Fall](https://img.shields.io/badge/BUIDL%20CTC%202026%20Fall-Gaming%20and%20DeFi%20tracks-000000)](https://github.com/ArhamKhan117/Vael)
-![Creditcoin testnet](https://img.shields.io/badge/Creditcoin-testnet%20102031-38BDF8)
-![Attestcoin Protocol](https://img.shields.io/badge/Attestcoin-Block%20Prover%20precompile-38BDF8)
-![Solidity 0.8.28](https://img.shields.io/badge/Solidity-0.8.28-363636)
-![Foundry](https://img.shields.io/badge/Foundry-forge%20test-363636)
-![Next.js 16](https://img.shields.io/badge/Next.js-16-000000)
-![Tests](https://img.shields.io/badge/tests-349%20passing-2EA043)
-![Keyless checks](https://img.shields.io/badge/keyless%20checks-141%20passing-2EA043)
-![Contracts verified](https://img.shields.io/badge/contracts-23%20source--verified-FBBF24)
-[![Pitch deck](https://img.shields.io/badge/pitch%20deck-PDF-FF4D6D)](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing)
-[![Whitepaper](https://img.shields.io/badge/whitepaper-read-38BDF8)](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md)
-[![License MIT](https://img.shields.io/badge/license-MIT-lightgrey)](./LICENSE)
+[![BUIDL CTC 2026 Fall](https://img.shields.io/badge/BUIDL%20CTC%202026%20Fall-Gaming%20and%20DeFi%20tracks-000000)](https://github.com/ArhamKhan117/Vael) ![Creditcoin](https://img.shields.io/badge/Creditcoin-testnet%20%2F%20mainnet-38BDF8) ![Attestcoin Protocol](https://img.shields.io/badge/Attestcoin-Block%20Prover%20precompile-38BDF8) ![Solidity 0.8.28](https://img.shields.io/badge/Solidity-0.8.28-363636) ![Foundry](https://img.shields.io/badge/Foundry-forge%20test-363636) ![Next.js 16](https://img.shields.io/badge/Next.js-16-000000) ![Tests](https://img.shields.io/badge/tests-349%20passing-2EA043) ![Keyless checks](https://img.shields.io/badge/keyless%20checks-141%20passing-2EA043) ![Contracts verified](https://img.shields.io/badge/contracts-23%20source--verified-FBBF24) [![Pitch deck](https://img.shields.io/badge/pitch%20deck-PDF-FF4D6D)](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing) [![Whitepaper](https://img.shields.io/badge/whitepaper-read-38BDF8)](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md) [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey)](./LICENSE)
 
 **Vael is a quest game on Creditcoin where no key can hand out a reward.**
 Players do real DeFi on Ethereum; the Attestcoin Protocol proves the transaction to Creditcoin; a contract verifies the proof itself and only then pays, mints the badge, grants the XP and deals the raid damage.
 
 Built for BUIDL CTC 2026 Fall, Gaming track and DeFi track, by Arham Khan.
-[Pitch deck](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing) · [Whitepaper](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md) · [GitHub](https://github.com/ArhamKhan117/Vael)
 
 ---
 
@@ -60,8 +48,7 @@ There is no owner function, no backend key and no agent key that can complete a 
 7. [Run it locally](#run-it-locally)
 8. [No key can pay a player](#no-key-can-pay-a-player)
 9. [Evidence](#evidence)
-10. [Limitations](#limitations)
-11. [Links](#links)
+10. [Links](#links)
 
 ## The case for Vael
 
@@ -128,8 +115,9 @@ Fees on verified value, already in the contracts:
 | Stage | What |
 |---|---|
 | Done | Testnet end to end: five action types, the native path, hero, raid, arena, loot, market, Academy, partner Studio, AI quests, every contract source-verified |
-| Q4 2026 | Creditcoin mainnet, VAEL launch through PenguinBase, Credit Wallet integration, first partner campaigns with real budgets |
-| H1 2027 | Ethereum mainnet veteran quests; more adapters: Lido, Curve, bridges, NFT mints; guilds and seasons |
+| Q4 2026 | Hosted app, Creditcoin mainnet, VAEL launch through PenguinBase, Credit Wallet integration, first partner campaigns with real budgets |
+| Q1 2027 | NativePortal v2, whose campaign payout reverts on an underfunded pool instead of running as a hook; quest documents editable by their creator with the history on chain; a dedicated IPFS gateway and pinning for quest and campaign art |
+| Q2 2027 | Ethereum mainnet veteran quests; more adapters: Lido, Curve, bridges, NFT mints; guilds and seasons; the AI quest agent with player opt-in and per-player budgets |
 | With Attestcoin writability | Claim VAEL rewards and badge attestations back on the source chain; the interface is already declared |
 
 ## How one quest works
@@ -307,17 +295,9 @@ There is no address that can be told a swap happened.
 | Deployed addresses, wiring, and the full supersession history | [`docs/ADDRESSES.md`](./docs/ADDRESSES.md) |
 | The whitepaper: the argument, the threat model, the measurements | [`docs/WHITEPAPER.md`](./docs/WHITEPAPER.md) |
 | Ethereum mainnet feasibility spike, keyless, with its conditions | [`docs/MAINNET_SPIKE.md`](./docs/MAINNET_SPIKE.md) |
+| Screenshots of every page at 1280 and 390 px from the production build | [`docs/evidence/final/`](./docs/evidence/final) |
 
 Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBaseline.s.sol` runs 141 keyless checks against the live deployment.
-
-## Limitations
-
-- **Testnet only.** Creditcoin testnet and Ethereum Sepolia. The mainnet spike shows the Ethereum side is feasible without a key; nothing is deployed there.
-- **Not hosted yet.** Every number above came from running the app locally against the public deployment; the addresses and hashes can be checked without running anything.
-- **A native campaign quest's payout is a hook, not a revert.** `NativePortal` cannot be replaced without a full redeploy, so its payout runs as a hook it calls: an underfunded pool is skipped and said, where `QuestASC` would revert the whole completion. Two early native completions (quests 16 and 29) were made before that hook existed and stay unpaid, because paying them by hand would be the privileged path the escrow refuses to have.
-- **A quest's document is fixed at creation.** `QuestManager` has no metadata setter, so a pinned picture or title cannot be changed afterwards; a pool's own document can, through the Studio.
-- **Public gateways rate-limit.** Pinned pictures load through public IPFS gateways and sometimes do not; every card falls back to the action's own artwork.
-- **The AI scheduler writes to chain.** Daily and weekly quests are generated from a player's proved history by a registered ERC-8004 agent; the model chooses the quest, and the chain still decides the completion.
 
 ## Links
 
