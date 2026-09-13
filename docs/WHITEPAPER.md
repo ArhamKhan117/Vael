@@ -14,7 +14,7 @@ Version 1.3.0, September 2026.
 1. [Abstract](#1-abstract)
 2. [The problem](#2-the-problem)
 3. [Background: Creditcoin and the Attestcoin Protocol](#3-background-creditcoin-and-the-attestcoin-protocol)
-4. [The removal test](#4-the-removal-test)
+4. [No key can pay a player](#4-no-key-can-pay-a-player)
 5. [System design](#5-system-design)
 6. [The two completion paths](#6-the-two-completion-paths)
 7. [The game economy and VAEL](#7-the-game-economy-and-vael)
@@ -67,7 +67,7 @@ Nothing in the protocol attests Creditcoin to itself.
 A Creditcoin transaction is in a block Creditcoin produced, and asking the prover for it would be asking the chain to prove itself to itself.
 Section 6 is what Vael does about that.
 
-## 4. The removal test
+## 4. No key can pay a player
 
 The claim is that no key held by Vael, or by anyone else, can complete a quest.
 It is meant to be checked rather than believed, and every check below sends nothing and needs no key.
@@ -242,7 +242,7 @@ Every number it draws was read from Creditcoin.
 | The same action claimed twice | The replay key, scoped to the log, is burned on first use |
 | An event of the right shape from an attacker's contract | The emitter must be on `QuestASC`'s allowlist for that action type |
 | A reverted transaction with a log in its trace | The receipt status must be success |
-| The operator paying a friend | No function does it. The removal test in section 4 is the proof, and it can be re-run at any time |
+| The operator paying a friend | No function does it. Section 4 is the proof, and it can be re-run at any time |
 | The operator adding a releaser or a completer that pays them | Possible only through a proposal that is public for 24 hours before it can take effect; and a completer can write XP and damage, not money |
 | A malicious or broken game module | Hooks run after the payout, inside `try/catch`, with a gas cap; a hook that reverts produces an event and nothing else. A player's reward never depends on a module being healthy |
 | Vael's servers down | The browser builds and submits the same proof from the player's own wallet |
@@ -256,7 +256,7 @@ For a native completion, PenguinSwap's router is trusted to swap, and nothing is
 
 ## 9. Measurements from the live network
 
-Read from the chain and the index at Creditcoin block 5479941; every transaction behind them is in `docs/EVIDENCE.md`.
+Read from the chain and the index at Creditcoin block 5479941; the full run log with every hash is `docs/E2E_LOG.md`.
 
 | | |
 |---|---|
@@ -306,4 +306,4 @@ Read from the chain and the index at Creditcoin block 5479941; every transaction
 - ERC-8004, trustless agents: the identity, reputation and validation registries the quest agent is registered with.
 - Uniswap v3, Aave v3 and the ERC-20 `Transfer` event, as the source of the actions proved.
 - Kenney's CC0 packs for the sprites, credited in `apps/web/public/game/CREDITS.md`.
-- `docs/ARCHITECTURE.md` for the system as deployed; `docs/ADDRESSES.md` for every address and supersession; `docs/EVIDENCE.md` for every feature exercised on the live network.
+- `docs/SPEC.md` for architecture, contracts and constants; `docs/ADDRESSES.md` for every address and supersession; `docs/E2E_LOG.md` for every live run.

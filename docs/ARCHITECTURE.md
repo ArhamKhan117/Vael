@@ -144,7 +144,7 @@ If the swap reverts or returns too little, nothing completes.
 The path is keyless and synchronous, and it is not cross-chain.
 A quest filed to `NativePortal` cannot be completed by `QuestASC`, and the reverse.
 
-### The removal test
+### No key can pay a player
 
 Delete the worker's key, the agent's key, and the deployer's key from every machine.
 Every quest still completes exactly as before, from the player's own wallet.

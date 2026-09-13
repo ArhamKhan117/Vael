@@ -1,63 +1,136 @@
 ![Vael](apps/web/public/readme/hero-dark.png#gh-dark-mode-only)
 ![Vael](apps/web/public/readme/hero-light.png#gh-light-mode-only)
 
+[![BUIDL CTC 2026 Fall](https://img.shields.io/badge/BUIDL%20CTC%202026%20Fall-Gaming%20and%20DeFi%20tracks-000000)](https://github.com/ArhamKhan117/Vael)
+![Creditcoin testnet](https://img.shields.io/badge/Creditcoin-testnet%20102031-38BDF8)
+![Attestcoin Protocol](https://img.shields.io/badge/Attestcoin-Block%20Prover%20precompile-38BDF8)
+![Solidity 0.8.28](https://img.shields.io/badge/Solidity-0.8.28-363636)
+![Foundry](https://img.shields.io/badge/Foundry-forge%20test-363636)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000000)
+![Tests](https://img.shields.io/badge/tests-349%20passing-2EA043)
+![Keyless checks](https://img.shields.io/badge/keyless%20checks-141%20passing-2EA043)
+![Contracts verified](https://img.shields.io/badge/contracts-23%20source--verified-FBBF24)
+[![Pitch deck](https://img.shields.io/badge/pitch%20deck-PDF-FF4D6D)](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing)
+[![Whitepaper](https://img.shields.io/badge/whitepaper-read-38BDF8)](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md)
+[![License MIT](https://img.shields.io/badge/license-MIT-lightgrey)](./LICENSE)
+
 **Vael is a quest game on Creditcoin where no key can hand out a reward.**
 Players do real DeFi on Ethereum; the Attestcoin Protocol proves the transaction to Creditcoin; a contract verifies the proof itself and only then pays, mints the badge, grants the XP and deals the raid damage.
 
-
-Hackathon: BUIDL CTC 2026 Fall, Gaming track and Defi Track.
-
+Built for BUIDL CTC 2026 Fall, Gaming track and DeFi track, by Arham Khan.
+[Pitch deck](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing) · [Whitepaper](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md) · [GitHub](https://github.com/ArhamKhan117/Vael)
 
 ---
 
+## What Vael is
+
+Vael is a quest platform with a game economy on top of it, and all of it lives on Creditcoin.
+A quest asks for one real action: a Uniswap v3 swap, an Aave v3 supply or borrow, an ERC-20 transfer, or a check-in through Vael's own portal contract, on Ethereum Sepolia; or a PenguinSwap swap or a CTC wrap on Creditcoin itself.
+The player does it with their own wallet.
+When the action is verified, the quest pays VAEL, mints a soul-bound badge, grants XP to the player's hero, and deals damage to the season's raid boss, all in the same transaction.
+
+Around that one verified completion sits a game.
+Every wallet can mint one soul-bound hero whose stats are earned, never bought.
+Raid bosses fall to the whole community's verified actions and drop loot by share of damage.
+Heroes duel in the arena for staked VAEL, resolved deterministically on chain from a seed committed at acceptance.
+Loot is ERC-1155, exists only because somebody defeated a boss or won a duel, equips for bonuses, and trades on an escrowed market.
+An Academy teaches what a swap, a supply and a proof are, in four modules that each end in a real quest.
+Daily and weekly quests are generated from a player's proved history by an AI agent registered under ERC-8004; the model chooses the quest, the chain decides the completion.
+Partners fund campaign pools through the Studio and pay only for verified actions.
+
+The rule that makes it different is a small one.
+Rewards are released by contracts, inside the receipt of the transaction that verified the proof.
+There is no owner function, no backend key and no agent key that can complete a quest, and if Vael's own servers disappear, a player can build the proof in the browser and submit it from their own wallet.
+
+| For | What Vael gives them |
+|---|---|
+| Players | Earn on Creditcoin for what they already do on Ethereum, and a hero whose every stat is a proved action |
+| Partners | Proof-gated campaign budgets: the pool releases inside the verified completion, never on a claim, and refunds any time |
+| Creditcoin | A user funnel from Ethereum with no bridge and no oracle operator; CTC pays every gas fee |
+| Builders | Attestcoin as a game-engine primitive: adapters and hooks turn any verified event into quests, raids, duels, loot and seasons. MIT licensed |
+
 ## Contents
 
-1. [The removal test](#the-removal-test)
+1. [The case for Vael](#the-case-for-vael)
 2. [How one quest works](#how-one-quest-works)
-3. [The game layer](#the-game-layer)
-4. [The two completion paths](#the-two-completion-paths)
-5. [What is deployed](#what-is-deployed)
-6. [Run it locally](#run-it-locally)
-7. [Evidence](#evidence)
-8. [Limitations](#limitations)
-9. [Links](#links)
+3. [Creditcoin and Attestcoin, surface by surface](#creditcoin-and-attestcoin-surface-by-surface)
+4. [The game layer](#the-game-layer)
+5. [The two completion paths](#the-two-completion-paths)
+6. [What is deployed](#what-is-deployed)
+7. [Run it locally](#run-it-locally)
+8. [No key can pay a player](#no-key-can-pay-a-player)
+9. [Evidence](#evidence)
+10. [Limitations](#limitations)
+11. [Links](#links)
 
-## The removal test
+## The case for Vael
 
-Every quest platform has a key somewhere that a reward contract obeys.
-Whoever holds it can pay for an action that never happened, through the intended interface.
-Vael's claim is that it has no such key, and the claim is checkable in commands that send nothing and need no key of their own.
+### The problem
 
-The address below is the deployer, which owns every contract in the system.
-Asked to complete quest 1, `QuestManager` refuses it and names the only address it would accept:
+Quest platforms run on trust, not proof.
+Galxe, Layer3, Zealy and every quest site verify tasks with a centralized indexer: a server says done, a key signs the reward, and nothing on chain checked anything.
+Partners buy engagement they cannot audit, so sybil farms and bots collect, and the loyalty data is neither portable nor provable.
+A new L1 like Creditcoin needs a funnel from where the users are, on Ethereum, without a bridge and without an oracle operator.
 
-```bash
-cast call 0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7 \
-  'recordCompletion(uint256,address,bytes32,bytes32)' \
-  1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
-  0x0000000000000000000000000000000000000000000000000000000000000000 \
-  0x0000000000000000000000000000000000000000000000000000000000000000 \
-  --from 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
-  --rpc-url https://rpc.cc3-testnet.creditcoin.network
-```
+### The solution
 
-```
-Error: execution reverted: QuestManager__WrongCompleter(0x017DFB929979AC1b7e1a080c88Db56Bee45846d2, 0x05958dD789EaC1de84e864d6b3956C90d3e90d0f)
-```
+A completion in Vael is a cryptographic proof of a real Ethereum transaction, verified on Creditcoin by the Block Prover precompile of the Attestcoin Protocol.
+Rewards, badges, hero XP, raid damage and partner payouts are released by that verification, in the same transaction.
+Actions that happen on Creditcoin itself, which Attestcoin cannot attest, are performed by a contract instead of reported by one.
+Take the precompile away and no path remains from an Ethereum action to a reward: not for the operator, not for an admin, not for anyone.
 
-The address it names is `QuestASC`, which completes a quest only inside a call that has just verified an Attestcoin proof at the block prover precompile.
-The same wall stands in front of everything a completion produces.
-Each of these was run against the live deployment the day this README was written:
+### What it unlocks
 
-| Ask the owner's key to | Contract | Answer |
+A partner campaign, start to finish:
+
+1. **Fund the escrow.** Deposit VAEL; a 0.5% fee is taken and the rest is the pool.
+2. **Publish the rule.** Action, contract, minimum amount and reward go on chain with the quest.
+3. **Players act** with their own keys, on Ethereum or on Creditcoin.
+4. **The pool pays** inside the verified completion, exactly the reward, in the same receipt.
+5. **Cancel any time.** Whatever was not earned comes back.
+
+### How it compares
+
+| | Galxe / Layer3 / Zealy | Vael |
 |---|---|---|
-| grant hero XP | `VaelHero.onQuestCompleted` | `VaelHero__OnlyQuestASC(0x017DFB92…)` |
-| release VAEL from the vault | `RewardVault.releaseReward` | `RewardVault__OnlyQuestManager` |
-| release VAEL from a partner pool | `CampaignEscrow.releaseReward` | `ReleaserSet__NotAReleaser(0x017DFB92…)` |
+| Task verification | Centralized indexer and backend rules | Cryptographic proof verified by a precompile on chain |
+| Who releases the reward | A company-held key | The contract, inside the receipt of the proof |
+| Partner budgets | Paid on claims the partner cannot audit | Escrow releases only on verified actions; refundable |
+| Sybil cost | Free accounts, social tasks | Every action is a real gas-paid transaction |
+| If the servers go down | Nothing works | Players self-claim from the browser |
+| Reputation | Points in a database | Soul-bound hero and badges built from proofs |
+| Game economy | Points and raffles | Raids, duels, loot and a market fed only by verified play |
 
-Remove Vael's worker and a player can build the same proof in the browser and submit it from their own wallet.
-Remove the precompile and nothing can complete a quest at all.
-There is no address that can be told a swap happened.
+### The market
+
+Quests are the growth engine of web3, and verification is the missing piece.
+Galxe alone recorded 184M quest participations in 2025, from 36M+ registered users and about 1.9M unique participant addresses a month, for 7,770 partner projects buying campaigns.
+Creditcoin has a community of 60K+ with a live DEX, a launchpad and a wallet, and every project launching on it needs a verified way to acquire and reward users.
+Vael is the native quest layer for that ecosystem first, then for every chain Attestcoin attests: Ethereum mainnet is already registered and proved feasible, and each new attested chain is one adapter away.
+
+Sources: Galxe 2025 Year in Review; Messari, Galxe: The Web3 Growth Engine; Creditcoin BUIDL CTC kickoff.
+
+### Business model
+
+Fees on verified value, already in the contracts:
+
+| Fee | Where | Status |
+|---|---|---|
+| 0.5% campaign escrow fee, adjustable up to 10% by governance | Every partner deposit into `CampaignEscrow` | Live |
+| 2% marketplace fee | Every loot sale on `Marketplace` | Live |
+| Arena burn | A slice of every resolved duel's stake | Live |
+| Studio Pro: targeting by verified history, analytics, featured placement, campaign API | Partners | Next |
+| Seasons and cosmetics: season passes, boss skins, hero cosmetics sold for VAEL | Players | Next |
+| Verification as a service: the adapters and the worker for other Creditcoin apps | Builders | Next |
+
+### Roadmap
+
+| Stage | What |
+|---|---|
+| Done | Testnet end to end: five action types, the native path, hero, raid, arena, loot, market, Academy, partner Studio, AI quests, every contract source-verified |
+| Q4 2026 | Creditcoin mainnet, VAEL launch through PenguinBase, Credit Wallet integration, first partner campaigns with real budgets |
+| H1 2027 | Ethereum mainnet veteran quests; more adapters: Lido, Curve, bridges, NFT mints; guilds and seasons |
+| With Attestcoin writability | Claim VAEL rewards and badge attestations back on the source chain; the interface is already declared |
 
 ## How one quest works
 
@@ -69,8 +142,24 @@ There is no address that can be told a swap happened.
 4. **Prove.** A Merkle proof of the receipt and a continuity proof of the block, built from public data by Vael's worker or by the player's browser; nothing in either is signed by Vael.
 5. **Verify and pay.** `QuestASC` hands the proof to the Block Prover precompile at `0x…0FD2`, then checks the receipt status, the emitting contract against an allowlist, the player against the log's own indexed address, the amount against the rule's minimum, and the block against the window recorded at acceptance. Only then does it record the completion, and the reward, the badge, the XP and the raid damage all follow from that one call.
 
-Live examples of every path, from the Ethereum action to the Creditcoin payout, with every hash: [`docs/EVIDENCE.md`](./docs/EVIDENCE.md).
+Every live run, from the Ethereum action to the Creditcoin payout, with every hash: [`docs/EVIDENCE.md`](./docs/EVIDENCE.md).
 How each Attestcoin surface is used, with measurements: [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md).
+
+## Creditcoin and Attestcoin, surface by surface
+
+Vael is built on the protocol, not next to it.
+
+| Surface | How Vael uses it |
+|---|---|
+| Block Prover precompile `0x…0FD2` | `verifyAndEmit` per proved transaction; a keyless `verify` preflight before any gas is spent |
+| ChainInfo precompile `0x…0FD3` | The attested height is anchored at quest acceptance; attestation bounds drive the worker's wait |
+| `EvmV1Decoder` | Receipt status, logs and fields decoded on chain; five action types through stateless adapters |
+| Proof Builder and a raw builder | Two independent proof sources; the Merkle root is re-derived locally before submission |
+| Batch proofs | Up to ten transactions per submission, each carrying its own continuity proof |
+| Chain keys 1 and 3 | Sepolia live; Ethereum mainnet registered and proved feasible for veteran quests |
+
+Measured on the live network: a Sepolia attestation takes 7 to 9 minutes; one verified proof with its payout, XP and damage costs about 1.0M gas; two proofs verified in one receipt cost 1.19M.
+Replay keys are per log, not per transaction, and player identity always comes from the log's indexed topics, never from the transaction sender.
 
 ## The game layer
 
@@ -95,7 +184,7 @@ If the swap does not happen, nothing completes.
 
 A quest is filed to one path at creation by its action type, and `QuestManager.recordCompletion` accepts nobody but the path the quest was filed to.
 Both release exactly the quest's own reward: from `RewardVault` for an open quest, from the partner's `CampaignEscrow` pool for a campaign quest, whose releasers are a set that changes only after a day's public notice.
-The one honest difference is written down in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md), section 4.
+The one honest difference between the two paths is written down in [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md#6d-native-quests-and-the-line-they-do-not-cross), section 6d.
 
 ## What is deployed
 
@@ -142,17 +231,17 @@ git submodule update --init --recursive
 cd contracts && forge build && forge test && cd ..
 ```
 
-Copy `apps/api/.env.example` and `apps/web/.env.example` to their real counterparts and fill them in; every variable is documented beside its name in those files, and `python3 contracts/script/sync-env.py --write` fills the contract addresses from `docs/ADDRESSES.md`.
+Copy `apps/api/.env.example` to `apps/api/.env` and `apps/web/.env.example` to `apps/web/.env.local`, then fill them in; every variable is explained in the example files, and `python3 contracts/script/sync-env.py --write` fills the contract addresses from `docs/ADDRESSES.md`.
 Real env files are ignored and must never be committed.
 
-Then build everything for production and start the four processes against the live Creditcoin testnet deployment.
+Build everything once, then start the four processes against the live Creditcoin testnet deployment:
 
 ```bash
 pnpm build
-pnpm --filter @vael/api start            # API on :4000
-pnpm --filter @vael/api start:worker     # the proof worker
-pnpm --filter @vael/api start:indexer    # the Creditcoin indexer
-pnpm --filter @vael/web start -p 3101    # the web app
+pnpm --filter @vael/api start
+pnpm --filter @vael/api start:worker
+pnpm --filter @vael/api start:indexer
+pnpm --filter @vael/web exec next start -p 3101
 ```
 
 | | |
@@ -169,19 +258,55 @@ pnpm --filter @vael/web start -p 3101    # the web app
 
 The worker and the indexer need no private key that can complete anything: the worker pays gas to submit proofs, and a proof is either valid or it is not.
 
-For development, `pnpm --filter @vael/web dev` on :3001 and `pnpm --filter @vael/api dev` on :4000.
+For development, `pnpm dev:web` serves the app on :3001 and `pnpm dev:api` the API on :4000.
+
+## No key can pay a player
+
+Every quest platform has a key somewhere that a reward contract obeys.
+Whoever holds it can pay for an action that never happened, through the intended interface.
+Vael's claim is that it has no such key, and the claim is checkable in commands that send nothing and need no key of their own.
+
+The address below is the deployer, which owns every contract in the system.
+Asked to complete quest 1, `QuestManager` refuses it and names the only address it would accept:
+
+```bash
+cast call 0x56385ac5cc5F1817ac96d8D1632E53f3A9a412B7 \
+  'recordCompletion(uint256,address,bytes32,bytes32)' \
+  1 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
+  0x0000000000000000000000000000000000000000000000000000000000000000 \
+  0x0000000000000000000000000000000000000000000000000000000000000000 \
+  --from 0x017DFB929979AC1b7e1a080c88Db56Bee45846d2 \
+  --rpc-url https://rpc.cc3-testnet.creditcoin.network
+```
+
+```
+Error: execution reverted: QuestManager__WrongCompleter(0x017DFB929979AC1b7e1a080c88Db56Bee45846d2, 0x05958dD789EaC1de84e864d6b3956C90d3e90d0f)
+```
+
+The address it names is `QuestASC`, which completes a quest only inside a call that has just verified an Attestcoin proof at the block prover precompile.
+The same wall stands in front of everything a completion produces.
+Each of these was run against the live deployment the day this README was written:
+
+| Ask the owner's key to | Contract | Answer |
+|---|---|---|
+| grant hero XP | `VaelHero.onQuestCompleted` | `VaelHero__OnlyQuestASC(0x017DFB92…)` |
+| release VAEL from the vault | `RewardVault.releaseReward` | `RewardVault__OnlyQuestManager` |
+| release VAEL from a partner pool | `CampaignEscrow.releaseReward` | `ReleaserSet__NotAReleaser(0x017DFB92…)` |
+
+Remove Vael's worker and a player can build the same proof in the browser and submit it from their own wallet.
+Remove the precompile and nothing can complete a quest at all.
+There is no address that can be told a swap happened.
 
 ## Evidence
 
 | What | Where |
 |---|---|
-| Every feature exercised on the live network, with hashes, blocks, and gas | [`docs/EVIDENCE.md`](./docs/EVIDENCE.md) |
+| Every live end-to-end run, with hashes, gas, and timings | [`docs/EVIDENCE.md`](./docs/EVIDENCE.md) |
 | How Vael uses Attestcoin, surface by surface, with measurements | [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md) |
+| The architecture as deployed: contracts, adapters, hooks, the agent, the API, the web app | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
 | Deployed addresses, wiring, and the full supersession history | [`docs/ADDRESSES.md`](./docs/ADDRESSES.md) |
-| The architecture as deployed: contracts, the two completion paths, adapters and hooks, worker, indexer, web app | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
 | The whitepaper: the argument, the threat model, the measurements | [`docs/WHITEPAPER.md`](./docs/WHITEPAPER.md) |
 | Ethereum mainnet feasibility spike, keyless, with its conditions | [`docs/MAINNET_SPIKE.md`](./docs/MAINNET_SPIKE.md) |
-| Screenshots of every page at 1280 and 390 px from the production build | [`docs/evidence/final/`](./docs/evidence/final) |
 
 Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBaseline.s.sol` runs 141 keyless checks against the live deployment.
 
@@ -198,13 +323,14 @@ Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBas
 
 | | |
 |---|---|
+| Pitch deck | [Vael pitch deck (PDF)](https://drive.google.com/file/d/1TTU7AZMM-yirHTD0JFR-vBoYg3fJFHiy/view?usp=sharing) |
+| Whitepaper | [docs/WHITEPAPER.md on GitHub](https://github.com/ArhamKhan117/Vael/blob/main/docs/WHITEPAPER.md), also rendered in the app at `/whitepaper` |
+| GitHub | [github.com/ArhamKhan117/Vael](https://github.com/ArhamKhan117/Vael) |
+| Documentation | [docs/ on GitHub](https://github.com/ArhamKhan117/Vael/tree/main/docs), the README rendered in the app at `/readme` |
 | Live website | pending |
 | Demo video | pending |
-| Twitter or X | pending |
-| GitHub | pending |
 | DoraHacks submission | pending |
-| Whitepaper | pending a hosted URL; in the repository at [`docs/WHITEPAPER.md`](./docs/WHITEPAPER.md), rendered at `/whitepaper` |
-| Documentation | pending a hosted URL; in the repository at [`docs/`](./docs), the README rendered at `/readme` |
+| Contact | Arham Khan, [arhamkhansab78616@gmail.com](mailto:arhamkhansab78616@gmail.com) |
 
 ## License
 
