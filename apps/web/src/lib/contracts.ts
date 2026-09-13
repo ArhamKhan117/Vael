@@ -2,8 +2,8 @@
  * Deployed contract addresses.
  *
  * Everything except QUEST_PORTAL lives on Creditcoin testnet. QUEST_PORTAL is the one
- * contract Vael owns on Ethereum Sepolia, and it lands in milestone 3.
- * Addresses are recorded in docs/ADDRESSES.md as each is deployed.
+ * contract Vael owns on Ethereum Sepolia.
+ * Addresses are recorded in docs/ADDRESSES.md.
  */
 
 const address = (value: string | undefined): `0x${string}` => (value || "") as `0x${string}`

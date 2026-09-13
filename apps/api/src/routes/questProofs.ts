@@ -25,7 +25,7 @@ const submitProofSchema = z.object({
  * when QuestASC verifies an Attestcoin proof through the block prover precompile, either
  * from the worker or from the player's own wallet.
  *
- * The proof pipeline that advances a row past `detected` arrives in milestone 3.
+ * The worker's pipeline is what advances a row past `detected`.
  */
 questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
   try {

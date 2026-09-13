@@ -319,7 +319,7 @@ async function summarize(
 
     // A pool must have received at least what has left it plus what is still in it. The index can
     // be short of the deposit when its cursor starts after the funding transaction, which is the
-    // case for every pool funded before the milestone 8 redeploy, so the larger of the two is used
+    // case for every pool funded before the index's first block, so the larger of the two is used
     // rather than a figure that is knowably too small.
     const accountedFor =
       BigInt(campaign.released) + BigInt(campaign.refunded) + BigInt(balance)

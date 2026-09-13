@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# milestone 2 baseline smoke test. Pure `cast`, no API and no web app.
+# Smoke test of a fresh core deployment. Pure `cast`, no API and no web app.
 #
 # Proves three things against the live Creditcoin deployment:
 #   1. the registered ERC-8004 agent can create a quest, and the reward vault funds it
@@ -25,7 +25,7 @@ REWARD_VAEL=100
 BADGE_LEVEL=1
 CATEGORY=0   # QuestCategory.Swap
 # Uniswap v3 SwapRouter02 on Sepolia, recorded for reference only. Nothing on Creditcoin
-# calls it; the real emitter allowlist arrives with QuestASC in milestone 3.
+# calls it; the real emitter allowlist lives in QuestASC.
 PROTOCOL="0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E"
 
 QUEST_ACCEPTED_TOPIC="0x7d422f3e3149564cf96cfeab23ae433b6b1d7259c2873096244209f9b40befee"
@@ -171,7 +171,7 @@ log "3. recordCompletion must be refused: only QuestASC may complete a quest"
 
 quest_asc="$(cast call "$QUEST_MANAGER" "questASC()(address)" "${RPC[@]}")"
 [ "$quest_asc" = "0x0000000000000000000000000000000000000000" ] \
-  || die "questASC is already bound to $quest_asc, this smoke test assumes milestone 2"
+  || die "questASC is already bound to $quest_asc, this smoke test assumes a core without it"
 info "  questASC is unset, so no address on earth may complete a quest"
 
 # eth_call, so this costs nothing and cannot accidentally succeed on-chain.
@@ -197,4 +197,4 @@ log "Smoke test passed"
 info "questId     $quest_id"
 info "create tx   $create_tx"
 info "accept tx   $accept_tx"
-info "No backend key can complete a quest. QuestASC arrives in milestone 3."
+info "No backend key can complete a quest. Only QuestASC will, once bound."

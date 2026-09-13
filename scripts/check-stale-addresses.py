@@ -3,17 +3,13 @@
 
     python3 scripts/check-stale-addresses.py
 
-Every cascade leaves a trail of addresses in prose, and prose does not fail a test. README and
-DEMO_SCRIPT went on naming a milestone 8 Arena for three redeploys, which is exactly the kind of thing
-nobody notices until a judge pastes it into an explorer and finds a dead contract.
+Every redeploy leaves a trail of addresses in prose, and prose does not fail a test. The README
+once went on naming a superseded Arena through three redeploys, which is exactly the kind of thing
+nobody notices until a reader pastes it into an explorer and finds a dead contract.
 
-Two files are deliberately exempt, because rewriting them would make them lie:
-
-  docs/ADDRESSES.md  - its history section exists to name superseded contracts.
-  docs/E2E_LOG.md    - each run happened against the contracts that were live at the time.
-
-So are docs/evidence/*.json: a pre-redeploy state export is a photograph of the chain at one block,
-and editing it would turn a record into a claim.
+One file is deliberately exempt, because rewriting it would make it lie: docs/ADDRESSES.md, whose
+history section exists to name superseded contracts. So is anything under docs/evidence/, which
+records what the chain and the app showed at one moment.
 """
 import re, subprocess
 from pathlib import Path
@@ -39,12 +35,11 @@ for line in re.findall(r"^SUPERSEDED_[A-Z_]+=(.+)$", book, re.MULTILINE):
 superseded -= current
 print(f"{len(current)} current, {len(superseded)} superseded addresses known\n")
 
-files = subprocess.run(["git", "ls-files", "README.md", "docs", "apps", "contracts", "scripts"],
+files = subprocess.run(["git", "ls-files", "README.md", "docs", "apps", "contracts", "scripts", "tools"],
                        capture_output=True, text=True).stdout.split()
-SKIP_DOC = {"docs/ADDRESSES.md", "docs/E2E_LOG.md"}
+SKIP_DOC = {"docs/ADDRESSES.md"}
 bad = []
 for f in files:
-    # A state export records the chain at one block; editing it would turn a record into a claim.
     if f in SKIP_DOC or f.startswith("docs/evidence/") or f.endswith((".png", ".jpg", ".ogg", ".lock")):
         continue
     try:

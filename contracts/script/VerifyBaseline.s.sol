@@ -25,7 +25,7 @@ import {Marketplace} from "../src/game/Marketplace.sol";
 
 /**
  * @title VerifyBaseline
- * @notice Keyless read-back of the milestone 2 baseline deployment. Sends no transaction and
+ * @notice Keyless read-back of the live deployment. Sends no transaction and
  *         needs no private key. Run it WITHOUT --broadcast:
  *
  *           set -a; source .env; set +a
@@ -256,7 +256,7 @@ contract VerifyBaseline is Script {
         _eq("RaidBoss.LOOT_TOKEN", address(raid.LOOT_TOKEN()), address(token));
         _isTrue("BadgeNFT lets RaidBoss mint", badge.minters(address(raid)));
 
-        console.log("=== milestone 6 modules ===");
+        console.log("=== game modules ===");
         _hasCode("Arena", address(arena));
         _hasCode("Loot", address(loot));
         _hasCode("Equipment", address(equipment));
@@ -264,9 +264,9 @@ contract VerifyBaseline is Script {
 
         // None of these is a hook, a minter, or anything QuestASC calls. That is the point: they
         // read core state and hold no privilege over it, which is why adding them cost no redeploy.
-        require(questASC.hookCount() == 2, "VerifyBaseline: milestone 6 must not have added a hook");
+        require(questASC.hookCount() == 2, "VerifyBaseline: the modules must not have added a hook");
         checks++;
-        console.log("ok   milestone 6 added no hook to QuestASC");
+        console.log("ok   the modules added no hook to QuestASC");
         _isTrue("BadgeNFT does not let Arena mint", !badge.minters(address(arena)));
         _isTrue("BadgeNFT does not let Loot mint", !badge.minters(address(loot)));
 

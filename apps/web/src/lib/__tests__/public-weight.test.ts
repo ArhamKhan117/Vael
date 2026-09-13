@@ -7,7 +7,7 @@ import itemCatalogue from "@/content/items.json"
 /**
  * What the site ships under public/ is a budget, not a folder.
  *
- * milestone 11 committed forty-eight generated PNGs at about 1.4 MB each, and a visitor's browser was
+ * Forty-eight generated PNGs at about 1.4 MB each were once committed, and a visitor's browser was
  * asked to pull a megabyte to draw a 64 px icon. The packed WebPs replaced them, and these are the
  * numbers that stop it happening again: every generated picture under 200 KB, the whole folder
  * under 8 MB, and no PNG master left behind in a folder pack-art owns.

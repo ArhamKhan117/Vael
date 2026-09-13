@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# milestone 2 baseline deployment to Creditcoin testnet.
+# Core deployment to Creditcoin testnet: registries, token, vault, badges, quest manager, escrow.
 #
 # The Creditcoin RPC returns block objects without mixHash, so `forge script --broadcast`
 # fails after the first transaction it sends (docs/SPEC.md section 3.2). Every step here is
@@ -269,7 +269,7 @@ wire WIRE_REPUTATION_AUTH_TX "ReputationRegistry.setReviewerAuthorization(QuestM
   "isReviewerAuthorized(address)(bool)" "true" "$QUEST_MANAGER"
 
 # QuestManager does not call the validation registry yet. Authorising it now keeps the
-# milestone 3 validation path open without another owner transaction later.
+# validation path open without another owner transaction later.
 wire WIRE_VALIDATION_AUTH_TX "ValidationRegistry.setValidatorAuthorization(QuestManager)" \
   "$VALIDATION_REGISTRY" "setValidatorAuthorization(address,bool)" "$QUEST_MANAGER true" \
   "isValidatorAuthorized(address)(bool)" "true" "$QUEST_MANAGER"
@@ -338,7 +338,7 @@ expect_call "IdentityRegistry.isActive($agent_id)" "$IDENTITY_REGISTRY" \
 
 # ---------------------------------------------------------------- 6. one-shots stay unset
 
-log "One-shot bindings deliberately left unset for milestone 3"
+log "One-shot bindings deliberately left unset until QuestASC is deployed"
 expect_call "QuestManager.questASC (must stay zero)" "$QUEST_MANAGER" \
   "questASC()(address)" "0x0000000000000000000000000000000000000000"
 expect_call "CampaignEscrow.rewardReleaser (must stay zero)" "$CAMPAIGN_ESCROW" \

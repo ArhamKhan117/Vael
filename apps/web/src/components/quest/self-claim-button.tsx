@@ -19,7 +19,7 @@ interface SelfClaimButtonProps {
   onClaimed?: (creditcoinTxHash: string) => void
 }
 
-type Phase = "idle" | "fetching" | "signing" | "done"
+type Stage = "idle" | "fetching" | "signing" | "done"
 
 /**
  * Claim a quest from the player's own wallet, with no Vael server involved.
@@ -41,7 +41,7 @@ export function SelfClaimButton({
   const { switchChain } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
 
-  const [phase, setPhase] = useState<Phase>("idle")
+  const [stage, setStage] = useState<Stage>("idle")
   const [error, setError] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
 
@@ -55,10 +55,10 @@ export function SelfClaimButton({
       }
       if (!CONTRACT_ADDRESSES.QUEST_ASC) throw new Error("QuestASC address is not configured.")
 
-      setPhase("fetching")
+      setStage("fetching")
       const proof = await fetchProof(sourceChainKey, sourceTxHash)
 
-      setPhase("signing")
+      setStage("signing")
       const hash = await writeContractAsync({
         abi: questAscAbi,
         address: CONTRACT_ASC(),
@@ -68,10 +68,10 @@ export function SelfClaimButton({
       })
 
       setTxHash(hash)
-      setPhase("done")
+      setStage("done")
       onClaimed?.(hash)
     } catch (caught) {
-      setPhase("idle")
+      setStage("idle")
       setError(describeClaimError(caught))
     }
   }, [
@@ -85,22 +85,22 @@ export function SelfClaimButton({
     writeContractAsync,
   ])
 
-  const busy = phase === "fetching" || phase === "signing"
+  const busy = stage === "fetching" || stage === "signing"
 
   return (
     <div className="space-y-2">
       <Button
         type="button"
         onClick={claim}
-        disabled={busy || phase === "done"}
+        disabled={busy || stage === "done"}
         className="w-full rounded bg-sky-500 text-black hover:bg-sky-400"
       >
         {busy ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {phase === "fetching" ? "Fetching the proof…" : "Confirm in your wallet…"}
+            {stage === "fetching" ? "Fetching the proof…" : "Confirm in your wallet…"}
           </>
-        ) : phase === "done" ? (
+        ) : stage === "done" ? (
           <>
             <ShieldCheck className="mr-2 h-4 w-4" />
             Claimed

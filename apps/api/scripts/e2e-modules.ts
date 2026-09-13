@@ -1,5 +1,5 @@
 /**
- * Live end-to-end run of the milestone 6 modules on Creditcoin testnet.
+ * Live end-to-end run of the game modules on Creditcoin testnet.
  *
  *   pnpm --filter @vael/api exec tsx scripts/e2e-modules.ts
  *

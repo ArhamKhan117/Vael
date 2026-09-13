@@ -14,7 +14,7 @@ export const INDEXER_ABI = [
   "event HeroMinted(address indexed player, uint256 indexed tokenId)",
   "event HeroXPGranted(address indexed player, uint256 indexed tokenId, uint8 actionType, uint8 tier, uint64 xpGained, bytes32 replayKey)",
   "event HeroLeveled(address indexed player, uint256 indexed tokenId, uint32 newLevel)",
-  // A hero carried across the milestone 8 redeploy. It is the only way a hero appears on the new
+  // A hero carried across a redeploy of VaelHero. It is the only way a hero appears on the new
   // contract without a proof, and the index has to see it or a migrated player looks heroless.
   "event HeroImported(address indexed player, uint256 indexed tokenId, uint32 level, uint64 xp)",
   // RaidBoss

@@ -11,7 +11,7 @@ the history stays machine-readable rather than living only in prose.
 
 It also rewrites the row in the "Current deployment" table, because that table is what a human
 reads and the key block is what a machine reads, and the two disagreeing is worse than either being
-wrong alone. Phase 10c promoted one contract, only the key block moved, and the table went on naming
+wrong alone. One arena promotion moved only the key block, and the table went on naming
 a superseded Arena while the chain, the env files and Loot.arena all named the new one. The script
 now refuses to finish if any promoted address is missing from the table.
 
@@ -112,7 +112,7 @@ def main() -> int:
             return 1
         had = book.get(key)
         if had and had.lower() == want.lower():
-            # The key is right. The table may still not be: that is how Phase 10c went wrong, and
+            # The key is right. The table may still not be: that is how the arena promotion went wrong, and
             # a run that says "already correct" and leaves a stale row is how it stayed wrong.
             print(f"{key} already points at {want}")
             text = rewrite_table_row(

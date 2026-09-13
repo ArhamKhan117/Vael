@@ -77,7 +77,7 @@ async function main() {
   // matters because the attestation wait in the middle is several minutes long.
   const resumeCampaign = process.env.RESUME_CAMPAIGN_ID
   const resumeQuest = process.env.RESUME_QUEST_ID
-  const campaignId = resumeCampaign ?? `phase7-partner-${Date.now()}`
+  const campaignId = resumeCampaign ?? `partner-run-${Date.now()}`
   const campaignKey = keccak256(toUtf8Bytes(campaignId))
 
   log("partner          ", partner.address)

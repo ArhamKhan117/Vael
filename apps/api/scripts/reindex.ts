@@ -19,12 +19,12 @@ import { CreditcoinIndexer } from "../src/indexer"
 /**
  * Block of the earliest contract this indexer watches, from docs/ADDRESSES.md.
  *
- * The milestone 10 redeploy replaced nine contracts in blocks 5465160 to 5465168. This moves forward
- * with each cascade rather than staying at the milestone 2 baseline, because scanning earlier only
- * re-reads events from superseded contracts.
+ * The current core was deployed in blocks 5465160 to 5465168. This moves forward with each
+ * redeploy rather than staying at the first deployment, because scanning earlier only re-reads
+ * events from superseded contracts.
  *
- * BadgeNFT is the exception and the reason this is not simply the first milestone 10 block. It survived
- * the cascade, so the twenty badges players hold were minted at milestone 8 heights and were never
+ * BadgeNFT is the exception and the reason this is not simply block 5465160. It survived the
+ * redeploy, so the twenty badges players hold were minted at earlier heights and were never
  * re-minted. Starting at 5465160 would lose all twenty from the index while leaving them on the
  * chain, so the floor stays at the block BadgeNFT itself was deployed in.
  */

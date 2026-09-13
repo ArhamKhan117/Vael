@@ -127,7 +127,7 @@ export class ArenaReplayScene extends Phaser.Scene {
 
     // A flush of colour, not a fill. The fill painted the whole sprite flat white for the flash,
     // and any still image taken in that window showed a white silhouette where a hero should be:
-    // the milestone 12 evidence caught duel 22's opponent that way and it read as a missing sprite.
+    // a screenshot caught duel 22's opponent that way and it read as a missing sprite.
     // A multiply tint keeps the hero recognisable while it flashes.
     defenderSprite.setTint(swing.crit ? 0xffd166 : 0xff8080)
     this.time.delayedCall(140, () => defenderSprite.clearTint())

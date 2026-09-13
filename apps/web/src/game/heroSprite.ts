@@ -14,8 +14,8 @@
  *
  * The frames index the Kenney Tiny Dungeon sheet, 16 px tiles, 12 per row, and were checked by eye
  * against a labelled contact sheet of all 132: 84 is the wizard, 85 an unarmoured villager, 96 full
- * plate with a closed helm, 112 a green hood and headband. Guessing them is how they were wrong for
- * a whole phase.
+ * plate with a closed helm, 112 a green hood and headband. Guessing them is how they were wrong
+ * for a long time.
  */
 export type Affinity = "novice" | "warrior" | "rogue" | "mage"
 

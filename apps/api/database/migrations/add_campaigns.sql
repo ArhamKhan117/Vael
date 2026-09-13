@@ -4,7 +4,7 @@
 -- A campaign now lives in `CampaignEscrow` on Creditcoin, and the index of it is `indexed_campaigns`
 -- (add_campaign_partner_name.sql, add_campaign_thumbnail_description.sql), written by the indexer
 -- from Deposited, Released and Refunded events. Both original tables were dropped by
--- `drop_database_first_tables.sql` after sitting unread for two phases.
+-- `drop_database_first_tables.sql` after sitting unread for some time.
 --
 -- The file stays so the migration order still reads in sequence, and its body is empty so running
 -- the set against a fresh database does not recreate two tables the next migration then deletes.

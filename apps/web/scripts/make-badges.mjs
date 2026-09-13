@@ -52,7 +52,7 @@ function rarityForLevel(level) {
 
 /**
  * Frame indices verified by eye against a labelled contact sheet of the whole tilemap. Guessing
- * these is how the hero sprites ended up wrong in milestone 5.
+ * these is how the hero sprites once ended up wrong.
  */
 export const BADGES = [
   { level: 1, name: "Initiate", frame: 113, blurb: "First verified action." },

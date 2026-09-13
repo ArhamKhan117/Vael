@@ -41,8 +41,8 @@ import {CampaignEscrow} from "../src/CampaignEscrow.sol";
  *   cast send $CAMPAIGN_ESCROW_ADDRESS  "setRewardToken(address)"           $REWARD_STABLE_ADDRESS
  *   cast send $BADGE_NFT_ADDRESS        "setBadgeURI(uint256,string)"       <level> <ipfs uri>
  *
- * `QuestManager.setQuestASC` and `CampaignEscrow.initialiseReleasers` are wired to QuestASC in
- * milestone 3, once that contract exists. `setQuestASC` is one-shot, so it is the last call made.
+ * `QuestManager.setQuestASC` and `CampaignEscrow.initialiseReleasers` are wired to QuestASC
+ * once that contract exists. `setQuestASC` is one-shot, so it is the last call made.
  */
 abstract contract DeployBase is Script {
     function _deployer() internal view returns (uint256 pk, address addr) {

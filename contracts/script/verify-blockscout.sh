@@ -104,7 +104,7 @@ HOOK="$(lookup CAMPAIGN_PAYOUT_HOOK_ADDRESS)"
   "$(cast abi-encode 'constructor(address)' "$DEPLOYER_ADDRESS")"
 [ -n "$A_AAVE" ] && submit "$A_AAVE" src/adapters/AaveV3Adapter.sol:AaveV3Adapter ""
 
-# milestone 6 modules. Each is standalone, so each constructor names only what it reads.
+# Game modules. Each is standalone, so each constructor names only what it reads.
 [ -n "$ARENA" ] && submit "$ARENA" src/game/Arena.sol:Arena \
   "$(cast abi-encode 'constructor(address,address,address)' "$DEPLOYER_ADDRESS" "$TOKEN" "$HERO")"
 

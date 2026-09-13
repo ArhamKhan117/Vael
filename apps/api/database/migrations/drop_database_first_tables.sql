@@ -1,7 +1,7 @@
 -- Remove the eight tables from the design that predates the chain being the source of truth.
 --
 -- Vael started with a database that held quests, submissions, XP and campaigns, and the chain was
--- somewhere rewards eventually went. That is backwards for this project, and milestone 8 inverted it:
+-- somewhere rewards eventually went. That is backwards for this project, and the indexer inverted it:
 -- every quest, badge, action and reward is now read back out of Creditcoin, and the database holds
 -- an index of what the chain emitted plus the three things the chain does not own, which are a
 -- player's name, their feedback, and their Academy progress.

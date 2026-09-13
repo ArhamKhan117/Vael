@@ -174,7 +174,8 @@ export interface Challenge {
    * Mirrors Arena.Status, including `voided`.
    *
    * The web type was missing that one member, so a voided duel could not be rendered and TypeScript
-   * called every check for it a mistake. The chain has had the status since milestone 9.
+   * called every check for it a mistake. The chain has had the status since the arena committed
+   * its seed at acceptance.
    */
   status: "open" | "accepted" | "resolved" | "drawn" | "expired" | "cancelled" | "voided"
   winner?: string

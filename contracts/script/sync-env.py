@@ -2,7 +2,7 @@
 """Push the addresses in docs/ADDRESSES.md into the local .env files.
 
 Nine contracts changed in one redeploy, across two apps and four files. Typing an address twice is
-how apps/api/.env came to point at a superseded RewardVault for a whole phase, with the only
+how apps/api/.env came to point at a superseded RewardVault for days, with the only
 symptom a number that stayed at zero. This edits the value of a key that already exists and
 touches nothing else: it never adds a key, never reorders a file, and never prints a value.
 

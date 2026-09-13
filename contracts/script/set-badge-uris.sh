@@ -2,7 +2,7 @@
 #
 # Point every badge level at its pinned metadata document.
 #
-# The badge levels were wired at milestone 2 with `ipfs://placeholder`, which meant every badge a
+# The badge levels were first wired with `ipfs://placeholder`, which meant every badge a
 # player earned resolved to nothing. The real documents are pinned by
 # `pnpm --filter @vael/api pin-badges`, which writes apps/api/scripts/badge-cids.json; this reads
 # that file and calls setBadgeURI once per level, reading each slot back at the block it landed in.

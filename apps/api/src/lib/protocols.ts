@@ -51,8 +51,8 @@ export const SEPOLIA_TOKENS = {
 } as const
 
 /**
- * QuestPortal on Sepolia. Filled in when milestone 3 deploys it; until then no portal quest
- * can be created, which is intentional.
+ * QuestPortal on Sepolia. Unset until it is deployed; until then no portal quest can be
+ * created, which is intentional.
  */
 /**
  * Symbol and decimals for the tokens a quest rule can name.

@@ -89,5 +89,5 @@ export async function getParticipantProgress(questId: number, participant: strin
 }
 
 // recordCompletion is intentionally absent. QuestManager.recordCompletion is gated by
-// onlyQuestASC, so only the on-chain verifier can complete a quest. The proof worker in
-// milestone 3 submits proofs; it never records a completion itself.
+// onlyQuestASC, so only the on-chain verifier can complete a quest. The proof worker
+// submits proofs; it never records a completion itself.

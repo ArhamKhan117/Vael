@@ -1,5 +1,5 @@
 /**
- * One live duel on Arena v3, and the claim that made it worth redeploying.
+ * One live duel, and the property the committed seed gives it.
  *
  *   pnpm --filter @vael/api e2e:arena
  *

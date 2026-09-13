@@ -54,7 +54,7 @@ export function ipfsToHttp(uri: string) {
 }
 
 /**
- * The milestone 4 stand-in, still on chain for any quest created before metadata was pinned. It is not
+ * The original stand-in, still on chain for any quest created before metadata was pinned. It is not
  * a CID, so asking a gateway for it returns 400 and a CORS error in the console rather than a
  * document. The caller falls back to what the chain itself says about the quest.
  */
