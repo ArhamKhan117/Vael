@@ -111,3 +111,6 @@ tools/.venv/
 # Windows download sidecars
 *:Zone.Identifier
 __pycache__/
+
+# Build-time copies of README.md and docs/WHITEPAPER.md for the rendered pages (apps/web/scripts/sync-docs.mjs)
+apps/web/repo-docs/

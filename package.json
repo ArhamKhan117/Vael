@@ -5,6 +5,9 @@
   "description": "Cross-chain quest game on Creditcoin, verified by the Attestcoin Protocol",
   "author": "Arham Khan",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@9.15.3",
   "scripts": {
     "dev": "turbo run dev",

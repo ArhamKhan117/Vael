@@ -4,9 +4,10 @@ import { join } from "node:path"
 /**
  * Where the repository's documents are, from wherever this is running.
  *
- * In development and in the standalone build the app runs from apps/web, two levels below the
- * repository (or below the traced root, which mirrors it). On Vercel the function runs from the
- * traced root itself. Both are tried, in that order, so one file can serve both without a copy.
+ * In development the app runs from apps/web, two levels below the repository, and reads the
+ * document itself, so the page cannot drift from it. A production bundle carries the copy that
+ * scripts/sync-docs.mjs writes into apps/web/repo-docs/ at build time, because that is the only
+ * path the bundle's tracer can be told to carry exactly. The repository file is tried first.
  */
 /**
  * The file name, hidden from static analysis on purpose.
@@ -24,10 +25,14 @@ function opaque(value: string): string {
 }
 
 async function readRepositoryFile(file: string): Promise<string> {
-  const roots = [["..", ".."], []]
+  const name = opaque(file)
+  const candidates = [
+    ["..", "..", ...name.split("/")],
+    ["repo-docs", name.split("/").at(-1) ?? name],
+  ]
   let lastError: unknown
-  for (const up of roots) {
-    const candidate = [...up, ...opaque(file).split("/")].reduce((acc, part) => join(acc, part), process.cwd())
+  for (const parts of candidates) {
+    const candidate = parts.reduce((acc, part) => join(acc, part), process.cwd())
     try {
       return await readFile(candidate, "utf8")
     } catch (error) {

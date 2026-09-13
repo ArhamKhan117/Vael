@@ -24,15 +24,14 @@ const nextConfig: NextConfig = {
   // produces .next/standalone, which is how the tracing above is checked without deploying.
   output: process.env.NEXT_STANDALONE ? "standalone" : undefined,
   outputFileTracingRoot: join(__dirname, "../../"),
+  // The two documents the site renders are copied into repo-docs/ by scripts/sync-docs.mjs before
+  // every build, because a pattern that normalises to a bare file name ("README.md", at the
+  // repository root) is matched by its basename anywhere under the tracing root: every package's
+  // README in node_modules and the contracts' vendored libraries came along, five thousand files
+  // per function. A path with a directory in it is matched exactly.
   outputFileTracingIncludes: {
-    "/readme": ["../../README.md"],
-    "/whitepaper": ["../../docs/WHITEPAPER.md"],
-  },
-  // A pattern with no slash in it after normalisation ("README.md") is matched by its basename
-  // anywhere under the tracing root, which is every package's README in node_modules and the
-  // contracts' vendored libraries. Those are excluded by name, so the route carries one README.
-  outputFileTracingExcludes: {
-    "/readme": ["../../node_modules/**/README.md", "../../contracts/**/README.md", "../../docs/evidence/**"],
+    "/readme": ["repo-docs/README.md"],
+    "/whitepaper": ["repo-docs/WHITEPAPER.md"],
   },
   turbopack: {
     resolveAlias: Object.fromEntries(
