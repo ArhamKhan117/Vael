@@ -26,8 +26,7 @@ site's: black, the electric blue of its chips, the gold of its partner badges, t
 dungeon floor, sampled from the very tile the hero stands on. The characters are the game's own
 sprites, the Kenney warrior the hero page draws and the season-three raid boss assembled from the
 same monster parts RaidScene assembles it from, drawn nearest-neighbour so the pixels stay pixels.
-The proof that travels from Ethereum to Creditcoin is a scroll with a face, because a picture of a
-Merkle proof is a picture of nothing. The wordmark, "Vael" in the navbar's own Matemasie, sits in
+The wordmark, "Vael" in the navbar's own Matemasie, sits in
 the bottom right of every image. Nothing sits in the top left.
 
 Every number a figure states was read from the chain or the index when the README was written and
@@ -313,37 +312,6 @@ def boss_sprite(season_id: int, height: int) -> Image.Image:
     return canvas.resize((round(canvas.width * factor), height), Image.LANCZOS)
 
 
-def proof_scroll(palette: Palette, height: int, tilt: float = -8) -> Image.Image:
-    """The proof, as a character: a rolled scroll with a face and a blue seal."""
-    s = 4  # drawn large and reduced, for smooth curves
-    h = height * s
-    w = round(h * 0.78)
-    img = Image.new("RGBA", (w * 2, h * 2), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    ox, oy = w // 2, h // 2
-    paper = "#F5E6C4"
-    edge = "#C9A86A"
-    # body
-    d.rounded_rectangle((ox, oy + h * 0.12, ox + w, oy + h * 0.88), radius=h * 0.12, fill=paper, outline=edge, width=s * 2)
-    # rolled ends
-    for y in (oy + h * 0.04, oy + h * 0.80):
-        d.rounded_rectangle((ox - w * 0.06, y, ox + w * 1.06, y + h * 0.16), radius=h * 0.08, fill="#EAD5A6", outline=edge, width=s * 2)
-    # face
-    ex = ox + w * 0.32
-    ey = oy + h * 0.42
-    for fx in (ex, ox + w * 0.68):
-        d.ellipse((fx - s * 5, ey - s * 5, fx + s * 5, ey + s * 5), fill="#1F1F24")
-        d.ellipse((fx - s * 2, ey - s * 4, fx + s * 1, ey - s * 1), fill="#FFFFFF")
-    d.arc((ox + w * 0.34, oy + h * 0.46, ox + w * 0.66, oy + h * 0.66), start=10, end=170, fill="#1F1F24", width=s * 2)
-    # seal
-    sx, sy = ox + w * 0.5, oy + h * 0.74
-    d.ellipse((sx - s * 8, sy - s * 8, sx + s * 8, sy + s * 8), fill=palette.blue, outline="#0369A1", width=s)
-    d.text((sx - s * 3, sy - s * 5), "✓", font=ImageFont.truetype(str(FONTS["bold"]), s * 9), fill="#0B0B0F")
-    img = img.rotate(tilt, resample=Image.BICUBIC, expand=True)
-    img = img.crop(img.getchannel("A").getbbox())
-    return img.resize((round(img.width / s), round(img.height / s)), Image.LANCZOS)
-
-
 def coin(palette: Palette, size: int) -> Image.Image:
     s = 4
     img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
@@ -481,8 +449,8 @@ def hero(palette: Palette) -> Image.Image:
     y = px(44) + (box[3] - box[1]) + px(16)
     y = text_block(draw, left, y, wrap("Do real DeFi on Ethereum. Prove it on Creditcoin. Earn what no key can hand out.", f_tag, span, draw), f_tag, palette.text, "center", span)
 
-    # The proof scroll, hopping from an Ethereum blob to a Creditcoin blob under the tagline. The
-    # row is placed from the tagline's measured bottom, so a longer line cannot run into the arc.
+    # The proof path, from an Ethereum blob to a Creditcoin blob under the tagline. The row is
+    # placed from the tagline's measured bottom, so a longer line cannot run into the arc.
     ey = cy = y + px(50)
     ex, cx = left + px(70), right - px(70)
     draw.ellipse((ex - px(16), ey - px(16), ex + px(16), ey + px(16)), fill=palette.ethereum, outline=palette.border, width=SCALE)
@@ -494,9 +462,6 @@ def hero(palette: Palette) -> Image.Image:
     draw.text((cx + px(22), cy - line_height(f_lab) / 2), "Creditcoin", font=f_lab, fill=palette.muted)
     arc = bezier((ex + px(18), ey), (ex + span * 0.3, ey - px(40)), (cx - span * 0.3, ey - px(40)), (cx - px(18), cy))
     dotted_path(draw, arc, palette.blue_text if palette.name == "light" else palette.blue, px(1.6), px(9))
-    scroll = proof_scroll(palette, px(34))
-    mid = arc[len(arc) // 2]
-    image.alpha_composite(scroll, (round(mid[0] - scroll.width / 2), round(mid[1] - scroll.height / 2 - px(4))))
 
     wordmark(draw, palette, (w, h))
     return finish(image)
@@ -564,10 +529,6 @@ def quest_flow(palette: Palette) -> Image.Image:
     for x0, label in ((xs[0], "Creditcoin"), (xs[1], "Ethereum"), (xs[2], "attestation"), (xs[3], "proof builder"), (xs[4], "Creditcoin")):
         lw = draw.textlength(label, font=f_lab)
         draw.text((x0 - lw / 2, py + px(17)), label, font=f_lab, fill=palette.muted)
-    scroll = proof_scroll(palette, px(40), tilt=-12)
-    hop = bezier((xs[2] + px(15), py), (xs[2] + (xs[3] - xs[2]) * 0.4, py - px(30)), (xs[3] - (xs[3] - xs[2]) * 0.4, py - px(30)), (xs[3] - px(15), py))
-    mid = hop[len(hop) // 2]
-    image.alpha_composite(scroll, (round(mid[0] - scroll.width / 2), round(mid[1] - scroll.height / 2 - px(20))))
     sparkle(draw, xs[4] + px(22), py - px(24), px(6), palette.gold)
     sparkle(draw, xs[4] - px(26), py - px(30), px(4), palette.gold)
 
@@ -730,9 +691,6 @@ def two_paths(palette: Palette) -> Image.Image:
             if si < len(steps) - 1:
                 ax = x + step_w + px(6)
                 draw.polygon([(ax - px(3), y + lane_h // 2 - px(4)), (ax + px(3), y + lane_h // 2), (ax - px(3), y + lane_h // 2 + px(4))], fill=palette.muted)
-        if li == 0:
-            scroll = proof_scroll(palette, px(30), tilt=10)
-            image.alpha_composite(scroll, (sx + step_w + px(4) - scroll.width // 2, y - px(14)))
 
     fy = lane_top + 2 * lane_h + px(14) + px(10)
     text_block(draw, pad, fy, wrap("Both release exactly the quest's own reward. There is no owner release, no owner mint, and no address that can be told a quest was done.", f_sub, w - pad * 2 - px(90), draw)[:2], f_sub, palette.text)

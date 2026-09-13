@@ -94,7 +94,7 @@ async function pack() {
     mkdirSync(to, { recursive: true })
     for (const file of readdirSync(from).filter((name) => name.endsWith(".png")).sort()) {
       const name = basename(file, ".png")
-      // Candidates that were drawn and not chosen stay masters; pick-art removes them.
+      // Candidates that were drawn and not chosen stay masters and are skipped here.
       if (/\.c\d+$/.test(name)) continue
       // The first rule whose predicate matches owns the file; later rules for the same folder are
       // skipped so the icon rule cannot repack a banner.

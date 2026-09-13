@@ -3,7 +3,7 @@
 # Core deployment to Creditcoin testnet: registries, token, vault, badges, quest manager, escrow.
 #
 # The Creditcoin RPC returns block objects without mixHash, so `forge script --broadcast`
-# fails after the first transaction it sends (docs/SPEC.md section 3.2). Every step here is
+# fails after the first transaction it sends (see contracts/README.md). Every step here is
 # therefore exactly one transaction: `forge create` per contract, `cast send` per wiring
 # call, and a `cast call` read-back pinned to the block the write landed in.
 #

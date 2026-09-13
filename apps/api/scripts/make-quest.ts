@@ -5,8 +5,8 @@
  *   PARTICIPANT=0x… ACTION=portal MIN=0.001 REWARD=75 pnpm --filter @vael/api make-quest
  *
  * The quest is created by the registered ERC-8004 agent, which is the only thing that can create
- * one. It is deliberately left unaccepted: accepting is the player's transaction, and the
- * wallet-driven UI run in apps/web/scripts/final-flow.mjs does it through the real page.
+ * one. It is deliberately left unaccepted: accepting is the player's transaction, made from
+ * their own wallet through the real page.
  *
  * This exists because every other script in here creates a quest and then immediately drives it,
  * which is no use when the driving is meant to happen in a browser.
