@@ -240,7 +240,7 @@ Creditcoin testnet is the default network; Sepolia is the second, for the source
 
 | Path | What it is |
 |---|---|
-| `contracts/` | Foundry project: `src/` contracts, `test/` tests with captured real-network fixtures, `script/` one-transaction deploy scripts, the keyless `VerifyBaseline` read-back, and the verification checkers |
+| `contracts/` | Foundry project: `src/` contracts (with [`src/asc/README.md`](../contracts/src/asc/README.md), the guide to building an ASC on Vael's base), `test/` tests with captured real-network fixtures, `script/` one-transaction deploy scripts, the keyless `VerifyBaseline` read-back, and the verification checkers |
 | `apps/api/` | API, worker, indexer, database schema and migrations |
 | `apps/web/` | Web app, Phaser scenes, artwork, and the asset pipeline |
 | `docs/` | This document, addresses, the Attestcoin integration, the whitepaper, the evidence |

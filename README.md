@@ -161,6 +161,21 @@ Vael is built on the protocol, not next to it.
 Measured on the live network: a Sepolia attestation takes 7 to 9 minutes; one verified proof with its payout, XP and damage costs about 1.0M gas; two proofs verified in one receipt cost 1.19M.
 Replay keys are per log, not per transaction, and player identity always comes from the log's indexed topics, never from the transaction sender.
 
+### What Vael adds to the Attestcoin ecosystem
+
+Using the precompile is the floor.
+What Vael puts back into the ecosystem, all of it in this repository and reusable without Vael:
+
+| Contribution | Where |
+|---|---|
+| Five new Ethereum data sources proved on Creditcoin: Uniswap v3 swaps, Aave v3 supplies and borrows, ERC-20 transfers, and a portal event, each a stateless adapter; a sixth protocol is one registration transaction | [`contracts/src/adapters/`](./contracts/src/adapters) |
+| A hardened ASC base any consumer can inherit: log-scoped replay keys, dispatch derived from the verified log rather than the caller, one continuity proof per batch member, with a guide to building on it | [`contracts/src/asc/README.md`](./contracts/src/asc/README.md) |
+| Eleven findings from the live network, each with a reproduction, what Vael does about it, and a suggestion for the protocol, written to be filed as issues | [`docs/ATTESTCOIN_FINDINGS.md`](./docs/ATTESTCOIN_FINDINGS.md) |
+| Real proof material captured from the network and replayed offline in Foundry, so adapters are tested against what the prover actually delivers | [`contracts/test/RealFixtures.t.sol`](./contracts/test/RealFixtures.t.sol) |
+| Two independent proof sources with the Merkle root re-derived locally, and proofs built in the browser and submitted from the player's own wallet | [`apps/api/src/attestcoin/prove.ts`](./apps/api/src/attestcoin/prove.ts) |
+| Ethereum mainnet, chain key 3, measured keylessly: 694 days of provable depth, the attestation stride, and the gas of a real mainnet proof | [`docs/MAINNET_SPIKE.md`](./docs/MAINNET_SPIKE.md) |
+| The return leg declared before it exists: what Vael will publish back to Ethereum once writability ships, derived only from state the chain already holds | [`contracts/src/interfaces/IVaelOutbound.sol`](./contracts/src/interfaces/IVaelOutbound.sol) |
+
 ## The game layer
 
 ![The game layer: one verified completion feeds the hero, the raid boss, the arena, loot and the market, badges and VAEL](apps/web/public/readme/game-layer.png)
@@ -303,6 +318,8 @@ There is no address that can be told a swap happened.
 |---|---|
 | Every live end-to-end run, with hashes, gas, and timings | [`docs/EVIDENCE.md`](./docs/EVIDENCE.md) |
 | How Vael uses Attestcoin, surface by surface, with measurements | [`docs/ATTESTCOIN_INTEGRATION.md`](./docs/ATTESTCOIN_INTEGRATION.md) |
+| Findings from the live network, written to be filed as issues on the protocol | [`docs/ATTESTCOIN_FINDINGS.md`](./docs/ATTESTCOIN_FINDINGS.md) |
+| Building an Attestcoin Smart Contract on Vael's base: the kit and the guide | [`contracts/src/asc/README.md`](./contracts/src/asc/README.md) |
 | The architecture as deployed: contracts, adapters, hooks, the agent, the API, the web app | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
 | Deployed addresses, wiring, and the full supersession history | [`docs/ADDRESSES.md`](./docs/ADDRESSES.md) |
 | The whitepaper: the argument, the threat model, the measurements | [`docs/WHITEPAPER.md`](./docs/WHITEPAPER.md) |

@@ -609,6 +609,10 @@ credentials, which are validated lazily and only where they are used.
 
 ## 8. Known limits
 
+Each protocol-level entry below is also written up as a filable issue, with a reproduction and a
+suggestion, in [ATTESTCOIN_FINDINGS.md](./ATTESTCOIN_FINDINGS.md); the base contract that acts on
+them is documented for reuse in [`contracts/src/asc/README.md`](../contracts/src/asc/README.md).
+
 Everything here is true of the live deployment. Nothing in this document describes a feature that
 is written but not deployed; anything that once was is now either deployed or listed below.
 

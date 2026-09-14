@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
+
+import { GITHUB_URL } from "@/lib/site"
 
 /**
  * Where the repository's documents are, from wherever this is running.
@@ -55,12 +57,24 @@ import remarkGfm from "remark-gfm"
  * as pipe-separated lines.
  */
 /**
+ * Where a link in the document goes when the document is read here rather than on GitHub.
+ *
  * The README's pictures are committed under apps/web/public/readme so GitHub can render them from
- * the repository, and referenced there by that repository path. Here the same path has to be the
- * site's own URL.
+ * the repository, and referenced there by that repository path; here the same path is the site's
+ * own URL. A link to another file in the repository has no counterpart on the site, except the two
+ * documents the site renders, so it goes to that file on GitHub: a blob for a file, a tree for a
+ * folder. Anchors and absolute URLs pass through. `baseDir` is the folder the document lives in,
+ * so a link written relative to docs/ resolves from docs/.
  */
-function toSiteUrl(url: string): string {
-  return url.startsWith("apps/web/public/") ? `/${url.slice("apps/web/public/".length)}` : url
+export function toSiteUrl(url: string, baseDir: string): string {
+  if (/^(https?:|mailto:|#)/.test(url)) return url
+  const path = join(baseDir, url).replace(/^\/+/, "").replace(/^\.\//, "")
+  if (path.startsWith("apps/web/public/")) return `/${path.slice("apps/web/public/".length)}`
+  const [file, anchor] = path.split("#")
+  if (file === "docs/WHITEPAPER.md") return anchor ? `/whitepaper#${anchor}` : "/whitepaper"
+  if (file === "README.md") return anchor ? `/readme#${anchor}` : "/readme"
+  const kind = /\.[a-z0-9]+$/i.test(file) ? "blob" : "tree"
+  return `${GITHUB_URL}/${kind}/main/${file}${anchor ? `#${anchor}` : ""}`
 }
 
 /**
@@ -113,6 +127,7 @@ export async function MarkdownPage({
   } catch {
     source = `# ${title}\n\nThis document could not be read from the repository.`
   }
+  const baseDir = dirname(file) === "." ? "" : dirname(file)
 
   return (
     <main className="bg-black px-5 pb-20 pt-24 text-white md:px-10">
@@ -124,7 +139,7 @@ export async function MarkdownPage({
         </header>
 
         <article className="doc-prose pt-8">
-          <Markdown remarkPlugins={[remarkGfm]} urlTransform={toSiteUrl} components={{ img: DocImage, ...HEADINGS }}>
+          <Markdown remarkPlugins={[remarkGfm]} urlTransform={(url) => toSiteUrl(url, baseDir)} components={{ img: DocImage, ...HEADINGS }}>
             {source}
           </Markdown>
         </article>
