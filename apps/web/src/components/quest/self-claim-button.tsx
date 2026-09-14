@@ -38,7 +38,7 @@ export function SelfClaimButton({
   onClaimed,
 }: SelfClaimButtonProps) {
   const { isConnected, chainId } = useAccount()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
 
   const [stage, setStage] = useState<Stage>("idle")
@@ -51,7 +51,7 @@ export function SelfClaimButton({
       if (!isConnected) throw new Error("Connect your wallet first.")
       if (chainId !== CREDITCOIN_CHAIN_ID) {
         // The proof is verified on Creditcoin, so that is where the transaction has to go.
-        await switchChain?.({ chainId: CREDITCOIN_CHAIN_ID })
+        await switchChainAsync({ chainId: CREDITCOIN_CHAIN_ID })
       }
       if (!CONTRACT_ADDRESSES.QUEST_ASC) throw new Error("QuestASC address is not configured.")
 
@@ -81,7 +81,7 @@ export function SelfClaimButton({
     questId,
     sourceChainKey,
     sourceTxHash,
-    switchChain,
+    switchChainAsync,
     writeContractAsync,
   ])
 
