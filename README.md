@@ -338,7 +338,7 @@ Tests: 265 in Foundry, 39 in Jest, 45 in Vitest, and `contracts/script/VerifyBas
 | Documentation | [docs/ on GitHub](https://github.com/ArhamKhan117/Vael/tree/main/docs), this README rendered live at [vaelonline.vercel.app/readme](https://vaelonline.vercel.app/readme) |
 | Live website | [vaelonline.vercel.app](https://vaelonline.vercel.app), API at [api-production-a79ef3.up.railway.app/health](https://api-production-a79ef3.up.railway.app/health) |
 | X | [x.com/vaelonline](https://x.com/vaelonline) |
-| Demo video | [vimeo.com/1226462008](https://vimeo.com/1226462008) |
+| Demo video | [vimeo.com/user263370677/vael](https://vimeo.com/user263370677/vael) |
 | Contact | Arham Khan, [arhamkhansab78616@gmail.com](mailto:arhamkhansab78616@gmail.com) |
 
 ## License
