@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAppKit } from "@reown/appkit/react"
 import { useQuest, useQuestProgress } from "@/hooks/useQuests"
 import { useQuestContract } from "@/hooks/useQuestContract"
@@ -80,6 +80,22 @@ export default function QuestDetailPage() {
 
   // The rule comes from QuestASC itself, not from our cache: it is what the chain will enforce.
   const verificationRule = useVerificationRule(Number.isNaN(questId) ? undefined : questId)
+  // A native quest's rule is enforced by NativePortal inside the completing transaction, so it is
+  // not stored in QuestASC. The catalogue already carries the same rule; use it when QuestASC has none.
+  const catalogueRule = useMemo<VerificationRule | undefined>(() => {
+    const a = (quest as { action?: { actionType?: number; emitter?: string; token?: string; minAmount?: string } } | null)?.action
+    if (!a || a.actionType === undefined || !isNativeAction(a.actionType as ActionType)) return undefined
+    return {
+      actionType: a.actionType as ActionType,
+      emitter: (a.emitter || "0x0000000000000000000000000000000000000000") as `0x${string}`,
+      token: (a.token || "0x0000000000000000000000000000000000000000") as `0x${string}`,
+      minAmount: BigInt(a.minAmount || "0"),
+      minSourceBlock: 0n,
+      maxSourceBlock: 0n,
+      playerMustMatch: true,
+    }
+  }, [quest])
+  const effectiveRule = verificationRule ?? catalogueRule
   const proofStatus = useProofStatus(
     Number.isNaN(questId) ? undefined : questId,
     wallet.address ?? undefined
@@ -572,7 +588,7 @@ export default function QuestDetailPage() {
                   </div>
                 )}
 
-                {(isAccepted || hasAccepted) && !isCompleted && verificationRule && (
+                {(isAccepted || hasAccepted) && !isCompleted && effectiveRule && (
                   <div className="pt-2">
                     {/* A quest belongs to exactly one completion path, fixed at creation by its
                         action type. Offering the proof form on a native quest would be offering a
@@ -580,7 +596,7 @@ export default function QuestDetailPage() {
                     {isNativeQuest ? (
                       <NativeActionPanel
                         questId={BigInt(questId)}
-                        rule={verificationRule}
+                        rule={effectiveRule}
                         onCompleted={() => {
                           void refetchQuest()
                           void refetchProgress()
@@ -589,7 +605,7 @@ export default function QuestDetailPage() {
                     ) : (
                       <ClaimPanel
                         questId={BigInt(questId)}
-                        rule={verificationRule}
+                        rule={effectiveRule}
                         status={proofStatus}
                       />
                     )}
