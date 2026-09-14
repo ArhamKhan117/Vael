@@ -53,7 +53,7 @@ function quoteOut(sqrtPriceX96: bigint, amountIn: bigint, sellingToken0: boolean
  */
 export function NativeActionPanel({ questId, rule, onCompleted }: NativeActionPanelProps) {
   const { address, isConnected, chainId } = useAccount()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
 
   const isWrap = rule.actionType === ActionType.WrapNative
@@ -126,8 +126,8 @@ export function NativeActionPanel({ questId, rule, onCompleted }: NativeActionPa
 
   const ensureNetwork = useCallback(async () => {
     if (!isConnected) throw new Error("Connect your wallet first.")
-    if (chainId !== CREDITCOIN_CHAIN_ID) await switchChain?.({ chainId: CREDITCOIN_CHAIN_ID })
-  }, [chainId, isConnected, switchChain])
+    if (chainId !== CREDITCOIN_CHAIN_ID) await switchChainAsync({ chainId: CREDITCOIN_CHAIN_ID })
+  }, [chainId, isConnected, switchChainAsync])
 
   const approve = useCallback(async () => {
     setError(null)

@@ -23,7 +23,7 @@ interface PortalCheckInButtonProps {
  */
 export function PortalCheckInButton({ questId, minAmount, onSent }: PortalCheckInButtonProps) {
   const { isConnected, chainId } = useAccount()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +34,7 @@ export function PortalCheckInButton({ questId, minAmount, onSent }: PortalCheckI
     try {
       if (!isConnected) throw new Error("Connect your wallet first.")
       if (chainId !== SEPOLIA_CHAIN_ID) {
-        await switchChain?.({ chainId: SEPOLIA_CHAIN_ID })
+        await switchChainAsync({ chainId: SEPOLIA_CHAIN_ID })
       }
       const hash = await writeContractAsync({
         abi: questPortalAbi,
@@ -50,7 +50,7 @@ export function PortalCheckInButton({ questId, minAmount, onSent }: PortalCheckI
     } finally {
       setBusy(false)
     }
-  }, [chainId, isConnected, minAmount, onSent, questId, switchChain, writeContractAsync])
+  }, [chainId, isConnected, minAmount, onSent, questId, switchChainAsync, writeContractAsync])
 
   return (
     <div className="space-y-2">
